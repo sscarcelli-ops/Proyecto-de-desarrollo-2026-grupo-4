@@ -1,0 +1,40 @@
+# --- Entorno y Variables Privadas---
+.env
+.env.local
+.env.*.local
+
+# --- Java / Maven (Backend) ---
+target/
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Node / React (Frontend) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# --- IDEs y Editores ---
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.project
+.classpath
+.settings/
+nbproject/
+build/
+
+# --- Sistema Operativo ---
+.DS_Store
+Thumbs.db
+
+# --- Logs y archivos subidos ---
+*.log
+uploads/
