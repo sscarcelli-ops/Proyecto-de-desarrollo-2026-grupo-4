@@ -1,0 +1,12 @@
+# En producción las credenciales son obligatorias: sin valores por defecto.
+spring:
+  datasource:
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+# Swagger solo en desarrollo: en producción no se expone el contrato de la API
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

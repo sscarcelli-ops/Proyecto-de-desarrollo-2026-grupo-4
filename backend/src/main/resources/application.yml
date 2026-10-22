@@ -5,6 +5,13 @@ spring:
   application:
     name: accesos
 
+  # Variables locales desde backend/.env (copiar .env.example). Si no existe, se usan las del sistema.
+  config:
+    import: optional:file:.env[.properties]
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:accesos_db}
     username: ${DB_USER:postgres}
@@ -12,23 +19,43 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: true
     properties:
       hibernate:
-        format_sql: true
+        # Fechas siempre en UTC entre la app y la BD (TIMESTAMPTZ), sin importar la zona de cada máquina
+        jdbc:
+          time_zone: UTC
+
+  # RNF-10: PDF hasta 8 MB y foto hasta 2 MB. 10 MB por archivo deja margen;
+  # 20 MB por petición cubre el alta de un trabajador con ART + Seguro de Vida + foto.
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+  # Mensajes de validación (Bean Validation) siempre en español, sin depender del navegador
+  web:
+    locale: es
+    locale-resolver: fixed
 
   flyway:
     enabled: true
     locations: classpath:db/migration
-    baseline-on-migrate: true
 
 # Configuración personalizada de la app
 app:
+  security:
+    jwt:
+      # Firma HMAC: mínimo 32 caracteres. Sin valor por defecto: cada entorno define el suyo.
+      secret: ${JWT_SECRET}
+      # 8 horas (28800 s): una jornada de trabajo. Al vencer, el usuario vuelve a iniciar sesión.
+      expiration-seconds: ${JWT_EXPIRATION_SECONDS:28800}
   storage:
-    path: ${STORAGE_PATH:./uploads}
+    base-path: ${STORAGE_PATH:/data/archivos}
   paging:
     default-page-size: ${PAGE_SIZE:20}
   cors:
+    # Lista separada por comas
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

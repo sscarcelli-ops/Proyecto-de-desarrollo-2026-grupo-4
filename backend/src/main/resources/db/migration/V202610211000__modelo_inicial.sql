@@ -6,12 +6,34 @@ CREATE TABLE usuario (
     id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email          VARCHAR(255) NOT NULL,
     password_hash  VARCHAR(100) NOT NULL,
-    -- EXTERNO = cuenta de Empresa/Monotributista; su rol real sale de PERFIL (puede no tener ninguno, RN-12)
-    tipo           VARCHAR(20)  NOT NULL CHECK (tipo IN ('ADMIN','OPERADOR','GUARDIA','EXTERNO')),
     creado_en      TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX uq_usuario_email ON usuario (lower(email));
 
+-- RBAC con roles fijos (sin tabla de permisos). Un usuario puede tener 0, 1 o más roles (RN-12, RF-08).
+-- EMPRESA / MONOTRIBUTISTA se asignan al APROBAR el perfil (US-20); ADMIN / OPERADOR / GUARDIA al crear la cuenta.
+CREATE TABLE rol (
+    id      SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    codigo  VARCHAR(20) NOT NULL UNIQUE,
+    nombre  VARCHAR(50) NOT NULL
+);
+INSERT INTO rol (codigo, nombre) VALUES
+    ('ADMIN',          'Administrador'),
+    ('OPERADOR',       'Operador'),
+    ('GUARDIA',        'Guardia'),
+    ('EMPRESA',        'Empresa'),
+    ('MONOTRIBUTISTA', 'Monotributista');
+
+CREATE TABLE usuario_rol (
+    usuario_id  BIGINT   NOT NULL REFERENCES usuario(id),
+    rol_id      SMALLINT NOT NULL REFERENCES rol(id),
+    asignado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (usuario_id, rol_id)
+);
+CREATE INDEX ix_usuario_rol_rol ON usuario_rol (rol_id);
+
+-- Datos propios de cada rol (el estado/alcance de cada rol vive acá, no en usuario_rol).
+-- Crear la fila de usuario_rol y la de operador/guardia/perfil en la MISMA transacción.
 CREATE TABLE operador (
     usuario_id  BIGINT PRIMARY KEY REFERENCES usuario(id),
     nombre      VARCHAR(100) NOT NULL,
