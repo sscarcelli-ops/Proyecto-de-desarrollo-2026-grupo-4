@@ -4,3 +4,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  flyway:
+    # Con ramas en paralelo, una migración con fecha anterior puede mergearse después de otra más nueva
+    # ya aplicada: out-of-order la aplica igual en lugar de impedir el arranque. Solo en desarrollo.
+    out-of-order: true
+    # Si tu base tiene el seed aplicado y arrancás sin el perfil seed, los scripts de db/seed figuran
+    # como "faltantes": se ignoran en lugar de impedir el arranque.
+    ignore-migration-patterns: "*:missing,*:future"

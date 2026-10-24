@@ -1,0 +1,6 @@
+# Datos de prueba del camino feliz. Se activa junto con dev: SPRING_PROFILES_ACTIVE=dev,seed
+# Sin este perfil la base queda sin usuarios, como necesita la activación del Administrador (US-01).
+# Nunca se usa en prod.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed

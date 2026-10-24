@@ -1,0 +1,36 @@
+# Infraestructura local para desarrollo: solo PostgreSQL (Mailpit se suma con T-04).
+# Backend y frontend corren desde el IDE. Los Dockerfiles y el compose completo llegan en S4.
+#
+#   Levantar:            docker compose --env-file backend/.env up -d
+#   Ver estado:          docker compose ps
+#   Apagar:              docker compose down
+#   Borrar los datos:    docker compose down -v   (vuelve a crear las bases vacías al levantar)
+#
+# Toma DB_NAME, DB_USER, DB_PASSWORD y DB_PORT de backend/.env, así el backend y el contenedor usan
+# los mismos valores. Si tenés PostgreSQL instalado en tu máquina usando el 5432, poné DB_PORT=5433.
+name: accesos
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: accesos-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-accesos_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      TZ: UTC
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Solo se ejecuta la primera vez (volumen vacío): crea la base accesos_vacia para probar US-01
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
