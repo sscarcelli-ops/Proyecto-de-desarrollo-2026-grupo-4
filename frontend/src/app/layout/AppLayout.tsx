@@ -6,6 +6,7 @@ import { useCurrentUser } from '../../features/auth/api/useCurrentUser';
 import { authToken } from '../../shared/lib/authToken';
 import { ROL_LABEL } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
+import { palette } from '../theme';
 
 const { Header, Sider, Content } = Layout;
 
@@ -33,14 +34,15 @@ export function AppLayout() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* En pantallas chicas (garita en el celular, RNF-05) el menú se oculta y se abre con el botón */}
-      <Sider theme="light" width={240} breakpoint="lg" collapsedWidth={0}>
+      <Sider theme="dark" width={240} breakpoint="lg" collapsedWidth={0}>
         <Flex vertical style={{ height: '100%' }}>
           <Flex align="center" gap={12} style={{ padding: '24px 20px' }}>
             {/* Reemplazar por el logo definitivo */}
-            <Avatar size={44} />
-            <Typography.Text strong style={{ fontSize: 18 }}>Logo</Typography.Text>
+            <Avatar size={40} style={{ background: palette.sidebarHover }} />
+            <Typography.Text strong style={{ fontSize: 18, color: palette.sidebarTextActive }}>Logo</Typography.Text>
           </Flex>
           <Menu
+            theme="dark"
             mode="inline"
             selectedKeys={[pathname]}
             items={items}
@@ -49,7 +51,13 @@ export function AppLayout() {
           />
           <Flex justify="flex-end" style={{ padding: 16 }}>
             <Tooltip title="Cerrar sesión">
-              <Button type="text" icon={<LogoutOutlined />} onClick={logout} aria-label="Cerrar sesión" />
+              <Button
+                type="text"
+                icon={<LogoutOutlined />}
+                onClick={logout}
+                aria-label="Cerrar sesión"
+                style={{ color: palette.sidebarText }}
+              />
             </Tooltip>
           </Flex>
         </Flex>

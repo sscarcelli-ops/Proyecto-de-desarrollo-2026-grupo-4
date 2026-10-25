@@ -1,4 +1,8 @@
-/* Estilos globales mínimos: el resto lo resuelve Ant Design */
+/* Estilos globales mínimos: el resto lo resuelve Ant Design con app/theme.ts */
 body {
   margin: 0;
+  /* Misma fuente que app/theme.ts, para el texto fuera de los componentes de Ant Design */
+  font-family: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Números del mismo ancho: DNI, CUIT y fechas quedan alineados en las columnas */
+  font-variant-numeric: tabular-nums;
 }

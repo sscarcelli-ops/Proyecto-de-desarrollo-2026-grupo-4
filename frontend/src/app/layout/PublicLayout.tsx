@@ -4,11 +4,11 @@ import { palette } from '../theme';
 
 /**
  * Layout de las pantallas sin sesión (wireframes de login, activación de cuenta, registro y
- * recuperar contraseña): fondo gris, logo arriba a la izquierda y el contenido en una tarjeta blanca.
+ * recuperar contraseña): fondo gris claro, logo arriba a la izquierda y el contenido en una tarjeta blanca.
  */
 export function PublicLayout() {
   return (
-    <Flex vertical style={{ minHeight: '100vh', background: palette.sidebar, padding: '24px 16px' }}>
+    <Flex vertical style={{ minHeight: '100vh', background: palette.background, padding: '24px 16px' }}>
       <Flex align="center" gap={12} style={{ marginBottom: 24 }}>
         {/* Reemplazar por el logo definitivo */}
         <Avatar size={44} />
@@ -19,7 +19,8 @@ export function PublicLayout() {
           style={{
             width: '100%',
             maxWidth: 720,
-            background: palette.content,
+            background: palette.surface,
+            border: `1px solid ${palette.borderSoft}`,
             borderRadius: 8,
             padding: '48px 24px',
           }}
