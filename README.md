@@ -130,6 +130,24 @@ Reglas del equipo:
 - **Frontend:** usar `shared/lib/apiError.ts`: `getErrorMessage(error)` para mostrar el mensaje y
   `form.setFields(toFormFieldErrors(error))` para marcar los campos de un formulario de Ant Design.
 
+## Tipos de la API (generados desde Swagger)
+
+Los tipos de TypeScript de los DTO del backend **no se escriben a mano**: se generan desde Swagger.
+
+```bash
+# con el backend corriendo en el 8080
+cd frontend
+npm run api:types      # regenera src/shared/api/schema.d.ts
+```
+
+- Correrlo cada vez que se crea o cambia un DTO en el backend, y **commitear `schema.d.ts`** junto con ese
+  cambio (así el build no necesita el backend levantado).
+- Uso: `import type { ApiSchema } from 'shared/api/types'` y `ApiSchema<'BarrioResponse'>`.
+- Si alguien cambia un DTO, al regenerar los tipos el frontend marca en rojo cada lugar que quedó desactualizado.
+- Los `XxxResponse` tienen todos sus campos obligatorios (`OpenApiConfig`). Si un campo puede venir `null`,
+  declararlo en el record con `@Schema(types = {"string", "null"})`. En los `XxxRequest`, lo obligatorio sale de
+  Bean Validation (`@NotNull`, `@NotBlank`...).
+
 ## Frontend
 
 ```bash

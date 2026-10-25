@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { httpClient } from '../../../shared/lib/httpClient';
+import type { ApiSchema } from '../../../shared/api/types';
 
-export interface PingResponse {
-  status: string;
-  message: string;
-  timestamp: string;
-}
+// Tipo generado desde el DTO PingResponse del backend (npm run api:types)
+type PingResponse = ApiSchema<'PingResponse'>;
 
 async function getPing(): Promise<PingResponse> {
   const { data } = await httpClient.get<PingResponse>('/ping');

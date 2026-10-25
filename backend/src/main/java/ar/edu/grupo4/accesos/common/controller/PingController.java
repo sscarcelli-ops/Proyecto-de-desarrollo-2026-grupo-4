@@ -1,23 +1,21 @@
 package ar.edu.grupo4.accesos.common.controller;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api")
 public class PingController {
 
+    /** DTO de ejemplo: aparece en Swagger y el frontend recibe su tipo generado (npm run api:types). */
+    public record PingResponse(String status, String message, OffsetDateTime timestamp) {
+    }
+
     @GetMapping("/ping")
-    public ResponseEntity<Map<String, Object>> ping() {
-        return ResponseEntity.ok(Map.of(
-            "status", "ok",
-            "message", "pong",
-            "timestamp", LocalDateTime.now().toString()
-        ));
+    public PingResponse ping() {
+        return new PingResponse("ok", "pong", OffsetDateTime.now());
     }
 }

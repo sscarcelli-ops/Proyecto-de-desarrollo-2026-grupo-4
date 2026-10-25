@@ -5,8 +5,11 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.ArrayList;
 
 /**
  * Contrato de la API (Swagger/OpenAPI) entre frontend y backend.
@@ -30,5 +33,25 @@ public class OpenApiConfig {
                 .scheme("bearer")
                 .bearerFormat("JWT")))
             .addSecurityItem(new SecurityRequirement().addList(BEARER_JWT));
+    }
+
+    /**
+     * Los XxxResponse siempre envían todos sus campos: se marcan obligatorios para que los tipos generados
+     * en el frontend (npm run api:types) no sean opcionales. Si un campo puede venir null, declararlo en el
+     * record con @Schema(types = {"string", "null"}) (o el tipo que corresponda).
+     * Los XxxRequest no se tocan: lo obligatorio sale de Bean Validation (@NotNull, @NotBlank...).
+     */
+    @Bean
+    public OpenApiCustomizer responsesConCamposObligatorios() {
+        return openApi -> {
+            if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
+                return;
+            }
+            openApi.getComponents().getSchemas().forEach((name, schema) -> {
+                if (name.endsWith("Response") && schema.getProperties() != null) {
+                    schema.setRequired(new ArrayList<>(schema.getProperties().keySet()));
+                }
+            });
+        };
     }
 }
