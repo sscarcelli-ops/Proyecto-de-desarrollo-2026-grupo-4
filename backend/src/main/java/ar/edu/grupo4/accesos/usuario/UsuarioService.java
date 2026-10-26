@@ -22,4 +22,14 @@ public class UsuarioService {
     public Optional<Usuario> buscarPorId(Long id) {
         return usuarioRepository.findWithRolesById(id);
     }
+
+    /**
+     * Si la cuenta puede operar (perfil no suspendido, Guardia habilitado, barrio del Guardia u Operador activo,
+     * Operador con barrio asignado).
+     * La usa el login (US-04 CA-3) y la va a usar el chequeo en cada petición (US-43, T-03).
+     */
+    @Transactional(readOnly = true)
+    public EstadoAcceso estadoDeAcceso(Long usuarioId) {
+        return EstadoAcceso.valueOf(usuarioRepository.estadoDeAcceso(usuarioId));
+    }
 }

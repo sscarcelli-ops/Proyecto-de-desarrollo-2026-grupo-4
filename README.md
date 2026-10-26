@@ -67,12 +67,16 @@ base queda sin usuarios. Todos los usuarios tienen la contraseña **`Prueba123`*
 |---|---|---|
 | `admin@seed.test` | Administrador | Gestión de barrios, Operadores y solicitudes |
 | `operador@seed.test` | Operador de *Barrio Los Álamos* (Activo) | Guardias, habilitaciones, historial |
-| `operador.libre@seed.test` | Operador sin barrio ("Disponible") | Asignar Operador a *Barrio San Jorge* (Inactivo) |
+| `operador.libre@seed.test` | Operador sin barrio ("Disponible") | Asignar Operador a *Barrio San Jorge* (Inactivo). No puede iniciar sesión hasta tener barrio: "No tenés un barrio asignado…" (RN-15) |
 | `guardia@seed.test` | Guardia de *Barrio Los Álamos* | Garita |
 | `empresa@seed.test` | Empresa aprobada y habilitada en *Los Álamos* | Trabajadores, documentación, historial |
 | `mono@seed.test` | Monotributista aprobado, **no** habilitado en *Los Álamos* | Motivo "no habilitado en el barrio" |
 | `mono.pendiente@seed.test` | Solicitud pendiente | Aprobar / ver estado de la solicitud |
 | `mono.rechazado@seed.test` | Solicitud rechazada con motivo | Ver motivo / corregir y reenviar |
+| `mono.suspendido@seed.test` | Monotributista suspendido | Login rechazado: "Tu cuenta se encuentra suspendida" (US-04) |
+| `guardia.deshabilitado@seed.test` | Guardia deshabilitado de *Los Álamos* | Login rechazado: "Tu usuario se encuentra deshabilitado" (US-04) |
+| `guardia.inactivo@seed.test` | Guardia de *San Jorge* (Inactivo) | Login rechazado: "Tu barrio se encuentra inactivo" (US-04) |
+| `operador.inactivo@seed.test` | Operador de *Barrio Las Lomas* (Inactivo) | Login rechazado: "Tu barrio se encuentra inactivo" (RN-15) |
 
 Trabajadores de la Empresa (DNI → caso): `30111222` vigente y **con ingreso abierto** (mismo DNI que el
 Monotributista: dos vínculos), `30777888` vigente listo para ingresar (sin foto), `30333444` ART vencida,
