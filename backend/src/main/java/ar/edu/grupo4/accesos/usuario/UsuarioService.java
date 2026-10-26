@@ -32,4 +32,10 @@ public class UsuarioService {
     public EstadoAcceso estadoDeAcceso(Long usuarioId) {
         return EstadoAcceso.valueOf(usuarioRepository.estadoDeAcceso(usuarioId));
     }
+
+    /** Nombre para mostrar en la interfaz; vacío para el Administrador o una cuenta sin perfil. */
+    @Transactional(readOnly = true)
+    public Optional<String> nombreVisible(Long usuarioId) {
+        return Optional.ofNullable(usuarioRepository.nombreVisible(usuarioId));
+    }
 }

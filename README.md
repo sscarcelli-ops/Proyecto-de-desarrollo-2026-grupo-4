@@ -94,6 +94,9 @@ Para agregar datos: un archivo nuevo y fechado por US (`V<fecha>__seed_<tema>.sq
 - El token sobrevive al cierre del navegador: cerrar sesión (RF-25) siempre borra el token. En dispositivos
   compartidos (garita), cada Guardia debe cerrar sesión al terminar su turno.
 - Nunca usar `dangerouslySetInnerHTML` con datos del usuario: un XSS podría leer el token.
+- **Política de contraseñas (US-44):** todo DTO que **define** una contraseña (registro, alta de Operador y Guardia,
+  cambio, recupero, activación) la marca con `@PasswordSegura` (`common/security`): mínimo 8 caracteres, una
+  mayúscula, una minúscula y un número, y como máximo 72 bytes (límite de bcrypt). El login no la usa.
 - Duración: **8 horas** (`JWT_EXPIRATION_SECONDS=28800`), una jornada de trabajo. No hay refresh token:
   al vencer, el backend responde 401 y el usuario vuelve a iniciar sesión.
 - El estado del usuario (suspendido, Guardia deshabilitado, barrio inactivo) se valida en la BD en cada

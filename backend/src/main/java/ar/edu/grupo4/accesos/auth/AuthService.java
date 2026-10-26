@@ -45,7 +45,11 @@ public class AuthService {
         }
         // Recién con la contraseña correcta: si no, cualquiera podría averiguar el estado de una cuenta ajena
         verificarQuePuedeOperar(usuario.get());
-        return LoginResponse.from(tokenService.emitir(usuario.get()), usuario.get());
+        return LoginResponse.from(tokenService.emitir(usuario.get()), usuario.get(), nombreVisible(usuario.get()));
+    }
+
+    private String nombreVisible(Usuario usuario) {
+        return usuarioService.nombreVisible(usuario.getId()).orElse(null);
     }
 
     /**
@@ -71,7 +75,7 @@ public class AuthService {
     /** El usuario del token (sub = id). Si la cuenta ya no existe, la sesión deja de valer (401). */
     public UsuarioActualResponse usuarioActual(Long usuarioId) {
         return usuarioService.buscarPorId(usuarioId)
-            .map(UsuarioActualResponse::from)
+            .map(usuario -> UsuarioActualResponse.from(usuario, nombreVisible(usuario)))
             .orElseThrow(() -> new InsufficientAuthenticationException("La cuenta del token no existe"));
     }
 }

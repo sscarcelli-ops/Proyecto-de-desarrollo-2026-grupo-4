@@ -65,6 +65,7 @@ export interface components {
             /** Format: date-time */
             expiraEn: string;
             email: string;
+            nombre: string | null;
             roles: string[];
         };
         PingResponse: {
@@ -75,6 +76,7 @@ export interface components {
         };
         UsuarioActualResponse: {
             email: string;
+            nombre: string | null;
             roles: string[];
         };
     };

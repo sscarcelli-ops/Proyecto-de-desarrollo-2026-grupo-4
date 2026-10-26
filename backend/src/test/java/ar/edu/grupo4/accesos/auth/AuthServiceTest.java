@@ -52,10 +52,20 @@ class AuthServiceTest {
 
     @Test
     void credencialesCorrectasDevuelveElTokenYElUsuario() {
+        when(usuarioService.nombreVisible(1L)).thenReturn(Optional.of("Carlos Gómez"));
+
         LoginResponse response = authService.login(new LoginRequest("admin@seed.test", "Prueba123"));
 
         assertThat(response.token()).isEqualTo("token-de-prueba");
         assertThat(response.email()).isEqualTo("admin@seed.test");
+        assertThat(response.nombre()).isEqualTo("Carlos Gómez");
+    }
+
+    @Test
+    void sinNombreVisibleElNombreVieneNulo() {
+        when(usuarioService.nombreVisible(1L)).thenReturn(Optional.empty());
+
+        assertThat(authService.login(new LoginRequest("admin@seed.test", "Prueba123")).nombre()).isNull();
     }
 
     @Test
