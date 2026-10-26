@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Rol } from '../../shared/types/rol';
-
+import { HomeOutlined } from '@ant-design/icons';
+import { PATHS } from '../../routes/paths';
 export interface AppMenuItem {
   path: string;
   label: string;
@@ -11,7 +12,9 @@ export interface AppMenuItem {
 
 // Cada feature agrega acá su opción del menú lateral (una línea por pantalla), en el orden en que se muestra.
 // Ej. según wireframes: { path: '/barrios', label: 'Barrios', icon: <HomeOutlined />, roles: ['ADMIN'] }
-export const MENU_ITEMS: AppMenuItem[] = [];
+export const MENU_ITEMS: AppMenuItem[] = [
+  { path: PATHS.barrios, label: 'Barrios privados', icon: <HomeOutlined />, roles: ['ADMIN'] },
+];
 
 /** Opciones visibles para los roles del usuario (RF-22). */
 export function getMenuItemsFor(roles: Rol[]): AppMenuItem[] {
