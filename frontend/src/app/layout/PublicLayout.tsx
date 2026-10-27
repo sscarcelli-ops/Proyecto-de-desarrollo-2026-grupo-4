@@ -14,7 +14,8 @@ export function PublicLayout() {
         <Avatar size={44} />
         <Typography.Text strong style={{ fontSize: 18 }}>Logo</Typography.Text>
       </Flex>
-      <Flex justify="center" align="flex-start" style={{ flex: 1 }}>
+      {/* Centrada en la pantalla: el padding de abajo compensa el alto de la fila del logo */}
+      <Flex justify="center" align="center" style={{ flex: 1, paddingBottom: 116 }}>
         <div
           style={{
             width: '100%',

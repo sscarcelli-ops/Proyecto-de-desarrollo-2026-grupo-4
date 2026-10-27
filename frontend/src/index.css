@@ -6,3 +6,15 @@ body {
   /* Números del mismo ancho: DNI, CUIT y fechas quedan alineados en las columnas */
   font-variant-numeric: tabular-nums;
 }
+
+/* Etiquetas de los formularios en mayúsculas, como en los wireframes ("NOMBRE *"). Color y tamaño: app/theme.ts */
+.ant-form-item-label > label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* En formularios verticales la etiqueta va pegada a su campo: Ant Design le da la altura del campo (40 px en
+   tamaño grande) y la separa de más. La distancia la define verticalLabelPadding en app/theme.ts */
+.ant-form.ant-form-vertical .ant-form-item .ant-form-item-label > label {
+  height: auto;
+}
