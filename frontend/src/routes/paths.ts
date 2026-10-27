@@ -3,8 +3,10 @@ export const PATHS = {
   // Sin sesión
   login: '/',
   registro: '/registro', // US-02
+  solicitarPerfil: '/solicitar-perfil', // US-03
   recuperarPassword: '/recuperar-contrasena', // US-06
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
+  estadoSolicitud: '/estado-solicitud', // US-08
 } as const;

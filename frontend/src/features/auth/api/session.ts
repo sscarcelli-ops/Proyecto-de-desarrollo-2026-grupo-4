@@ -6,6 +6,7 @@ import { CURRENT_USER_KEY, toCurrentUser } from './useCurrentUser';
 
 type LoginRequest = ApiSchema<'LoginRequest'>;
 type LoginResponse = ApiSchema<'LoginResponse'>;
+type RegistroRequest = ApiSchema<'RegistroRequest'>;
 
 /** US-04: inicia sesión, guarda el token y deja el usuario en la caché (sin otra consulta a /me). */
 export function useLogin() {
@@ -15,6 +16,20 @@ export function useLogin() {
     onSuccess: (data) => {
       authToken.set(data.token);
       queryClient.setQueryData(CURRENT_USER_KEY, toCurrentUser(data));
+    },
+  });
+}
+
+/** US-02: crea cuenta base, guarda el token y autentica automáticamente para continuar a US-03. */
+export function useRegistro() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: RegistroRequest) => (await httpClient.post<LoginResponse>('/auth/registro', body)).data,
+    onSuccess: (data) => {
+      authToken.set(data.token);
+      queryClient.setQueryData(CURRENT_USER_KEY, toCurrentUser(data));
+      // Invalida la query de solicitud para que las páginas con sesión reconozcan que no tiene perfil aún
+      queryClient.invalidateQueries({ queryKey: ['perfil', 'mi-solicitud'] });
     },
   });
 }

@@ -2,6 +2,7 @@ package ar.edu.grupo4.accesos.auth;
 
 import ar.edu.grupo4.accesos.auth.dto.LoginRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginResponse;
+import ar.edu.grupo4.accesos.auth.dto.RegistroRequest;
 import ar.edu.grupo4.accesos.auth.dto.UsuarioActualResponse;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.security.TokenService;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -46,6 +48,15 @@ public class AuthService {
         // Recién con la contraseña correcta: si no, cualquiera podría averiguar el estado de una cuenta ajena
         verificarQuePuedeOperar(usuario.get());
         return LoginResponse.from(tokenService.emitir(usuario.get()), usuario.get(), nombreVisible(usuario.get()));
+    }
+
+    /**
+     * US-02: registra la cuenta base sin rol e inicia sesión automáticamente (RF-08, RN-12).
+     */
+    @Transactional
+    public LoginResponse registrar(RegistroRequest request) {
+        Usuario usuario = usuarioService.crearUsuario(request.email(), request.password());
+        return LoginResponse.from(tokenService.emitir(usuario), usuario, null);
     }
 
     private String nombreVisible(Usuario usuario) {

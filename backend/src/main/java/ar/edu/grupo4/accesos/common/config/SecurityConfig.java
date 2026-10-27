@@ -41,7 +41,8 @@ public class SecurityConfig {
         RUTA.matcher("/v3/api-docs/**"),
         RUTA.matcher("/swagger-ui/**"),
         RUTA.matcher("/swagger-ui.html"),
-        RUTA.matcher(HttpMethod.POST, "/api/auth/login")
+        RUTA.matcher(HttpMethod.POST, "/api/auth/login"),
+        RUTA.matcher(HttpMethod.POST, "/api/auth/registro")
     );
 
     // Spring convierte la lista separada por comas en List<String>

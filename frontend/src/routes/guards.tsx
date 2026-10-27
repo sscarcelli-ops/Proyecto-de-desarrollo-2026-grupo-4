@@ -1,6 +1,7 @@
 import { Flex, Spin } from 'antd';
 import { Navigate, Outlet } from 'react-router';
 import { useCurrentUserQuery } from '../features/auth/api/useCurrentUser';
+import { useMiSolicitud } from '../features/perfiles/api/perfiles';
 import { useAuthToken } from '../shared/lib/authToken';
 import { pantallaInicial } from './pantallaInicial';
 import { PATHS } from './paths';
@@ -36,12 +37,22 @@ export function RequireAuth() {
 export function RedirectIfAuthenticated() {
   const token = useAuthToken();
   const { data, isPending, isError } = useCurrentUserQuery();
+  const { data: perfil, isPending: pendingPerfil } = useMiSolicitud();
 
   if (token === null || isError) {
     return <Outlet />;
   }
-  if (isPending) {
+  if (isPending || (token && pendingPerfil)) {
     return <Cargando />;
+  }
+  // Si no tiene roles todavía (cuenta en proceso de alta):
+  // - Si ya envió su solicitud -> /estado-solicitud (US-08)
+  // - Si todavía no completó los datos fiscales -> /solicitar-perfil (US-03)
+  if (data.roles.length === 0) {
+    if (perfil) {
+      return <Navigate to={PATHS.estadoSolicitud} replace />;
+    }
+    return <Navigate to={PATHS.solicitarPerfil} replace />;
   }
   return <Navigate to={pantallaInicial(data.roles)} replace />;
 }

@@ -56,6 +56,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RegistroRequest: {
+            email: string;
+            password: string;
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -78,6 +82,21 @@ export interface components {
             email: string;
             nombre: string | null;
             roles: string[];
+        };
+        PerfilResponse: {
+            id: number;
+            usuarioId: number;
+            tipo: 'EMPRESA' | 'MONOTRIBUTISTA';
+            estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'SUSPENDIDO';
+            cuitCuil: string;
+            razonSocial: string | null;
+            nombre: string | null;
+            apellido: string | null;
+            dniTitular: string | null;
+            telefono: string | null;
+            constanciaRuta: string;
+            motivoRechazo: string | null;
+            creadoEn: string;
         };
     };
     responses: never;

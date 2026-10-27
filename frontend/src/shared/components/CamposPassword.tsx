@@ -6,6 +6,7 @@ import { MENSAJE_LARGO, MENSAJE_POLITICA, cumplePolitica, esDemasiadoLarga } fro
 interface Props {
   name?: NamePath;
   label?: string;
+  placeholder?: string;
 }
 
 /**
@@ -15,7 +16,7 @@ interface Props {
  *   <CampoPasswordNueva />                                    // name="password", label="Contraseña"
  *   <CampoPasswordNueva name="passwordInicial" label="Contraseña inicial" />
  */
-export function CampoPasswordNueva({ name = 'password', label = 'Contraseña' }: Props) {
+export function CampoPasswordNueva({ name = 'password', label = 'Contraseña', placeholder }: Props) {
   const password: string | undefined = Form.useWatch(name, Form.useFormInstance());
 
   return (
@@ -36,7 +37,7 @@ export function CampoPasswordNueva({ name = 'password', label = 'Contraseña' }:
       ]}
       extra={<RequisitosPassword password={password} />}
     >
-      <Input.Password autoComplete="new-password" />
+      <Input.Password autoComplete="new-password" placeholder={placeholder} />
     </Form.Item>
   );
 }
@@ -49,6 +50,7 @@ export function CampoPasswordNueva({ name = 'password', label = 'Contraseña' }:
 export function CampoConfirmarPassword({
   name = 'confirmarPassword',
   label = 'Repetí la contraseña',
+  placeholder,
   campoPassword = 'password',
 }: Props & { campoPassword?: NamePath }) {
   return (
@@ -67,7 +69,7 @@ export function CampoConfirmarPassword({
         }),
       ]}
     >
-      <Input.Password autoComplete="new-password" />
+      <Input.Password autoComplete="new-password" placeholder={placeholder} />
     </Form.Item>
   );
 }
