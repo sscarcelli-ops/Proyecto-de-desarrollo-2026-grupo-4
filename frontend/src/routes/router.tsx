@@ -24,10 +24,18 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-  // Pantallas con sesión: menú lateral según el rol. En US-04 se envuelve con el guard que
-  // redirige al login si no hay usuario; cada feature agrega acá sus páginas y su opción en menuItems.
+  // Pantallas con sesión: menú lateral según el rol. Cada feature agrega acá sus páginas y su opción en menuItems.
   {
-    element: <AppLayout />,
-    children: [],
+    element: <RequireAuth />,
+    children: [
+      {
+        element: <AppLayout />,
+        children: [
+          { path: PATHS.inicio, element: <InicioPage /> },
+          { path: PATHS.barrios, element: <BarriosPage /> },
+          { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
+        ],
+      },
+    ],
   },
 ]);

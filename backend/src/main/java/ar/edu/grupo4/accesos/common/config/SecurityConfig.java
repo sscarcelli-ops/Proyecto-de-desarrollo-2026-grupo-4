@@ -1,7 +1,5 @@
 package ar.edu.grupo4.accesos.common.config;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +23,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -68,8 +68,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint((request, response, e) -> exceptionResolver.resolveException(request, response, null, e))
                 .accessDeniedHandler((request, response, e) -> exceptionResolver.resolveException(request, response, null, e)))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/ping", "/api/health").permitAll() // Ruta pública para probar
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Swagger
+                .requestMatchers(RUTAS_PUBLICAS).permitAll()
                 .anyRequest().authenticated()
             )
             // Habilitamos el Resource Server para validar tokens Bearer JWT automáticamente
