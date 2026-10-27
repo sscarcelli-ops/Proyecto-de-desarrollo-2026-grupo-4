@@ -99,6 +99,13 @@ export const theme: ThemeConfig = {
       rowHoverBg: palette.background,
       borderColor: palette.borderSoft,
     },
+    // Etiquetas de los formularios como en los wireframes ("NOMBRE *"): chicas y en gris. Las mayúsculas
+    // están en index.css y el "*" de obligatorio en providers.tsx (no son tokens de Ant Design).
+    Form: {
+      labelColor: palette.textSecondary,
+      labelFontSize: 12,
+      verticalLabelPadding: '0 0 4px',
+    },
   },
 };
 

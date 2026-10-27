@@ -9,7 +9,7 @@ export function NotFoundPage() {
       title="404"
       subTitle="La página que buscás no existe."
       extra={
-        <Link to={PATHS.home}>
+        <Link to={PATHS.login}>
           <Button type="primary">Volver al inicio</Button>
         </Link>
       }
