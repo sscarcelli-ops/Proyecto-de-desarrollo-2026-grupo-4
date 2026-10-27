@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Alert, Button, Flex, Form, Input, Typography } from 'antd';
 import { Link, useNavigate } from 'react-router';
 import { useLogin } from '../api/session';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { authToken } from '../../../shared/lib/authToken';
 import type { ApiSchema } from '../../../shared/api/types';
 import { PATHS } from '../../../routes/paths';
 import { pantallaInicial } from '../../../routes/pantallaInicial';
@@ -14,6 +16,9 @@ import { toCurrentUser } from '../api/useCurrentUser';
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useLogin();
+  // Se lee al entrar y se olvida: si recarga el login, el aviso ya no aparece
+  const [sesionVencida] = useState(authToken.sesionVencida);
+  useEffect(() => authToken.olvidarSesionVencida(), []);
 
   const onFinish = (values: ApiSchema<'LoginRequest'>) =>
     login.mutate(values, {
@@ -25,6 +30,16 @@ export function LoginPage() {
       <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 32 }}>
         Bienvenido
       </Typography.Title>
+
+      {/* El backend rechazó el token guardado (vencido o alterado): mismo mensaje para los dos casos */}
+      {sesionVencida && login.isIdle && (
+        <Alert
+          type="warning"
+          showIcon
+          title="Tu sesión expiró. Iniciá sesión de nuevo."
+          style={{ marginBottom: 24 }}
+        />
+      )}
 
       {/* Credenciales incorrectas (401) o cuenta que no puede operar (403): el mensaje viene del backend */}
       {login.isError && (

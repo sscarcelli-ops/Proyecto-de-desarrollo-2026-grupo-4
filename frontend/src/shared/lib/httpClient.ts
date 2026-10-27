@@ -20,13 +20,13 @@ httpClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 401 = token ausente, vencido (8 h) o inválido: se descarta para no reenviarlo.
-// La redirección al login se agrega con la pantalla de inicio de sesión (US-04).
+// 401 a un pedido que llevaba token = vencido (8 h) o alterado: se descarta y RequireAuth lleva al login con el
+// aviso "Tu sesión expiró". Sin token (ej. contraseña incorrecta en el login) el 401 lo maneja la pantalla.
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      authToken.clear();
+    if (axios.isAxiosError(error) && error.response?.status === 401 && error.config?.headers?.Authorization) {
+      authToken.expirar();
     }
     return Promise.reject(error);
   },
