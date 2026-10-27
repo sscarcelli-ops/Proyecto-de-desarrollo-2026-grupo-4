@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dropdown, Flex, Input, Table, Typography } from 'antd';
+import { Button, ConfigProvider, Dropdown, Flex, Input, Pagination, Table, Typography } from 'antd';
 import { EllipsisOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { useTrabajadores, type TrabajadorResponse } from '../api/trabajadores';
@@ -40,29 +40,32 @@ export function TrabajadoresPage() {
   // Columnas de la tabla, siguiendo el wireframe: Nombre | DNI | Estado doc. | Detalle
   const columnas: ColumnsType<TrabajadorResponse> = [
     {
-      title: 'Nombre',
+      title: <span style={{ fontWeight: 600, color: '#1a2233' }}>Nombre</span>,
       key: 'nombre',
-      // Concatenamos nombre y apellido como muestra el wireframe ("Carlos Pablo Mendoza")
+      align: 'center' as const,
       render: (_, t) => `${t.nombre} ${t.apellido}`,
     },
     {
-      title: 'DNI',
+      title: <span style={{ fontWeight: 600, color: '#1a2233' }}>DNI</span>,
       dataIndex: 'dni',
-      width: 140,
+      width: 170,
+      align: 'center' as const,
     },
     {
-      title: 'Estado doc.',
+      title: <span style={{ fontWeight: 600, color: '#1a2233' }}>Estado documental</span>,
       dataIndex: 'estadoDocumental',
-      width: 180,
+      width: 220,
+      align: 'center' as const,
       render: (estado: string) => <EstadoTag estado={estado as Estado} />,
     },
     {
-      title: 'Detalle',
+      title: <span style={{ fontWeight: 600, color: '#1a2233' }}>Detalle</span>,
       key: 'acciones',
-      width: 80,
+      width: 110,
       align: 'center' as const,
       render: (_, t) => (
         <Dropdown
+          placement="topRight"
           trigger={['click']}
           menu={{
             items: [
@@ -72,20 +75,30 @@ export function TrabajadoresPage() {
                 label: 'Editar',
                 onClick: () => navigate(PATHS.trabajadorEditar(t.id)),
               },
-              // Borrar se agrega en S3 (US-27). Ejemplo de cómo quedará:
-              // { key: 'borrar', icon: <DeleteOutlined />, label: 'Borrar', danger: true,
-              //   onClick: () => abrirModalConfirmacion(t) }
             ],
           }}
         >
-          <Button type="text" icon={<EllipsisOutlined />} aria-label="Acciones" />
+          <Button
+            shape="circle"
+            icon={<EllipsisOutlined style={{ fontSize: 16, color: '#4a5568', fontWeight: 'bold' }} />}
+            aria-label="Acciones"
+            style={{
+              borderColor: '#4a5568',
+              borderWidth: 1.5,
+              width: 32,
+              height: 32,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          />
         </Dropdown>
       ),
     },
   ];
 
   return (
-    <>
+    <div style={{ maxWidth: 1080, margin: '0 auto', width: '100%' }}>
       <Typography.Title level={2} style={{ marginTop: 0 }}>
         Trabajadores
       </Typography.Title>
@@ -110,28 +123,53 @@ export function TrabajadoresPage() {
         />
       </Flex>
 
-      {/* Tabla paginada. La paginación se conecta con el backend a través del hook useTrabajadores */}
-      <Table<TrabajadorResponse>
-        rowKey="id"
-        columns={columnas}
-        dataSource={trabajadoresFiltrados}
-        loading={isLoading}
-        locale={{
-          emptyText: 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
-        }}
-        pagination={{
-          current: pagina,
-          pageSize: tamano,
-          total: data?.totalElements ?? 0,
-          showSizeChanger: true,
-          pageSizeOptions: ['5', '10', '20'],
-          onChange: (page, size) => {
-            setPagina(page);
-            setTamano(size);
-            setBusqueda(''); // limpiar filtro al cambiar de página
+      {/* Tabla con bordes exteriores e interiores homogéneos de 1px y esquinas redondeadas */}
+      <ConfigProvider
+        theme={{
+          components: {
+            Table: {
+              borderColor: '#cbd5e1',
+              borderRadius: 8,
+            },
           },
         }}
-      />
-    </>
+      >
+        <div
+          style={{
+            borderRadius: 8,
+            overflow: 'hidden',
+            backgroundColor: '#ffffff',
+            marginBottom: 24,
+          }}
+        >
+          <Table<TrabajadorResponse>
+            bordered
+            rowKey="id"
+            columns={columnas}
+            dataSource={trabajadoresFiltrados}
+            loading={isLoading}
+            locale={{
+              emptyText: 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
+            }}
+            pagination={false}
+          />
+        </div>
+      </ConfigProvider>
+
+      {/* Paginación centrada debajo del bloque redondeado de la tabla */}
+      <Flex justify="center" style={{ marginTop: 16 }}>
+        <Pagination
+          current={pagina}
+          pageSize={tamano}
+          total={data?.totalElements ?? 0}
+          showSizeChanger={false}
+          onChange={(page, size) => {
+            setPagina(page);
+            setTamano(size);
+            setBusqueda('');
+          }}
+        />
+      </Flex>
+    </div>
   );
 }

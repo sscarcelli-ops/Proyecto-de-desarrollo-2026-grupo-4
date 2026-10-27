@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Avatar, Button, Drawer, Flex, Grid, Layout, Menu, Tooltip, Typography } from 'antd';
+import { Avatar, Button, Drawer, Flex, Grid, Layout, Menu, Modal, Typography } from 'antd';
 import { LogoutOutlined, MenuOutlined } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { getMenuItemsFor } from './menuItems';
@@ -23,6 +23,7 @@ export function AppLayout() {
   const cerrarSesion = useLogout();
   const esEscritorio = Grid.useBreakpoint().lg ?? true;
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [modalLogoutAbierto, setModalLogoutAbierto] = useState(false);
 
   const items = getMenuItemsFor(user?.roles ?? []).map((item) => ({
     key: item.path,
@@ -31,7 +32,8 @@ export function AppLayout() {
   }));
 
   // RF-25. El token persiste en localStorage: cerrar sesión siempre lo borra (useLogout).
-  const logout = () => {
+  const confirmarLogout = () => {
+    setModalLogoutAbierto(false);
     cerrarSesion();
     navigate(PATHS.login, { replace: true });
   };
@@ -55,16 +57,37 @@ export function AppLayout() {
         style={{ borderInlineEnd: 'none', flex: 1 }}
       />
       <Flex justify="flex-end" style={{ padding: 16 }}>
-        <Tooltip title="Cerrar sesión">
-          <Button
-            type="text"
-            icon={<LogoutOutlined />}
-            onClick={logout}
-            aria-label="Cerrar sesión"
-            style={{ color: palette.sidebarText }}
-          />
-        </Tooltip>
+        <Button
+          type="text"
+          icon={<LogoutOutlined style={{ fontSize: 22 }} />}
+          onClick={() => setModalLogoutAbierto(true)}
+          aria-label="Cerrar sesión"
+          style={{ color: palette.sidebarText, width: 44, height: 44 }}
+        />
       </Flex>
+
+      {/* Modal de confirmación según wireframe */}
+      <Modal
+        open={modalLogoutAbierto}
+        onCancel={() => setModalLogoutAbierto(false)}
+        footer={null}
+        centered
+        width={360}
+      >
+        <Flex vertical align="center" gap={24} style={{ padding: '16px 8px 8px' }}>
+          <Typography.Title level={4} style={{ textAlign: 'center', margin: 0 }}>
+            ¿Seguro que quiere Cerrar Sesión?
+          </Typography.Title>
+          <Flex vertical gap={12} style={{ width: '100%' }}>
+            <Button size="large" block onClick={() => setModalLogoutAbierto(false)}>
+              Cancelar
+            </Button>
+            <Button size="large" type="primary" block onClick={confirmarLogout}>
+              Aceptar
+            </Button>
+          </Flex>
+        </Flex>
+      </Modal>
     </Flex>
   );
 

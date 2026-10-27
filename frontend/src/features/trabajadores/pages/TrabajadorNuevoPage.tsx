@@ -93,7 +93,7 @@ export function TrabajadorNuevoPage() {
 
           {/* S2 (US-28): Aquí se sumarán los componentes de carga de Foto, ART y Seguro de Vida */}
 
-          <Flex vertical gap={12} style={{ marginTop: 32 }}>
+          <Flex vertical align="center" gap={16} style={{ marginTop: 32 }}>
             <Button
               type="primary"
               htmlType="submit"
@@ -102,14 +102,12 @@ export function TrabajadorNuevoPage() {
             >
               Aceptar
             </Button>
-            <Button
-              type="text"
-              block
+            <Typography.Link
               onClick={() => navigate(PATHS.trabajadores)}
-              disabled={crear.isPending}
+              style={{ fontSize: 13, color: 'inherit' }}
             >
               Volver
-            </Button>
+            </Typography.Link>
           </Flex>
         </Form>
       </Card>

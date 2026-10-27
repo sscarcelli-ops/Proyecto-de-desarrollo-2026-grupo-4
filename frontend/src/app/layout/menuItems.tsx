@@ -11,16 +11,16 @@ export interface AppMenuItem {
   roles: Rol[];
 }
 
-// Cada feature agrega acá su opción del menú lateral (una línea por pantalla), en el orden en que se muestra.
-// Ej. según wireframes: { path: '/barrios', label: 'Barrios', icon: <HomeOutlined />, roles: ['ADMIN'] }
-// "Inicio" es provisorio: cada rol tendrá su pantalla principal según los wireframes.
+// Opciones del menú lateral según wireframes y rol del usuario
 export const MENU_ITEMS: AppMenuItem[] = [
-  { path: PATHS.inicio, label: 'Inicio', icon: <HomeOutlined />, roles: [] },
+  // Inicio solo para roles que lo tienen como dashboard (ej. Admin / Operador)
+  { path: PATHS.inicio, label: 'Inicio', icon: <HomeOutlined />, roles: ['ADMIN', 'OPERADOR'] },
+  // US-25, US-26: Trabajadores para Empresa y Monotributista
   {
     path: PATHS.trabajadores,
     label: 'Trabajadores',
     icon: <TeamOutlined />,
-    roles: ['EMPRESA', 'MONOTRIBUTISTA'],
+    roles: ['EMPRESA'],
   },
 ];
 
