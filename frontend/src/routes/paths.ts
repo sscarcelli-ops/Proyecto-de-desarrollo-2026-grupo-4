@@ -7,4 +7,8 @@ export const PATHS = {
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
+  // Trabajadores (US-25, US-26)
+  trabajadores: '/trabajadores',
+  trabajadorNuevo: '/trabajadores/nuevo',
+  trabajadorEditar: (id: number | string) => `/trabajadores/${id}/editar`,
 } as const;

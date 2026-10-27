@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { HomeOutlined } from '@ant-design/icons';
+import { HomeOutlined, TeamOutlined } from '@ant-design/icons';
 import type { Rol } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
 
@@ -16,6 +16,12 @@ export interface AppMenuItem {
 // "Inicio" es provisorio: cada rol tendrá su pantalla principal según los wireframes.
 export const MENU_ITEMS: AppMenuItem[] = [
   { path: PATHS.inicio, label: 'Inicio', icon: <HomeOutlined />, roles: [] },
+  {
+    path: PATHS.trabajadores,
+    label: 'Trabajadores',
+    icon: <TeamOutlined />,
+    roles: ['EMPRESA', 'MONOTRIBUTISTA'],
+  },
 ];
 
 /** Opciones visibles para los roles del usuario (RF-22). */

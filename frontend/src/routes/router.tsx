@@ -7,6 +7,9 @@ import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { PingPage } from '../features/health/pages/PingPage';
+import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
+import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
+import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04). Se suman activación del Administrador (US-01), registro (US-02)
@@ -28,7 +31,13 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <AppLayout />,
-        children: [{ path: PATHS.inicio, element: <InicioPage /> }],
+        children: [
+          { path: PATHS.inicio, element: <InicioPage /> },
+          // Trabajadores (US-25, US-26)
+          { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
+          { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
+          { path: '/trabajadores/:id/editar', element: <TrabajadorEditarPage /> },
+        ],
       },
     ],
   },
