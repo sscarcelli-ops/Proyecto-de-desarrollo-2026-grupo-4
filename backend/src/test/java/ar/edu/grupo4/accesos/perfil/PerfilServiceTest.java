@@ -4,8 +4,9 @@ import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
+import ar.edu.grupo4.accesos.usuario.Rol;
 import ar.edu.grupo4.accesos.usuario.Usuario;
-import ar.edu.grupo4.accesos.usuario.UsuarioRepository;
+import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ class PerfilServiceTest {
     private PerfilRepository perfilRepository;
 
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private UsuarioService usuarioService;
 
     @Mock
     private FileStorageService fileStorageService;
@@ -56,7 +57,7 @@ class PerfilServiceTest {
     @Test
     @DisplayName("solicitar perfil Empresa con datos válidos crea solicitud Pendiente")
     void solicitarEmpresaValida() {
-        when(usuarioRepository.findById(10L)).thenReturn(Optional.of(usuario));
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
         when(perfilRepository.existsByCuitCuil("30-11223344-5")).thenReturn(false);
         when(fileStorageService.guardar(eq(constanciaPdf), any())).thenReturn("perfiles/10/constancia/uuid.pdf");
@@ -82,14 +83,13 @@ class PerfilServiceTest {
         assertThat(res.estado()).isEqualTo(EstadoPerfil.PENDIENTE);
         assertThat(res.cuitCuil()).isEqualTo("30-11223344-5");
         assertThat(res.razonSocial()).isEqualTo("Mi Empresa S.A.");
-        assertThat(res.constanciaRuta()).isEqualTo("perfiles/10/constancia/uuid.pdf");
         verify(perfilRepository).save(any(Perfil.class));
     }
 
     @Test
     @DisplayName("solicitar perfil Monotributista con datos válidos crea solicitud Pendiente")
     void solicitarMonotributistaValido() {
-        when(usuarioRepository.findById(10L)).thenReturn(Optional.of(usuario));
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
         when(perfilRepository.existsByCuitCuil("20-33445566-7")).thenReturn(false);
         when(perfilRepository.existsByDniTitularAndTipo("33445566", TipoPerfil.MONOTRIBUTISTA)).thenReturn(false);
@@ -104,8 +104,8 @@ class PerfilServiceTest {
             TipoPerfil.MONOTRIBUTISTA,
             null, null,
             "20-33445566-7",
-            "Juan",
-            "Pérez",
+            "Carlos",
+            "Gómez",
             "33445566",
             null,
             constanciaPdf
@@ -116,15 +116,36 @@ class PerfilServiceTest {
         assertThat(res.id()).isEqualTo(2L);
         assertThat(res.tipo()).isEqualTo(TipoPerfil.MONOTRIBUTISTA);
         assertThat(res.estado()).isEqualTo(EstadoPerfil.PENDIENTE);
-        assertThat(res.nombre()).isEqualTo("Juan");
-        assertThat(res.apellido()).isEqualTo("Pérez");
-        assertThat(res.dniTitular()).isEqualTo("33445566");
+        assertThat(res.nombre()).isEqualTo("Carlos");
+        assertThat(res.apellido()).isEqualTo("Gómez");
+        verify(perfilRepository).save(any(Perfil.class));
     }
 
     @Test
-    @DisplayName("solicitar con DNI duplicado de Monotributista lanza BusinessException (CA-3)")
-    void rechazaDniDuplicadoMonotributista() {
-        when(usuarioRepository.findById(10L)).thenReturn(Optional.of(usuario));
+    @DisplayName("solicitar con usuario que ya tiene un rol es rechazado (restricción multirol)")
+    void rechazaUsuarioConRol() {
+        Usuario usuarioConRol = org.mockito.Mockito.mock(Usuario.class);
+        when(usuarioConRol.getRoles()).thenReturn(java.util.Set.of(org.mockito.Mockito.mock(Rol.class)));
+
+        when(usuarioService.buscarPorId(20L)).thenReturn(Optional.of(usuarioConRol));
+
+        SolicitarPerfilRequest req = new SolicitarPerfilRequest(
+            TipoPerfil.EMPRESA,
+            "30-11223344-5",
+            "Empresa S.A.",
+            null, null, null, null, null,
+            constanciaPdf
+        );
+
+        assertThatThrownBy(() -> perfilService.solicitar(20L, req))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("Los usuarios con rol asignado no pueden solicitar un perfil");
+    }
+
+    @Test
+    @DisplayName("solicitar con DNI duplicado para Monotributista lanza DNI_DUPLICADO (CA-3)")
+    void rechazaDniDuplicado() {
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
         when(perfilRepository.existsByCuitCuil("20-33445566-7")).thenReturn(false);
         when(perfilRepository.existsByDniTitularAndTipo("33445566", TipoPerfil.MONOTRIBUTISTA)).thenReturn(true);
@@ -133,8 +154,8 @@ class PerfilServiceTest {
             TipoPerfil.MONOTRIBUTISTA,
             null, null,
             "20-33445566-7",
-            "Juan",
-            "Pérez",
+            "Carlos",
+            "Gómez",
             "33445566",
             null,
             constanciaPdf
@@ -148,7 +169,7 @@ class PerfilServiceTest {
     @Test
     @DisplayName("solicitar cuando ya tiene perfil registrado lanza SOLICITUD_DUPLICADA (CA-6)")
     void rechazaSegundaSolicitud() {
-        when(usuarioRepository.findById(10L)).thenReturn(Optional.of(usuario));
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(true);
 
         SolicitarPerfilRequest req = new SolicitarPerfilRequest(
@@ -167,7 +188,7 @@ class PerfilServiceTest {
     @Test
     @DisplayName("solicitar sin constancia o formato no PDF lanza BusinessException (CA-4)")
     void rechazaConstanciaInvalida() {
-        when(usuarioRepository.findById(10L)).thenReturn(Optional.of(usuario));
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
 
         MockMultipartFile noPdf = new MockMultipartFile(

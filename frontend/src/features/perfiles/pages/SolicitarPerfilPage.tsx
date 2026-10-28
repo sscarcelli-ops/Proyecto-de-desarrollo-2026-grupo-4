@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Flex, Form, Input, Typography, Upload } from 'antd';
+import { Alert, Button, Divider, Flex, Form, Input, Typography, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogout } from '../../auth/api/session';
 import { useMiSolicitud, useSolicitarPerfil } from '../api/perfiles';
-import { getErrorMessage } from '../../../shared/lib/apiError';
+import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 
 type TipoRegistro = 'EMPRESA' | 'MONOTRIBUTISTA';
@@ -38,18 +38,19 @@ export function SolicitarPerfilPage() {
     }
   }, [perfilExistente, navigate]);
 
-  // Si vino desde el paso 1 (RegistroPage), tipo está en location.state.tipo.
-  // Se persiste en sessionStorage para que sobreviva recargas de página durante el flujo de registro.
+  // Si vino desde el paso 1 (RegistroPage), tipo puede estar en location.state.tipo o sessionStorage
   const tipoDesdeState = location.state && (location.state as { tipo?: TipoRegistro }).tipo;
-  const tipoInicial = (): TipoRegistro => {
+  const [tipo, setTipo] = useState<TipoRegistro | null>(() => {
     if (tipoDesdeState === 'EMPRESA' || tipoDesdeState === 'MONOTRIBUTISTA') {
       sessionStorage.setItem('registro_tipo', tipoDesdeState);
       return tipoDesdeState;
     }
     const guardado = sessionStorage.getItem('registro_tipo');
-    return guardado === 'MONOTRIBUTISTA' ? 'MONOTRIBUTISTA' : 'EMPRESA';
-  };
-  const tipo: TipoRegistro = tipoInicial();
+    if (guardado === 'EMPRESA' || guardado === 'MONOTRIBUTISTA') {
+      return guardado;
+    }
+    return null;
+  });
 
   const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null);
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export function SolicitarPerfilPage() {
     }
 
     const formData = new FormData();
-    formData.append('tipo', tipo);
+    formData.append('tipo', tipo!);
     formData.append('constancia', archivoSeleccionado);
 
     if (values.telefono) {
@@ -94,10 +95,14 @@ export function SolicitarPerfilPage() {
 
     solicitarPerfil.mutate(formData, {
       onSuccess: () => {
-        // Limpia el tipo guardado — el flujo de registro terminó
         sessionStorage.removeItem('registro_tipo');
-        // Redirige al estado de la solicitud (US-08)
         navigate(PATHS.estadoSolicitud, { replace: true });
+      },
+      onError: (err) => {
+        const fieldErrors = toFormFieldErrors(err);
+        if (fieldErrors.length > 0) {
+          form.setFields(fieldErrors);
+        }
       },
     });
   };
@@ -106,6 +111,63 @@ export function SolicitarPerfilPage() {
     return null;
   }
 
+  /* ── US-03 CA-5: Si entra sin tipo guardado, elige de nuevo el tipo ── */
+  if (tipo === null) {
+    return (
+      <Flex vertical align="center" style={{ width: '100%', maxWidth: 480, margin: '0 auto' }}>
+        <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 8, textAlign: 'center' }}>
+          Completar solicitud de perfil
+        </Typography.Title>
+
+        <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 8, fontWeight: 400, textAlign: 'center' }}>
+          ¿De qué manera desea registrarse?
+        </Typography.Title>
+
+        <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 32 }}>
+          Tenga en cuenta que un <strong>monotributista</strong> no puede registrar otros trabajadores a su nombre
+        </Typography.Paragraph>
+
+        <Flex gap={16} justify="center" style={{ width: '100%', marginBottom: 24 }}>
+          <Button
+            type="primary"
+            size="large"
+            style={{ flex: 1, maxWidth: 200, height: 44 }}
+            onClick={() => {
+              sessionStorage.setItem('registro_tipo', 'EMPRESA');
+              setTipo('EMPRESA');
+            }}
+          >
+            Como <strong>Empresa</strong>
+          </Button>
+          <Button
+            type="primary"
+            size="large"
+            style={{ flex: 1, maxWidth: 200, height: 44 }}
+            onClick={() => {
+              sessionStorage.setItem('registro_tipo', 'MONOTRIBUTISTA');
+              setTipo('MONOTRIBUTISTA');
+            }}
+          >
+            Como <strong>Monotributista</strong>
+          </Button>
+        </Flex>
+
+        <Divider style={{ margin: '0 0 16px' }} />
+
+        <Button
+          type="link"
+          onClick={() => {
+            logout();
+            navigate(PATHS.login);
+          }}
+        >
+          Cerrar sesión
+        </Button>
+      </Flex>
+    );
+  }
+
+  /* ── Formulario de datos fiscales según tipo ── */
   return (
     <Flex vertical style={{ width: '100%', maxWidth: 440, margin: '0 auto' }}>
       <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 28, textAlign: 'center' }}>
@@ -152,17 +214,21 @@ export function SolicitarPerfilPage() {
                   pattern: /^\d{2}-?\d{8}-?\d$/,
                   message: 'Formato de CUIT no válido',
                 },
+                { max: 13, message: 'El CUIT no puede superar los 13 caracteres' },
               ]}
             >
-              <Input placeholder="Ej. 20-12345678-9" />
+              <Input placeholder="Ej. 20-12345678-9" maxLength={13} />
             </Form.Item>
 
             <Form.Item
               label="Razón social"
               name="razonSocial"
-              rules={[{ required: true, message: 'La razón social es obligatoria' }]}
+              rules={[
+                { required: true, message: 'La razón social es obligatoria' },
+                { max: 200, message: 'La razón social no puede superar los 200 caracteres' },
+              ]}
             >
-              <Input placeholder="Razón social" />
+              <Input placeholder="Razón social" maxLength={200} />
             </Form.Item>
           </>
         ) : (
@@ -176,25 +242,32 @@ export function SolicitarPerfilPage() {
                   pattern: /^\d{2}-?\d{8}-?\d$/,
                   message: 'Formato de CUIL no válido',
                 },
+                { max: 13, message: 'El CUIL no puede superar los 13 caracteres' },
               ]}
             >
-              <Input placeholder="Ej. 20-12345678-9" />
+              <Input placeholder="Ej. 20-12345678-9" maxLength={13} />
             </Form.Item>
 
             <Form.Item
               label="Nombre"
               name="nombre"
-              rules={[{ required: true, message: 'El nombre es obligatorio' }]}
+              rules={[
+                { required: true, message: 'El nombre es obligatorio' },
+                { max: 100, message: 'El nombre no puede superar los 100 caracteres' },
+              ]}
             >
-              <Input placeholder="Nombre" />
+              <Input placeholder="Nombre" maxLength={100} />
             </Form.Item>
 
             <Form.Item
               label="Apellido"
               name="apellido"
-              rules={[{ required: true, message: 'El apellido es obligatorio' }]}
+              rules={[
+                { required: true, message: 'El apellido es obligatorio' },
+                { max: 100, message: 'El apellido no puede superar los 100 caracteres' },
+              ]}
             >
-              <Input placeholder="Apellido" />
+              <Input placeholder="Apellido" maxLength={100} />
             </Form.Item>
 
             <Form.Item
@@ -203,9 +276,10 @@ export function SolicitarPerfilPage() {
               rules={[
                 { required: true, message: 'El DNI es obligatorio' },
                 { pattern: /^\d{7,8}$/, message: 'Formato de DNI no válido' },
+                { max: 10, message: 'El DNI no puede superar los 10 caracteres' },
               ]}
             >
-              <Input placeholder="Ej. 12345678" />
+              <Input placeholder="Ej. 12345678" maxLength={10} />
             </Form.Item>
           </>
         )}
@@ -227,7 +301,7 @@ export function SolicitarPerfilPage() {
               }
               setErrorArchivo(null);
               setArchivoSeleccionado(file);
-              return false; // Evita subida automática por AJAX
+              return false;
             }}
             fileList={archivoSeleccionado ? [{ uid: '-1', name: archivoSeleccionado.name, status: 'done' }] : []}
             onRemove={() => {
@@ -246,9 +320,10 @@ export function SolicitarPerfilPage() {
         <Form.Item
           label="Número de teléfono"
           name="telefono"
+          rules={[{ max: 30, message: 'El teléfono no puede superar los 30 caracteres' }]}
           extra={<Typography.Text type="secondary" style={{ fontSize: 12 }}>* Dato opcional</Typography.Text>}
         >
-          <Input placeholder="+54 9 1234 567890" />
+          <Input placeholder="+54 9 1234 567890" maxLength={30} />
         </Form.Item>
 
         <Flex vertical gap={12} style={{ marginTop: 20 }}>

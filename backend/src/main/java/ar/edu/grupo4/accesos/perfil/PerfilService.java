@@ -6,7 +6,7 @@ import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import ar.edu.grupo4.accesos.usuario.Usuario;
-import ar.edu.grupo4.accesos.usuario.UsuarioRepository;
+import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.regex.Pattern;
 
 @Service
@@ -22,11 +24,12 @@ import java.util.regex.Pattern;
 public class PerfilService {
 
     private static final long MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB (RNF-10)
+    private static final byte[] PDF_MAGIC_BYTES = new byte[]{0x25, 0x50, 0x44, 0x46}; // %PDF
     private static final Pattern PATTERN_CUIT_CUIL = Pattern.compile("^\\d{2}-?\\d{8}-?\\d$");
     private static final Pattern PATTERN_DNI = Pattern.compile("^\\d{7,8}$");
 
     private final PerfilRepository perfilRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
     private final FileStorageService fileStorageService;
 
     /**
@@ -34,8 +37,14 @@ public class PerfilService {
      */
     @Transactional
     public PerfilResponse solicitar(Long usuarioId, SolicitarPerfilRequest request) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
+        Usuario usuario = usuarioService.buscarPorId(usuarioId)
             .orElseThrow(NotFoundException::new);
+
+        // Bloqueo multirol: quien ya tiene roles no puede solicitar perfil (Admin, Operador, Guardia, etc.)
+        if (!usuario.getRoles().isEmpty()) {
+            throw new BusinessException("USUARIO_CON_ROL",
+                "Los usuarios con rol asignado no pueden solicitar un perfil", HttpStatus.FORBIDDEN);
+        }
 
         if (perfilRepository.existsByUsuarioId(usuarioId)) {
             throw new BusinessException("SOLICITUD_DUPLICADA",
@@ -157,9 +166,18 @@ public class PerfilService {
             throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
         }
 
-        String contentType = archivo.getContentType();
-        if (contentType != null && !contentType.equalsIgnoreCase("application/pdf")
-            && !contentType.equalsIgnoreCase("application/octet-stream")) {
+        // Validación estricta del encabezado mágico %PDF
+        try (InputStream is = archivo.getInputStream()) {
+            byte[] header = new byte[4];
+            int read = is.read(header);
+            if (read < 4 || header[0] != PDF_MAGIC_BYTES[0]
+                         || header[1] != PDF_MAGIC_BYTES[1]
+                         || header[2] != PDF_MAGIC_BYTES[2]
+                         || header[3] != PDF_MAGIC_BYTES[3]) {
+                throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
+            }
+        } catch (IOException e) {
+            log.error("Error al leer archivo de constancia", e);
             throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
         }
     }

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { useLogin } from '../api/session';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { authToken } from '../../../shared/lib/authToken';
+import { httpClient } from '../../../shared/lib/httpClient';
 import type { ApiSchema } from '../../../shared/api/types';
 import { PATHS } from '../../../routes/paths';
 import { pantallaInicial } from '../../../routes/pantallaInicial';
@@ -22,7 +23,19 @@ export function LoginPage() {
 
   const onFinish = (values: ApiSchema<'LoginRequest'>) =>
     login.mutate(values, {
-      onSuccess: (data) => navigate(pantallaInicial(toCurrentUser(data).roles), { replace: true }),
+      onSuccess: async (data) => {
+        const user = toCurrentUser(data);
+        if (user.roles.length === 0) {
+          try {
+            const perfilRes = await httpClient.get<ApiSchema<'PerfilResponse'>>('/perfil/mi-solicitud');
+            navigate(pantallaInicial(user.roles, perfilRes.data), { replace: true });
+          } catch {
+            navigate(pantallaInicial(user.roles, null), { replace: true });
+          }
+        } else {
+          navigate(pantallaInicial(user.roles), { replace: true });
+        }
+      },
     });
 
   return (

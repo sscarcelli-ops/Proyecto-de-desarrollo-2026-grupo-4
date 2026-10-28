@@ -3,6 +3,7 @@ package ar.edu.grupo4.accesos.perfil.dto;
 import ar.edu.grupo4.accesos.perfil.EstadoPerfil;
 import ar.edu.grupo4.accesos.perfil.Perfil;
 import ar.edu.grupo4.accesos.perfil.TipoPerfil;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.OffsetDateTime;
 
@@ -12,13 +13,12 @@ public record PerfilResponse(
     TipoPerfil tipo,
     EstadoPerfil estado,
     String cuitCuil,
-    String razonSocial,
-    String nombre,
-    String apellido,
-    String dniTitular,
-    String telefono,
-    String constanciaRuta,
-    String motivoRechazo,
+    @Schema(types = {"string", "null"}) String razonSocial,
+    @Schema(types = {"string", "null"}) String nombre,
+    @Schema(types = {"string", "null"}) String apellido,
+    @Schema(types = {"string", "null"}) String dniTitular,
+    @Schema(types = {"string", "null"}) String telefono,
+    @Schema(types = {"string", "null"}) String motivoRechazo,
     OffsetDateTime creadoEn
 ) {
     public static PerfilResponse from(Perfil p) {
@@ -33,7 +33,6 @@ public record PerfilResponse(
             p.getApellido(),
             p.getDniTitular(),
             p.getTelefono(),
-            p.getConstanciaRuta(),
             p.getMotivoRechazo(),
             p.getCreadoEn()
         );

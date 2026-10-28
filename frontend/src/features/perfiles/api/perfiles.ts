@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { httpClient } from '../../../shared/lib/httpClient';
+import { authToken } from '../../../shared/lib/authToken';
 import type { ApiSchema } from '../../../shared/api/types';
 
 export type PerfilResponse = ApiSchema<'PerfilResponse'>;
@@ -7,6 +8,7 @@ export type PerfilResponse = ApiSchema<'PerfilResponse'>;
 export const MI_SOLICITUD_KEY = ['perfil', 'mi-solicitud'];
 
 export function useMiSolicitud() {
+  const token = authToken.get();
   return useQuery({
     queryKey: MI_SOLICITUD_KEY,
     queryFn: async () => {
@@ -22,6 +24,7 @@ export function useMiSolicitud() {
         throw err;
       }
     },
+    enabled: token !== null,
     retry: false,
   });
 }

@@ -1,13 +1,23 @@
 import type { Rol } from '../shared/types/rol';
 import { PATHS } from './paths';
 
+export interface PerfilInfo {
+  estado?: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'SUSPENDIDO';
+}
+
 /**
- * Pantalla a la que va cada usuario al iniciar sesión, según su rol (US-04: redirección por rol).
- * Hoy todos van a Inicio. Cada US que crea la pantalla principal de un rol la conecta acá con una línea, por ej.
- * la garita (US-37): if (roles.includes('GUARDIA')) return PATHS.garita;
- * Sin rol aprobado (roles vacíos), el estado de la solicitud (US-08).
+ * Pantalla a la que va cada usuario al iniciar sesión, según su rol y estado de solicitud.
+ * - Sin rol:
+ *   - Si tiene solicitud enviada (pendiente/rechazada) -> /estado-solicitud (US-08)
+ *   - Si no completó datos de perfil -> /solicitar-perfil (US-03 CA-5)
+ * - Con rol aprobado -> pantalla principal de su rol (hoy /inicio para todos).
  */
-export function pantallaInicial(roles: Rol[]): string {
-  void roles;
+export function pantallaInicial(roles: Rol[], perfil?: PerfilInfo | null): string {
+  if (roles.length === 0) {
+    if (perfil) {
+      return PATHS.estadoSolicitud;
+    }
+    return PATHS.solicitarPerfil;
+  }
   return PATHS.inicio;
 }

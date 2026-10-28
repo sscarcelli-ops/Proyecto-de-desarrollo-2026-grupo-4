@@ -3,6 +3,7 @@ import { httpClient } from '../../../shared/lib/httpClient';
 import { authToken } from '../../../shared/lib/authToken';
 import type { ApiSchema } from '../../../shared/api/types';
 import { CURRENT_USER_KEY, toCurrentUser } from './useCurrentUser';
+import { MI_SOLICITUD_KEY } from '../../perfiles/api/perfiles';
 
 type LoginRequest = ApiSchema<'LoginRequest'>;
 type LoginResponse = ApiSchema<'LoginResponse'>;
@@ -16,6 +17,8 @@ export function useLogin() {
     onSuccess: (data) => {
       authToken.set(data.token);
       queryClient.setQueryData(CURRENT_USER_KEY, toCurrentUser(data));
+      // Invalida la consulta de solicitud por si inició sesión otra cuenta
+      queryClient.invalidateQueries({ queryKey: MI_SOLICITUD_KEY });
     },
   });
 }
@@ -29,7 +32,7 @@ export function useRegistro() {
       authToken.set(data.token);
       queryClient.setQueryData(CURRENT_USER_KEY, toCurrentUser(data));
       // Invalida la query de solicitud para que las páginas con sesión reconozcan que no tiene perfil aún
-      queryClient.invalidateQueries({ queryKey: ['perfil', 'mi-solicitud'] });
+      queryClient.invalidateQueries({ queryKey: MI_SOLICITUD_KEY });
     },
   });
 }
@@ -39,6 +42,8 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return () => {
     authToken.clear();
+    sessionStorage.removeItem('registro_tipo');
     queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
+    queryClient.removeQueries({ queryKey: MI_SOLICITUD_KEY });
   };
 }

@@ -1,6 +1,7 @@
 import { Button, Flex, Typography } from 'antd';
 import { ClockCircleOutlined } from '@ant-design/icons';
 import { useLogout } from '../../auth/api/session';
+import { palette } from '../../../app/theme';
 
 /**
  * US-08: Vista de estado de la solicitud.
@@ -15,7 +16,7 @@ export function EstadoSolicitudPage() {
 
   return (
     <Flex vertical align="center" justify="center" style={{ minHeight: '60vh', textAlign: 'center' }}>
-      <ClockCircleOutlined style={{ fontSize: 64, color: '#1677ff', marginBottom: 24 }} />
+      <ClockCircleOutlined style={{ fontSize: 64, color: palette.primary, marginBottom: 24 }} />
 
       <Typography.Title level={2} style={{ marginBottom: 12 }}>
         Tu solicitud está pendiente de aprobación

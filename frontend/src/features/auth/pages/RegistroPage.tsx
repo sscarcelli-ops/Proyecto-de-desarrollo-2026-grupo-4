@@ -60,7 +60,7 @@ export function RegistroPage() {
           ¿De qué manera desea registrarse?
         </Typography.Title>
 
-        <Typography.Paragraph style={{ textAlign: 'center', color: '#595959', marginBottom: 32 }}>
+        <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 32 }}>
           Tenga en cuenta que un <strong>monotributista</strong> no puede registrar
           otros trabajadores a su nombre
         </Typography.Paragraph>

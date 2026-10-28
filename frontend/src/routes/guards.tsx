@@ -46,13 +46,6 @@ export function RedirectIfAuthenticated() {
     return <Cargando />;
   }
   // Si no tiene roles todavía (cuenta en proceso de alta):
-  // - Si ya envió su solicitud -> /estado-solicitud (US-08)
-  // - Si todavía no completó los datos fiscales -> /solicitar-perfil (US-03)
-  if (data.roles.length === 0) {
-    if (perfil) {
-      return <Navigate to={PATHS.estadoSolicitud} replace />;
-    }
-    return <Navigate to={PATHS.solicitarPerfil} replace />;
-  }
-  return <Navigate to={pantallaInicial(data.roles)} replace />;
+  // pantallaInicial se encarga de decidir si va a /estado-solicitud o a /solicitar-perfil
+  return <Navigate to={pantallaInicial(data.roles, perfil)} replace />;
 }
