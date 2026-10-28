@@ -25,9 +25,8 @@ import org.springframework.stereotype.Component;
  *   encuentre un recurso (404), sino que el usuario no tiene permiso operativo.
  *
  * Nota para la integración:
- * Cuando Persona 3 termine su entidad Perfil, podríamos reemplazar esta query nativa
- * por una llamada a PerfilService.obtenerIdAprobado(usuarioId). Por ahora esto funciona
- * sin depender de código ajeno.
+ * Cuando Persona 3 termine su entidad Perfil y su PR sea mergeado, se reemplazará
+ * esta query nativa por una llamada al servicio correspondiente de perfil.
  */
 @Component
 @RequiredArgsConstructor
@@ -51,13 +50,11 @@ public class PerfilIdResolver {
                 .setParameter("usuarioId", usuarioId)
                 .getSingleResult();
         } catch (NoResultException e) {
-            // Puede significar dos cosas:
-            // 1. El usuario no tiene perfil (aún no completó el registro de empresa/monotributista)
-            // 2. El perfil existe pero no está aprobado (PENDIENTE, RECHAZADO, SUSPENDIDO)
-            // En cualquier caso, no puede operar sobre trabajadores.
+            // El usuario no tiene perfil aprobado (PENDIENTE, RECHAZADO, SUSPENDIDO).
+            // La aprobación de perfiles corresponde al Administrador de la plataforma (RF-04).
             throw new BusinessException(
                 "PERFIL_NO_APROBADO",
-                "Tu perfil no está aprobado. Contactá al administrador del barrio.",
+                "Tu perfil no está aprobado. Contactá al Administrador de la plataforma.",
                 HttpStatus.FORBIDDEN
             );
         }

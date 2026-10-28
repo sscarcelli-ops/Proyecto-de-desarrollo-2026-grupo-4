@@ -5,10 +5,10 @@ import { estadoTonos, type EstadoTono } from '../../app/theme';
 // que devuelve el backend, así se usa directo: <EstadoTag estado={perfil.estado} />.
 // Un estado nuevo se agrega acá; nunca se elige un color de estado a mano en una pantalla.
 const ESTADOS = {
-  // Estado documental del trabajador según wireframes (Actualizado / Desactualizado / Pendiente)
-  VIGENTE: { label: 'Actualizado', tono: 'exito' },
-  VENCIDO: { label: 'Desactualizado', tono: 'error' },
-  PENDIENTE_CARGA: { label: 'Pendiente', tono: 'marca' },
+  // Estado documental del trabajador (RF-10, RN-04)
+  VIGENTE: { label: 'Vigente', tono: 'exito' },
+  VENCIDO: { label: 'Vencido', tono: 'error' },
+  PENDIENTE_CARGA: { label: 'Pendiente de carga', tono: 'aviso' },
   // Solicitud de Empresa / Monotributista (RF-04)
   PENDIENTE: { label: 'Pendiente de aprobación', tono: 'aviso' },
   APROBADO: { label: 'Aprobado', tono: 'exito' },
@@ -36,11 +36,14 @@ export function EstadoTag({ estado }: { estado: Estado }) {
       style={{
         ...estadoTonos[tono],
         marginInlineEnd: 0,
-        width: 110,
+        minWidth: 155,
+        paddingInline: 10,
         height: 28,
         lineHeight: '26px',
         textAlign: 'center',
-        display: 'inline-block',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         fontSize: 13,
         borderRadius: 4,
       }}

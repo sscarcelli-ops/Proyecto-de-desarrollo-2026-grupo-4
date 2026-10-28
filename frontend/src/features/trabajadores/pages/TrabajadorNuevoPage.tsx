@@ -19,7 +19,7 @@ import { PATHS } from '../../../routes/paths';
  */
 export function TrabajadorNuevoPage() {
   const navigate = useNavigate();
-  const [form] = Form.useForm<TrabajadorRequest>();
+  const [form] = Form.useForm();
   const crear = useCrearTrabajador();
 
   const onFinish = (values: TrabajadorRequest) => {
@@ -30,7 +30,7 @@ export function TrabajadorNuevoPage() {
       },
       onError: (error) => {
         // Si el backend devuelve errores de campo (ej. DNI inválido), se asignan al formulario
-        form.setFields(toFormFieldErrors(error) as never);
+        form.setFields(toFormFieldErrors(error));
       },
     });
   };

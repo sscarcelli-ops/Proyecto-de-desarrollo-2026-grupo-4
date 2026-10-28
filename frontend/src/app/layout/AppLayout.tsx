@@ -124,7 +124,7 @@ export function AppLayout() {
             <Button type="text" icon={<MenuOutlined />} onClick={() => setMenuAbierto(true)} aria-label="Abrir menú" />
           )}
           {user && (
-            <Typography.Text style={{ fontWeight: 600, color: '#1a2233', fontSize: 16 }}>
+            <Typography.Text style={{ fontWeight: 600, color: palette.text, fontSize: 16 }}>
               {user.roles.map((rol) => ROL_LABEL[rol]).join(' / ')}
             </Typography.Text>
           )}

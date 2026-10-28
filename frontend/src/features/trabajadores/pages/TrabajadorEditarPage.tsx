@@ -22,7 +22,7 @@ export function TrabajadorEditarPage() {
 
   const { data: trabajador, isLoading, isError, error } = useTrabajador(trabajadorId);
   const editar = useEditarTrabajador(trabajadorId);
-  const [form] = Form.useForm<TrabajadorEditarRequest>();
+  const [form] = Form.useForm();
 
   // Cuando los datos del trabajador cargan, se inicializa el formulario
   useEffect(() => {
@@ -69,7 +69,7 @@ export function TrabajadorEditarPage() {
         navigate(PATHS.trabajadores);
       },
       onError: (err) => {
-        form.setFields(toFormFieldErrors(err) as never);
+        form.setFields(toFormFieldErrors(err));
       },
     });
   };
