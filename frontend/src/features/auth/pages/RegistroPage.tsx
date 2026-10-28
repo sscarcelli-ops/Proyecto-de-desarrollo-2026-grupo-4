@@ -70,7 +70,10 @@ export function RegistroPage() {
             type="primary"
             size="large"
             style={{ flex: 1, maxWidth: 200, height: 44 }}
-            onClick={() => setTipoSeleccionado('EMPRESA')}
+            onClick={() => {
+              sessionStorage.setItem('registro_tipo', 'EMPRESA');
+              setTipoSeleccionado('EMPRESA');
+            }}
           >
             Como <strong>Empresa</strong>
           </Button>
@@ -78,7 +81,10 @@ export function RegistroPage() {
             type="primary"
             size="large"
             style={{ flex: 1, maxWidth: 200, height: 44 }}
-            onClick={() => setTipoSeleccionado('MONOTRIBUTISTA')}
+            onClick={() => {
+              sessionStorage.setItem('registro_tipo', 'MONOTRIBUTISTA');
+              setTipoSeleccionado('MONOTRIBUTISTA');
+            }}
           >
             Como <strong>Monotributista</strong>
           </Button>

@@ -52,6 +52,19 @@ export function SolicitarPerfilPage() {
     return null;
   });
 
+  // Si location.state cambia o se actualiza al navegar
+  useEffect(() => {
+    if (tipoDesdeState && (tipoDesdeState === 'EMPRESA' || tipoDesdeState === 'MONOTRIBUTISTA')) {
+      setTipo(tipoDesdeState);
+      sessionStorage.setItem('registro_tipo', tipoDesdeState);
+    } else {
+      const guardado = sessionStorage.getItem('registro_tipo');
+      if (guardado === 'EMPRESA' || guardado === 'MONOTRIBUTISTA') {
+        setTipo(guardado);
+      }
+    }
+  }, [tipoDesdeState]);
+
   const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null);
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null);
 
@@ -101,7 +114,7 @@ export function SolicitarPerfilPage() {
       onError: (err) => {
         const fieldErrors = toFormFieldErrors(err);
         if (fieldErrors.length > 0) {
-          form.setFields(fieldErrors);
+          form.setFields(fieldErrors as Parameters<typeof form.setFields>[0]);
         }
       },
     });
