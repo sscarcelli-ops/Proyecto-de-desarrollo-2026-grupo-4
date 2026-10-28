@@ -1,7 +1,7 @@
 import { Alert, Button, Flex, Table, Typography } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router';
+import { EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { generatePath, useNavigate } from 'react-router';
 import { useBarrios, type Barrio } from '../api/barrios';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
@@ -9,27 +9,41 @@ import { PATHS } from '../../../routes/paths';
 
 const { Title, Text } = Typography;
 
-const columns: TableColumnsType<Barrio> = [
-  { title: 'Nombre', dataIndex: 'nombre', key: 'nombre' },
-  { title: 'Localidad / Provincia', dataIndex: 'localidadProvincia', key: 'localidadProvincia' },
-  { title: 'Dirección', dataIndex: 'direccion', key: 'direccion' },
-  {
-    // US-10, criterio 3: un barrio recién creado figura "Inactivo – sin Operador"
-    title: 'Estado',
-    key: 'estado',
-    render: (_, barrio) => (
-      <>
-        <EstadoTag estado={barrio.estado as Estado} />
-        {barrio.operadorId === null && <Text type="secondary"> – sin Operador</Text>}
-      </>
-    ),
-  },
-];
-
 // US-10: listado de barrios privados (Administrador). Sin paginación, orden alfabético desde el backend.
 export function BarriosPage() {
   const navigate = useNavigate();
   const { data, error, isLoading } = useBarrios();
+
+  const columns: TableColumnsType<Barrio> = [
+    { title: 'Nombre', dataIndex: 'nombre', key: 'nombre' },
+    { title: 'Localidad / Provincia', dataIndex: 'localidadProvincia', key: 'localidadProvincia' },
+    { title: 'Dirección', dataIndex: 'direccion', key: 'direccion' },
+    {
+      // US-10, criterio 3: un barrio recién creado figura "Inactivo – sin Operador"
+      title: 'Estado',
+      key: 'estado',
+      render: (_, barrio) => (
+        <>
+          <EstadoTag estado={barrio.estado as Estado} />
+          {barrio.operadorId === null && <Text type="secondary"> – sin Operador</Text>}
+        </>
+      ),
+    },
+    {
+      // US-11: editar los datos del barrio
+      title: 'Acciones',
+      key: 'acciones',
+      render: (_, barrio) => (
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => navigate(generatePath(PATHS.barrioEditar, { id: String(barrio.id) }))}
+        >
+          Editar
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <Flex vertical gap={16}>

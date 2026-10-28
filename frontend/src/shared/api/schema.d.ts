@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/barrios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener"];
+        put: operations["modificar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/barrios": {
         parameters: {
             query?: never;
@@ -119,6 +135,54 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    obtener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
+    modificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BarrioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
     listar: {
         parameters: {
             query?: never;

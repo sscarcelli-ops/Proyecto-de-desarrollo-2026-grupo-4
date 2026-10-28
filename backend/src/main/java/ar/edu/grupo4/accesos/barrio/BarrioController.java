@@ -28,4 +28,16 @@ public class BarrioController {
     public List<BarrioResponse> listar() {
         return barrioService.listar().stream().map(BarrioResponse::from).toList();
     }
+
+    // US-11
+    @GetMapping("/{id}")
+    public BarrioResponse obtener(@PathVariable Long id) {
+        return BarrioResponse.from(barrioService.obtener(id));
+    }
+
+    // US-11
+    @PutMapping("/{id}")
+    public BarrioResponse modificar(@PathVariable Long id, @Valid @RequestBody BarrioRequest request) {
+        return BarrioResponse.from(barrioService.modificar(id, request));
+    }
 }
