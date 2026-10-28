@@ -29,7 +29,7 @@ async function listarTrabajadores(page: number, size: number): Promise<PageRespo
   // Ant Design numera las páginas desde 1, pero Spring las numera desde 0.
   // La conversión se hace acá para que las páginas no tengan que preocuparse por eso.
   const { data } = await httpClient.get<PageResponse<TrabajadorResponse>>('/trabajadores', {
-    params: { page: page - 1, size, sort: 'apellido,asc' },
+    params: { page: page - 1, size, sort: 'nombre,asc' },
   });
   return data;
 }
