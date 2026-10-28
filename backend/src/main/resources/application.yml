@@ -59,6 +59,11 @@ app:
       secret: ${JWT_SECRET}
       # 8 horas (28800 s): una jornada de trabajo. Al vencer, el usuario vuelve a iniciar sesión.
       expiration-seconds: ${JWT_EXPIRATION_SECONDS:28800}
+  # US-01: código de activación del Administrador inicial (manual de instalación). Se carga al arrancar si no hay
+  # Administrador. Para uno nuevo (se perdió o venció): cambiar el valor y reiniciar. Vacío: no se carga ninguno.
+  activacion:
+    token: ${ACTIVACION_TOKEN:}
+    vigencia-dias: ${ACTIVACION_VIGENCIA_DIAS:30}
   storage:
     base-path: ${STORAGE_PATH:/data/archivos}
   cors:
