@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { FormInstance } from 'antd';
 
 // Formato estándar de error del backend (GlobalExceptionHandler, application/problem+json)
 export interface ApiFieldError {
@@ -43,15 +44,22 @@ export function getErrorMessage(error: unknown): string {
   return UNKNOWN_ERROR_MESSAGE;
 }
 
+// Lo que recibe form.setFields de un formulario con esos valores (sirve también para Form.useForm<Tipo>())
+type FieldErrors<Values> = Parameters<FormInstance<Values>['setFields']>[0];
+
 /**
- * Errores por campo en el formato de Form.setFields de Ant Design:
+ * Errores por campo en el formato de Form.setFields de Ant Design, también con formularios tipados:
  *   onError: (error) => form.setFields(toFormFieldErrors(error))
  * Los nombres anidados del backend ("domicilio.calle") se convierten en rutas (['domicilio', 'calle']).
  */
-export function toFormFieldErrors(error: unknown): { name: string[]; errors: string[] }[] {
+export function toFormFieldErrors<Values = unknown>(error: unknown): FieldErrors<Values> {
   const byField = new Map<string, string[]>();
   for (const { field, message } of getApiProblem(error)?.errors ?? []) {
     byField.set(field, [...(byField.get(field) ?? []), message]);
   }
-  return [...byField].map(([field, errors]) => ({ name: field.split('.'), errors }));
+  // El nombre viene del backend como texto: no se puede comprobar contra los campos del formulario al compilar
+  return [...byField].map(([field, errors]) => ({
+    name: field.split('.') as FieldErrors<Values>[number]['name'],
+    errors,
+  }));
 }
