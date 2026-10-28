@@ -26,15 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * Seguridad:
  * - Todos los endpoints requieren un JWT válido (SecurityConfig exige token para /api/**).
- * - @PreAuthorize restringe el acceso a los roles EMPRESA y MONOTRIBUTISTA.
- *   Otros roles (ADMIN, GUARDIA, OPERADOR) recibirán HTTP 403.
+ * - @PreAuthorize restringe el acceso al rol EMPRESA.
+ *   Otros roles (ADMIN, GUARDIA, OPERADOR, MONOTRIBUTISTA) recibirán HTTP 403.
  * - El perfilId NUNCA se recibe del frontend: se resuelve internamente desde el JWT
  *   (vía PerfilIdResolver), garantizando aislamiento entre empresas (RF-23).
  *
  * Paginación:
- * - Por defecto se muestran 10 trabajadores por página, ordenados por apellido (A-Z).
+ * - Por defecto se muestran 10 trabajadores por página, ordenados alfabéticamente por nombre (A-Z).
  * - El frontend puede cambiar página, tamaño y orden con query params estándar de Spring:
- *   ?page=0&size=10&sort=apellido,asc
+ *   ?page=0&size=10&sort=nombre,asc
  */
 @RestController
 @RequestMapping("/api/trabajadores")
@@ -75,12 +75,12 @@ public class TrabajadorController {
      *
      * @PageableDefault define los valores si el frontend no envía ninguno:
      *   - size = 10 (10 filas por página, coincide con el wireframe)
-     *   - sort = "apellido" (orden alfabético por defecto)
+     *   - sort = {"nombre", "apellido"} (orden alfabético por defecto, RNF-08)
      */
     @GetMapping
     public PageResponse<TrabajadorResponse> listar(
             @AuthenticationPrincipal Jwt jwt,
-            @PageableDefault(size = 10, sort = "apellido") Pageable pageable) {
+            @PageableDefault(size = 10, sort = {"nombre", "apellido"}) Pageable pageable) {
 
         return trabajadorService.listar(usuarioId(jwt), pageable);
     }
