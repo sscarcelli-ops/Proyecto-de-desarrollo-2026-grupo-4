@@ -114,14 +114,29 @@ export function AppLayout() {
             justifyContent: esEscritorio ? 'flex-end' : 'space-between',
             alignItems: 'center',
             paddingInline: esEscritorio ? 32 : 16,
+            background: 'transparent',
+            height: 'auto',
+            paddingTop: 24,
+            paddingBottom: 8,
           }}
         >
           {!esEscritorio && (
             <Button type="text" icon={<MenuOutlined />} onClick={() => setMenuAbierto(true)} aria-label="Abrir menú" />
           )}
-          {user && <Typography.Text strong>{user.roles.map((rol) => ROL_LABEL[rol]).join(' / ')}</Typography.Text>}
+          {user && (
+            <Typography.Text style={{ fontWeight: 600, color: '#1a2233', fontSize: 16 }}>
+              {user.roles.map((rol) => ROL_LABEL[rol]).join(' / ')}
+            </Typography.Text>
+          )}
         </Header>
-        <Content style={{ padding: esEscritorio ? '8px 32px 32px' : '8px 16px 24px' }}>
+        <Content
+          style={{
+            padding: esEscritorio ? '0 32px 24px' : '0 16px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+          }}
+        >
           <Outlet />
         </Content>
       </Layout>

@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/trabajadores")
-@PreAuthorize("hasRole('EMPRESA') or hasRole('MONOTRIBUTISTA')")
+@PreAuthorize("hasRole('EMPRESA')")
 @RequiredArgsConstructor
 public class TrabajadorController {
 

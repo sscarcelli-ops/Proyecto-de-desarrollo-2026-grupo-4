@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { Button, ConfigProvider, Dropdown, Flex, Input, Pagination, Table, Typography } from 'antd';
-import { EllipsisOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  EllipsisOutlined,
+  EditOutlined,
+  PlusCircleOutlined,
+  SearchOutlined,
+  FilterFilled,
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { useTrabajadores, type TrabajadorResponse } from '../api/trabajadores';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
@@ -10,14 +16,12 @@ import type { ColumnsType } from 'antd/es/table';
 /**
  * US-26: listado paginado de trabajadores.
  *
- * Lo que muestra:
- * - Nombre completo (nombre + apellido concatenados, como en el wireframe)
- * - DNI
- * - Estado documental (badge de color con EstadoTag)
- * - Botón de acciones (Editar; Borrar se suma en S3 con US-27)
- *
- * La búsqueda filtra localmente sobre la página actual por nombre o DNI.
- * En un futuro se puede agregar búsqueda server-side con un query param.
+ * Diseño alineado al wireframe de Figma:
+ * - Título con presencia e impacto visual.
+ * - Disparador limpio "(+) Registrar trabajador" con ícono verde.
+ * - Campo buscador amplio con ícono de lupa y filtro.
+ * - Tabla con bordes nítidos de 1px, esquinas redondeadas y filas con altura cómoda.
+ * - Paginación anclada armónicamente en pantalla normal y pantalla completa (F11).
  */
 export function TrabajadoresPage() {
   const navigate = useNavigate();
@@ -37,7 +41,7 @@ export function TrabajadoresPage() {
     return nombreCompleto.includes(texto) || t.dni.includes(texto);
   });
 
-  // Columnas de la tabla, siguiendo el wireframe: Nombre | DNI | Estado doc. | Detalle
+  // Columnas de la tabla, siguiendo el wireframe: Nombre | DNI | Estado documental | Detalle
   const columnas: ColumnsType<TrabajadorResponse> = [
     {
       title: <span style={{ fontWeight: 600, color: '#1a2233' }}>Nombre</span>,
@@ -98,52 +102,93 @@ export function TrabajadoresPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto', width: '100%' }}>
-      <Typography.Title level={2} style={{ marginTop: 0 }}>
+    <div
+      style={{
+        maxWidth: 1080,
+        margin: '0 auto',
+        width: '100%',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Título adaptable */}
+      <Typography.Title
+        level={1}
+        style={{
+          fontSize: 'clamp(26px, 2.2vw, 32px)',
+          fontWeight: 700,
+          color: '#1a2233',
+          marginTop: 0,
+          marginBottom: 16,
+        }}
+      >
         Trabajadores
       </Typography.Title>
 
-      {/* Barra superior: botón de registrar + campo de búsqueda (como en el wireframe) */}
-      <Flex justify="space-between" align="center" wrap="wrap" gap={12} style={{ marginBottom: 16 }}>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
+      {/* Barra superior separada de la tabla con buen respiro */}
+      <Flex justify="space-between" align="center" wrap="wrap" gap={16} style={{ marginBottom: 30 }}>
+        <button
+          type="button"
           onClick={() => navigate(PATHS.trabajadorNuevo)}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 12,
+            transition: 'opacity 0.2s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
         >
-          Registrar trabajador
-        </Button>
+          <PlusCircleOutlined style={{ fontSize: 32, color: '#10b981' }} />
+          <span style={{ fontSize: 19, fontWeight: 600, color: '#1a2233' }}>
+            Registrar trabajador
+          </span>
+        </button>
 
         <Input
+          size="middle"
           placeholder="Buscar trabajador..."
-          prefix={<SearchOutlined />}
+          prefix={<SearchOutlined style={{ color: '#94a3b8', fontSize: 15, marginRight: 6 }} />}
+          suffix={<FilterFilled style={{ color: '#475569', fontSize: 15, cursor: 'pointer' }} />}
           allowClear
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={{ maxWidth: 300 }}
+          style={{
+            width: 320,
+            borderRadius: 8,
+            borderColor: '#cbd5e1',
+            height: 38,
+          }}
         />
       </Flex>
 
-      {/* Tabla con bordes exteriores e interiores homogéneos de 1px y esquinas redondeadas */}
+      {/* Tabla con bordes homogéneos, celdas proporcionadas y esquinas redondeadas */}
       <ConfigProvider
         theme={{
           components: {
             Table: {
               borderColor: '#cbd5e1',
               borderRadius: 8,
+              cellPaddingBlock: 12,
             },
           },
         }}
       >
         <div
           style={{
-            borderRadius: 8,
-            overflow: 'hidden',
             backgroundColor: '#ffffff',
-            marginBottom: 24,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+            borderRadius: 8,
           }}
         >
           <Table<TrabajadorResponse>
             bordered
+            className="tabla-redondeada"
             rowKey="id"
             columns={columnas}
             dataSource={trabajadoresFiltrados}
@@ -156,8 +201,8 @@ export function TrabajadoresPage() {
         </div>
       </ConfigProvider>
 
-      {/* Paginación centrada debajo del bloque redondeado de la tabla */}
-      <Flex justify="center" style={{ marginTop: 16 }}>
+      {/* Paginación anclada al fondo gracias al flex del contenedor */}
+      <Flex justify="center" style={{ marginTop: 'auto', paddingTop: 20, paddingBottom: 8 }}>
         <Pagination
           current={pagina}
           pageSize={tamano}

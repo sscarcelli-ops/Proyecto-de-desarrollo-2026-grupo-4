@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { PATHS } from './paths';
 import { NotFoundPage } from './NotFoundPage';
-import { RedirectIfAuthenticated, RequireAuth } from './guards';
+import { RedirectIfAuthenticated, RequireAuth, RequireRole } from './guards';
 import { AppLayout } from '../app/layout/AppLayout';
 import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
@@ -25,7 +25,7 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-  // Pantallas con sesión: menú lateral según el rol. Cada feature agrega acá sus páginas y su opción en menuItems.
+  // Pantallas con sesión: menú lateral según el rol.
   {
     element: <RequireAuth />,
     children: [
@@ -33,10 +33,15 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: PATHS.inicio, element: <InicioPage /> },
-          // Trabajadores (US-25, US-26)
-          { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
-          { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
-          { path: '/trabajadores/:id/editar', element: <TrabajadorEditarPage /> },
+          // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)
+          {
+            element: <RequireRole roles={['EMPRESA']} />,
+            children: [
+              { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
+              { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
+              { path: '/trabajadores/:id/editar', element: <TrabajadorEditarPage /> },
+            ],
+          },
         ],
       },
     ],
