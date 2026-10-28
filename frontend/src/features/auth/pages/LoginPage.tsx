@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Flex, Form, Input, Typography } from 'antd';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogin } from '../api/session';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { authToken } from '../../../shared/lib/authToken';
@@ -8,6 +8,7 @@ import type { ApiSchema } from '../../../shared/api/types';
 import { PATHS } from '../../../routes/paths';
 import { pantallaInicial } from '../../../routes/pantallaInicial';
 import { toCurrentUser } from '../api/useCurrentUser';
+import type { CuentaCreadaState } from './ActivacionPage';
 
 /**
  * US-04: inicio de sesión (wireframe "Bienvenido"). Una sola pantalla para escritorio y celular: el formulario
@@ -19,6 +20,7 @@ export function LoginPage() {
   // Se lee al entrar y se olvida: si recarga el login, el aviso ya no aparece
   const [sesionVencida] = useState(authToken.sesionVencida);
   useEffect(() => authToken.olvidarSesionVencida(), []);
+  const cuentaCreada = (useLocation().state as CuentaCreadaState | null)?.cuentaCreada;
 
   const onFinish = (values: ApiSchema<'LoginRequest'>) =>
     login.mutate(values, {
@@ -41,6 +43,11 @@ export function LoginPage() {
         />
       )}
 
+      {/* Recién activó la cuenta del Administrador (US-01): el email ya queda cargado */}
+      {cuentaCreada && login.isIdle && (
+        <Alert type="success" showIcon title="Cuenta creada. Iniciá sesión." style={{ marginBottom: 24 }} />
+      )}
+
       {/* Credenciales incorrectas (401) o cuenta que no puede operar (403): el mensaje viene del backend */}
       {login.isError && (
         <Alert type="error" showIcon title={getErrorMessage(login.error)} style={{ marginBottom: 24 }} />
@@ -49,6 +56,7 @@ export function LoginPage() {
       <Form
         layout="vertical"
         size="large"
+        initialValues={{ email: cuentaCreada }}
         // Sin "*": en un login es obvio que los dos campos son obligatorios
         requiredMark={false}
         onFinish={onFinish}
