@@ -1,7 +1,13 @@
 import { Form, Input } from 'antd';
 import type { NamePath } from 'antd/es/form/interface';
 import { RequisitosPassword } from './RequisitosPassword';
-import { MENSAJE_LARGO, MENSAJE_POLITICA, cumplePolitica, esDemasiadoLarga } from '../lib/politicaPassword';
+import {
+  MENSAJE_LARGO,
+  MENSAJE_OBLIGATORIA,
+  MENSAJE_POLITICA,
+  cumplePolitica,
+  esDemasiadoLarga,
+} from '../lib/politicaPassword';
 
 interface Props {
   name?: NamePath;
@@ -26,7 +32,7 @@ export function CampoPasswordNueva({ name = 'password', label = 'Contraseña', p
       // Al salir del campo y al enviar: mientras escribe, el indicador ya muestra lo que falta
       validateTrigger="onBlur"
       rules={[
-        { required: true, message: MENSAJE_POLITICA },
+        { required: true, message: MENSAJE_OBLIGATORIA },
         {
           validator: (_, value?: string) => {
             if (!value) return Promise.resolve();
@@ -60,7 +66,7 @@ export function CampoConfirmarPassword({
       dependencies={[campoPassword]}
       validateTrigger="onBlur"
       rules={[
-        { required: true, message: 'Repetí la contraseña' },
+        { required: true, message: 'La confirmación de la contraseña es obligatoria' },
         ({ getFieldValue }) => ({
           validator: (_, value?: string) =>
             !value || value === getFieldValue(campoPassword)

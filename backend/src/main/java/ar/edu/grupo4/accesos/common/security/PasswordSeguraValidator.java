@@ -7,12 +7,19 @@ public class PasswordSeguraValidator implements ConstraintValidator<PasswordSegu
 
     @Override
     public boolean isValid(String password, ConstraintValidatorContext context) {
+        if (password == null || password.isEmpty()) {
+            return rechazar(context, PoliticaPassword.MENSAJE_OBLIGATORIA);
+        }
         if (PoliticaPassword.esDemasiadoLarga(password)) {
             // Mensaje propio: el de la US no explica el límite que impone bcrypt
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(PoliticaPassword.MENSAJE_LARGO).addConstraintViolation();
-            return false;
+            return rechazar(context, PoliticaPassword.MENSAJE_LARGO);
         }
         return PoliticaPassword.cumpleRequisitos(password);
+    }
+
+    private static boolean rechazar(ConstraintValidatorContext context, String mensaje) {
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate(mensaje).addConstraintViolation();
+        return false;
     }
 }

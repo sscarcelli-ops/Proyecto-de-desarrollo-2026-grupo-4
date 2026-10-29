@@ -4,6 +4,8 @@
 export const MENSAJE_POLITICA =
   'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número';
 export const MENSAJE_LARGO = 'La contraseña no puede tener más de 72 caracteres';
+// Campo vacío: "[Campo] es obligatorio", como el resto de los campos de las US
+export const MENSAJE_OBLIGATORIA = 'La contraseña es obligatoria';
 
 const MAXIMO_BYTES = 72; // límite de bcrypt
 
