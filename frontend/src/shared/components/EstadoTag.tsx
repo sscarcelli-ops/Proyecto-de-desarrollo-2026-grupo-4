@@ -36,8 +36,8 @@ export function EstadoTag({ estado }: { estado: Estado }) {
       style={{
         ...estadoTonos[tono],
         marginInlineEnd: 0,
-        minWidth: 155,
-        paddingInline: 10,
+        minWidth: 135,
+        paddingInline: 8,
         height: 28,
         lineHeight: '26px',
         textAlign: 'center',

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -59,9 +60,12 @@ public class Trabajador {
     @Column(name = "creado_en", nullable = false, updatable = false)
     private Instant creadoEn;
 
-    // Documentos cargados (ART y/o Seguro de Vida). La lista puede estar vacía
-    // (estado documental = PENDIENTE_CARGA) o tener 1 o 2 documentos.
-    // LAZY: no se cargan de la BD salvo que se acceda a la lista.
+    // Documentos cargados (ART y/o Seguro de Vida).
+    // @BatchSize(size = 20): al iterar la página de trabajadores en el Service,
+    // Hibernate carga los documentos de todos los trabajadores de la página en
+    // un único lote con WHERE trabajador_id IN (...). Resuelve el N+1 y permite
+    // paginación 100% nativa en SQL (sin paginar en memoria).
+    @BatchSize(size = 20)
     @OneToMany(mappedBy = "trabajador", fetch = FetchType.LAZY)
     private List<Documento> documentos = new ArrayList<>();
 

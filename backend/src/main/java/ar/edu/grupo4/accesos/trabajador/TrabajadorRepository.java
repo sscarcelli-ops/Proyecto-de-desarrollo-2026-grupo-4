@@ -19,12 +19,16 @@ public interface TrabajadorRepository extends JpaRepository<Trabajador, Long> {
 
     /**
      * Listado paginado de los trabajadores de un perfil (US-26, RNF-08).
-     * @EntityGraph resuelve el problema N+1 trayendo los documentos asociados en un único JOIN.
+     * No lleva @EntityGraph para permitir que PostgreSQL aplique LIMIT/OFFSET en la BD sin
+     * paginar en memoria (aviso HHH90003004). Los documentos se cargan en lote mediante
+     * @BatchSize en la entidad Trabajador.
      */
-    @EntityGraph(attributePaths = "documentos")
     Page<Trabajador> findByPerfilId(Long perfilId, Pageable pageable);
 
-    /** Buscar un trabajador verificando que pertenezca al perfil autenticado (aislamiento RF-23). */
+    /**
+     * Buscar un trabajador verificando que pertenezca al perfil autenticado (aislamiento RF-23).
+     * Al no ser paginado, @EntityGraph carga el trabajador y sus documentos en un único JOIN.
+     */
     @EntityGraph(attributePaths = "documentos")
     Optional<Trabajador> findByIdAndPerfilId(Long id, Long perfilId);
 
