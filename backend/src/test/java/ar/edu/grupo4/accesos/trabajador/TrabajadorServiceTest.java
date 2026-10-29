@@ -16,7 +16,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class TrabajadorServiceTest {
@@ -27,7 +26,6 @@ class TrabajadorServiceTest {
 
     private static final Long USUARIO_ID = 10L;
     private static final Long PERFIL_ID = 100L;
-    private static final Long OTRO_PERFIL_ID = 200L;
 
     @BeforeEach
     void setUp() {

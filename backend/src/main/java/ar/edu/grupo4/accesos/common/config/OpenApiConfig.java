@@ -3,6 +3,7 @@ package ar.edu.grupo4.accesos.common.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OpenApiCustomizer;
@@ -47,11 +48,14 @@ public class OpenApiConfig {
             if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
                 return;
             }
-            openApi.getComponents().getSchemas().forEach((name, schema) -> {
-                if (name.endsWith("Response") && schema.getProperties() != null) {
-                    schema.setRequired(new ArrayList<>(schema.getProperties().keySet()));
-                }
-            });
+            openApi.getComponents().getSchemas().forEach(OpenApiConfig::marcarObligatorios);
         };
+    }
+
+    // Schema<?> y no Schema: el mapa de springdoc usa el tipo crudo, y con el comodín el compilador no avisa
+    private static void marcarObligatorios(String nombre, Schema<?> schema) {
+        if (nombre.endsWith("Response") && schema.getProperties() != null) {
+            schema.setRequired(new ArrayList<>(schema.getProperties().keySet()));
+        }
     }
 }
