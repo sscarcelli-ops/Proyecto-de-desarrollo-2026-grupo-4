@@ -8,6 +8,8 @@ import { PATHS } from './paths';
  * Sin rol aprobado (roles vacíos), el estado de la solicitud (US-08).
  */
 export function pantallaInicial(roles: Rol[]): string {
-  void roles;
+  if (roles.includes('GUARDIA')) {
+    return PATHS.garita;
+  }
   return PATHS.inicio;
 }

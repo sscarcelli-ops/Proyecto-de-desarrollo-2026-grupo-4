@@ -7,6 +7,7 @@ import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { PingPage } from '../features/health/pages/PingPage';
+import { GaritaPage } from '../features/garita/pages/GaritaPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04). Se suman activación del Administrador (US-01), registro (US-02)
@@ -22,14 +23,17 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-  // Pantallas con sesión: menú lateral según el rol. Cada feature agrega acá sus páginas y su opción en menuItems.
+  // Pantallas con sesión:
   {
     element: <RequireAuth />,
     children: [
+      // Menú lateral para roles de administración / oficina
       {
         element: <AppLayout />,
         children: [{ path: PATHS.inicio, element: <InicioPage /> }],
       },
+      // Garita (Guardia): pantalla móvil dedicada sin sidebar (wireframe RNF-05)
+      { path: PATHS.garita, element: <GaritaPage /> },
     ],
   },
 ]);

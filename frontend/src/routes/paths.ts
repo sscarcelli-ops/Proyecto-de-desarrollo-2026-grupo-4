@@ -7,4 +7,5 @@ export const PATHS = {
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
+  garita: '/garita', // US-37 a US-40 (Guardia)
 } as const;
