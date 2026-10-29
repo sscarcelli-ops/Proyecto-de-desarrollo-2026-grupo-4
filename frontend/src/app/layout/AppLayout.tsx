@@ -94,7 +94,17 @@ export function AppLayout() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {esEscritorio ? (
-        <Sider theme="dark" width={240}>{menuLateral}</Sider>
+        <Sider
+          theme="dark"
+          width={240}
+          style={{
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+          }}
+        >
+          {menuLateral}
+        </Sider>
       ) : (
         <Drawer
           placement="left"
