@@ -5,7 +5,7 @@ import { estadoTonos, type EstadoTono } from '../../app/theme';
 // que devuelve el backend, así se usa directo: <EstadoTag estado={perfil.estado} />.
 // Un estado nuevo se agrega acá; nunca se elige un color de estado a mano en una pantalla.
 const ESTADOS = {
-  // Estado documental del trabajador (RN-04, RF-30)
+  // Estado documental del trabajador (RF-10, RN-04)
   VIGENTE: { label: 'Vigente', tono: 'exito' },
   VENCIDO: { label: 'Vencido', tono: 'error' },
   PENDIENTE_CARGA: { label: 'Pendiente de carga', tono: 'aviso' },
@@ -31,7 +31,23 @@ export type Estado = keyof typeof ESTADOS;
 export function EstadoTag({ estado }: { estado: Estado }) {
   const { label, tono } = ESTADOS[estado];
   return (
-    <Tag bordered style={{ ...estadoTonos[tono], marginInlineEnd: 0 }}>
+    <Tag
+      bordered
+      style={{
+        ...estadoTonos[tono],
+        marginInlineEnd: 0,
+        minWidth: 135,
+        paddingInline: 8,
+        height: 28,
+        lineHeight: '26px',
+        textAlign: 'center',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 13,
+        borderRadius: 4,
+      }}
+    >
       {label}
     </Tag>
   );
