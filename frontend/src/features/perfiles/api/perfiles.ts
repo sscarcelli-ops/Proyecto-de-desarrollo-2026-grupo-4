@@ -7,8 +7,10 @@ export type PerfilResponse = ApiSchema<'PerfilResponse'>;
 
 export const MI_SOLICITUD_KEY = ['perfil', 'mi-solicitud'];
 
-export function useMiSolicitud() {
+export function useMiSolicitud(options?: { enabled?: boolean }) {
   const token = authToken.get();
+  const enabledByToken = token !== null;
+  const enabled = enabledByToken && (options?.enabled ?? true);
   return useQuery({
     queryKey: MI_SOLICITUD_KEY,
     queryFn: async () => {
@@ -24,7 +26,7 @@ export function useMiSolicitud() {
         throw err;
       }
     },
-    enabled: token !== null,
+    enabled,
     retry: false,
   });
 }

@@ -9,6 +9,8 @@ import type { ApiSchema } from '../../../shared/api/types';
 import { PATHS } from '../../../routes/paths';
 import { pantallaInicial } from '../../../routes/pantallaInicial';
 import { toCurrentUser } from '../api/useCurrentUser';
+import { useQueryClient } from '@tanstack/react-query';
+import { MI_SOLICITUD_KEY } from '../../perfiles/api/perfiles';
 
 /**
  * US-04: inicio de sesión (wireframe "Bienvenido"). Una sola pantalla para escritorio y celular: el formulario
@@ -17,6 +19,7 @@ import { toCurrentUser } from '../api/useCurrentUser';
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useLogin();
+  const queryClient = useQueryClient();
   // Se lee al entrar y se olvida: si recarga el login, el aviso ya no aparece
   const [sesionVencida] = useState(authToken.sesionVencida);
   useEffect(() => authToken.olvidarSesionVencida(), []);
@@ -28,8 +31,10 @@ export function LoginPage() {
         if (user.roles.length === 0) {
           try {
             const perfilRes = await httpClient.get<ApiSchema<'PerfilResponse'>>('/perfil/mi-solicitud');
+            queryClient.setQueryData(MI_SOLICITUD_KEY, perfilRes.data);
             navigate(pantallaInicial(user.roles, perfilRes.data), { replace: true });
           } catch {
+            queryClient.setQueryData(MI_SOLICITUD_KEY, null);
             navigate(pantallaInicial(user.roles, null), { replace: true });
           }
         } else {

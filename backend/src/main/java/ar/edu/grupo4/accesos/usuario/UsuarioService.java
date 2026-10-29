@@ -56,7 +56,7 @@ public class UsuarioService {
         String emailLimpio = email.trim();
         if (usuarioRepository.existsByEmailIgnoreCase(emailLimpio)) {
             throw new BusinessException(
-                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado", HttpStatus.BAD_REQUEST);
+                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         Usuario usuario = new Usuario();
         usuario.setEmail(emailLimpio);

@@ -37,12 +37,12 @@ export function RequireAuth() {
 export function RedirectIfAuthenticated() {
   const token = useAuthToken();
   const { data, isPending, isError } = useCurrentUserQuery();
-  const { data: perfil, isPending: pendingPerfil } = useMiSolicitud();
+  const { data: perfil, isPending: pendingPerfil } = useMiSolicitud({ enabled: data?.roles.length === 0 });
 
   if (token === null || isError) {
     return <Outlet />;
   }
-  if (isPending || (token && pendingPerfil)) {
+  if (isPending || (token && data?.roles.length === 0 && pendingPerfil)) {
     return <Cargando />;
   }
   // Si no tiene roles todavía (cuenta en proceso de alta):
