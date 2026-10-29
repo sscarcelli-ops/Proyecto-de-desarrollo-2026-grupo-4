@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/barrios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_1"];
+        put: operations["modificar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/trabajadores": {
         parameters: {
             query?: never;
@@ -30,6 +46,22 @@ export interface paths {
         get: operations["listar"];
         put?: never;
         post: operations["crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/barrios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_1"];
+        put?: never;
+        post: operations["crear_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -101,6 +133,21 @@ export interface components {
             estadoDocumental: string;
             tieneFoto: boolean;
             dadoDeBaja: boolean;
+        };
+        BarrioRequest: {
+            nombre: string;
+            localidadProvincia: string;
+            direccion: string;
+        };
+        BarrioResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            localidadProvincia: string;
+            direccion: string;
+            estado: string;
+            /** Format: int64 */
+            operadorId: number | null;
         };
         TrabajadorRequest: {
             nombre: string;
@@ -205,6 +252,54 @@ export interface operations {
             };
         };
     };
+    obtener_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
+    modificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BarrioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
     listar: {
         parameters: {
             query: {
@@ -247,6 +342,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    listar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"][];
+                };
+            };
+        };
+    };
+    crear_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BarrioRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
                 };
             };
         };

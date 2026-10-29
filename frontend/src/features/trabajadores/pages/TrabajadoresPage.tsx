@@ -5,7 +5,7 @@ import {
   EditOutlined,
   PlusCircleOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router';
+import { generatePath, useNavigate } from 'react-router';
 import { useTrabajadores, type TrabajadorResponse } from '../api/trabajadores';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { PATHS } from '../../../routes/paths';
@@ -62,7 +62,7 @@ export function TrabajadoresPage() {
                 key: 'editar',
                 icon: <EditOutlined />,
                 label: 'Editar',
-                onClick: () => navigate(PATHS.trabajadorEditar(t.id)),
+                onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
               },
             ],
           }}

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { HomeOutlined, TeamOutlined } from '@ant-design/icons';
+import { ApartmentOutlined, HomeOutlined, TeamOutlined } from '@ant-design/icons';
 import type { Rol } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
 
@@ -15,13 +15,9 @@ export interface AppMenuItem {
 export const MENU_ITEMS: AppMenuItem[] = [
   // Inicio solo para roles que lo tienen como dashboard (ej. Admin / Operador)
   { path: PATHS.inicio, label: 'Inicio', icon: <HomeOutlined />, roles: ['ADMIN', 'OPERADOR'] },
-  // US-25, US-26: Trabajadores para Empresa y Monotributista
-  {
-    path: PATHS.trabajadores,
-    label: 'Trabajadores',
-    icon: <TeamOutlined />,
-    roles: ['EMPRESA'],
-  },
+  { path: PATHS.barrios, label: 'Barrios privados', icon: <ApartmentOutlined />, roles: ['ADMIN'] },
+  // US-25, US-26: Trabajadores de la Empresa
+  { path: PATHS.trabajadores, label: 'Trabajadores', icon: <TeamOutlined />, roles: ['EMPRESA'] },
 ];
 
 /** Opciones visibles para los roles del usuario (RF-22). */
