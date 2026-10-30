@@ -3,6 +3,7 @@ import { Alert, Button, Divider, Flex, Form, Input, Typography, Upload } from 'a
 import { UploadOutlined } from '@ant-design/icons';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogout } from '../../auth/api/session';
+import { BotonCerrarSesion } from '../../auth/components/BotonCerrarSesion';
 import { useMiSolicitud, useSolicitarPerfil } from '../api/perfiles';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
@@ -154,15 +155,7 @@ export function SolicitarPerfilPage() {
 
         <Divider style={{ margin: '0 0 16px' }} />
 
-        <Button
-          type="link"
-          onClick={() => {
-            logout();
-            navigate(PATHS.login);
-          }}
-        >
-          Cerrar sesión
-        </Button>
+        <BotonCerrarSesion conTexto />
       </Flex>
     );
   }

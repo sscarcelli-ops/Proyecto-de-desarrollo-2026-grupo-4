@@ -38,12 +38,3 @@ Thumbs.db
 # --- Logs y archivos subidos ---
 *.log
 uploads/
-# --- Archivos de referencia / capturas de Figma (no son parte del entregable) ---
-docs/testing/*.png
-docs/testing/*.jpg
-docs/*.jpg
-docs/*.json
-docs/*.txt
-
-docs/testing/CP-US-02-crear-cuenta.xlsx
-docs/testing/CP-US-03-solicitar-perfil.xlsx

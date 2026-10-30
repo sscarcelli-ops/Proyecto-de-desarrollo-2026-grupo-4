@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.Optional;
@@ -61,7 +62,7 @@ class PerfilServiceTest {
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
         when(perfilRepository.existsByCuitCuil("30-11223344-5")).thenReturn(false);
         when(fileStorageService.guardar(eq(constanciaPdf), any())).thenReturn("perfiles/10/constancia/uuid.pdf");
-        when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> {
+        when(perfilRepository.saveAndFlush(any(Perfil.class))).thenAnswer(inv -> {
             Perfil p = inv.getArgument(0);
             p.setId(1L);
             return p;
@@ -83,7 +84,7 @@ class PerfilServiceTest {
         assertThat(res.estado()).isEqualTo(EstadoPerfil.PENDIENTE);
         assertThat(res.cuitCuil()).isEqualTo("30-11223344-5");
         assertThat(res.razonSocial()).isEqualTo("Mi Empresa S.A.");
-        verify(perfilRepository).save(any(Perfil.class));
+        verify(perfilRepository).saveAndFlush(any(Perfil.class));
     }
 
     @Test
@@ -94,7 +95,7 @@ class PerfilServiceTest {
         when(perfilRepository.existsByCuitCuil("20-33445566-7")).thenReturn(false);
         when(perfilRepository.existsByDniTitularAndTipo("33445566", TipoPerfil.MONOTRIBUTISTA)).thenReturn(false);
         when(fileStorageService.guardar(eq(constanciaPdf), any())).thenReturn("perfiles/10/constancia/uuid.pdf");
-        when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> {
+        when(perfilRepository.saveAndFlush(any(Perfil.class))).thenAnswer(inv -> {
             Perfil p = inv.getArgument(0);
             p.setId(2L);
             return p;
@@ -118,7 +119,25 @@ class PerfilServiceTest {
         assertThat(res.estado()).isEqualTo(EstadoPerfil.PENDIENTE);
         assertThat(res.nombre()).isEqualTo("Carlos");
         assertThat(res.apellido()).isEqualTo("Gómez");
-        verify(perfilRepository).save(any(Perfil.class));
+        verify(perfilRepository).saveAndFlush(any(Perfil.class));
+    }
+
+    @Test
+    @DisplayName("si la base rechaza la solicitud, se borra la constancia ya guardada")
+    void fallaAlGuardarBorraConstancia() {
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
+        when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
+        when(perfilRepository.existsByCuitCuil("30-11223344-5")).thenReturn(false);
+        when(fileStorageService.guardar(eq(constanciaPdf), any())).thenReturn("perfiles/10/constancia/uuid.pdf");
+        when(perfilRepository.saveAndFlush(any(Perfil.class)))
+            .thenThrow(new DataIntegrityViolationException("cuit_cuil duplicado"));
+
+        SolicitarPerfilRequest req = new SolicitarPerfilRequest(
+            TipoPerfil.EMPRESA, "30-11223344-5", "Mi Empresa S.A.", null, null, null, null, null, constanciaPdf
+        );
+
+        assertThatThrownBy(() -> perfilService.solicitar(10L, req)).isInstanceOf(DataIntegrityViolationException.class);
+        verify(fileStorageService).eliminar("perfiles/10/constancia/uuid.pdf");
     }
 
     @Test

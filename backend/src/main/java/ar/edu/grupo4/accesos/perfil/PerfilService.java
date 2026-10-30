@@ -71,8 +71,15 @@ public class PerfilService {
             perfil.setTelefono(request.telefono().trim());
         }
 
-        Perfil guardado = perfilRepository.save(perfil);
-        return PerfilResponse.from(guardado);
+        // saveAndFlush: si la base rechaza el insert (ej. CUIT cargado a la vez por otra cuenta), el error sale acá
+        // y se borra la constancia para no dejar archivos sin solicitud
+        try {
+            Perfil guardado = perfilRepository.saveAndFlush(perfil);
+            return PerfilResponse.from(guardado);
+        } catch (RuntimeException e) {
+            fileStorageService.eliminar(rutaArchivo);
+            throw e;
+        }
     }
 
     /**
