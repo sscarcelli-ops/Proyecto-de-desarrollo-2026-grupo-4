@@ -60,7 +60,10 @@ export const router = createBrowserRouter([
         ],
       },
       // Garita (Guardia): pantalla móvil dedicada sin sidebar (wireframe RNF-05)
-      { path: PATHS.garita, element: <GaritaPage /> },
+      {
+        element: <RequireRole roles={['GUARDIA']} />,
+        children: [{ path: PATHS.garita, element: <GaritaPage /> }],
+      },
     ],
   },
 ]);

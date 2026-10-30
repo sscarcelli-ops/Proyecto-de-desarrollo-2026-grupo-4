@@ -16,7 +16,6 @@ import {
 } from 'antd';
 import {
   ExclamationCircleOutlined,
-  KeyOutlined,
   LogoutOutlined,
   SearchOutlined,
   UserOutlined,
@@ -38,7 +37,7 @@ import { PATHS } from '../../../routes/paths';
 
 const { Title, Text, Paragraph } = Typography;
 
-type PasoGarita = 'BUSQUEDA' | 'SELECCION_EMPRESA' | 'HABILITADO' | 'DENEGADO';
+type PasoGarita = 'BUSQUEDA' | 'SELECCION_EMPRESA' | 'HABILITADO' | 'DENEGADO' | 'REGISTRAR_EGRESO';
 
 /* ========================================================================= */
 /* COMPONENTES REUTILIZABLES DE GARITA                                       */
@@ -217,7 +216,7 @@ function GaritaCard({
 }) {
   return (
     <Card
-      bordered
+      variant="outlined"
       style={{
         borderRadius: 8,
         borderColor: palette.border,
@@ -227,35 +226,6 @@ function GaritaCard({
     >
       {children}
     </Card>
-  );
-}
-
-/** Botón inferior separado para cambiar contraseña */
-function BotonCambiarPassword({ onClick }: { onClick: () => void }) {
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
-      style={{
-        backgroundColor: palette.surface,
-        border: `1px solid ${palette.border}`,
-        borderRadius: 8,
-        padding: '14px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        cursor: 'pointer',
-        transition: 'background-color 0.2s',
-      }}
-    >
-      <KeyOutlined style={{ fontSize: 20, color: palette.text }} />
-      <Text strong style={{ fontSize: 15, color: palette.text }}>
-        Cambiar Contraseña
-      </Text>
-    </div>
   );
 }
 
@@ -298,8 +268,11 @@ export function GaritaPage() {
       onSuccess: (data) => {
         setTrabajador(data);
 
-        // Si tiene más de una empresa/vínculo -> Pantalla de selección
-        if (data.vinculosBusqueda.length > 1) {
+        // US-37 CA-4: Si tiene ingreso activo en el barrio -> Pantalla REGISTRAR EGRESO directa (amarilla)
+        if (data.ingresoActivo) {
+          setPaso('REGISTRAR_EGRESO');
+        } else if (data.vinculosBusqueda.length > 1) {
+          // Si tiene más de una empresa/vínculo -> Pantalla de selección
           setVinculoSeleccionado(data.vinculosBusqueda[0]);
           setPaso('SELECCION_EMPRESA');
         } else if (data.vinculosBusqueda.length === 1) {
@@ -391,7 +364,7 @@ export function GaritaPage() {
                   <Alert
                     type="error"
                     showIcon
-                    message="No se encontró un trabajador con este DNI"
+                    title={errorBusqueda}
                     style={{
                       marginBottom: 28,
                       borderRadius: 6,
@@ -448,15 +421,13 @@ export function GaritaPage() {
                   </Flex>
                 </Form>
               </GaritaCard>
-
-              <BotonCambiarPassword onClick={() => navigate(PATHS.recuperarPassword)} />
             </Flex>
           )}
 
           {/* Spinner durante la verificación */}
           {verificarMutation.isPending && (
             <Flex justify="center" align="center" style={{ padding: 48 }}>
-              <Spin size="large" tip="Verificando habilitación..." />
+              <Spin size="large" description="Verificando habilitación..." />
             </Flex>
           )}
 
@@ -521,6 +492,68 @@ export function GaritaPage() {
                   style={{ flex: 2, height: 46, fontSize: 15, fontWeight: 600 }}
                 >
                   Continuar con el ingreso
+                </Button>
+                <Button
+                  onClick={volverABusqueda}
+                  style={{ flex: 1, height: 46, fontSize: 15 }}
+                >
+                  Cancelar
+                </Button>
+              </Flex>
+            </GaritaCard>
+          )}
+
+          {/* ========================================================================= */}
+          {/* PANTALLA: REGISTRAR EGRESO (Wireframe pantalla amarilla / US-37 CA-4)     */}
+          {/* ========================================================================= */}
+          {!verificarMutation.isPending && paso === 'REGISTRAR_EGRESO' && trabajador?.ingresoActivo && (
+            <GaritaCard>
+              <GaritaTitulo />
+
+              <FichaTrabajador
+                trabajador={trabajador}
+                nombreVinculo={trabajador.ingresoActivo.nombreVinculo}
+                marginBottom={28}
+              />
+
+              <div
+                style={{
+                  backgroundColor: palette.warning,
+                  color: palette.surface,
+                  textAlign: 'center',
+                  padding: '16px 12px',
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 18,
+                  letterSpacing: '0.5px',
+                  marginBottom: 60,
+                  marginTop: 40,
+                  boxShadow: '0 2px 4px rgba(183,110,0,0.2)',
+                }}
+              >
+                REGISTRAR EGRESO
+              </div>
+
+              <Flex gap={12}>
+                <Button
+                  type="primary"
+                  loading={egresoMutation.isPending}
+                  onClick={() => {
+                    if (!trabajador.ingresoActivo?.trabajadorId) return;
+                    egresoMutation.mutate(trabajador.ingresoActivo.trabajadorId, {
+                      onSuccess: () => volverABusqueda(),
+                    });
+                  }}
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    backgroundColor: palette.warning,
+                    borderColor: palette.warning,
+                  }}
+                >
+                  Registrar egreso
                 </Button>
                 <Button
                   onClick={volverABusqueda}
