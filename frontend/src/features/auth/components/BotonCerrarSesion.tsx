@@ -7,16 +7,19 @@ import { useLogout } from '../api/session';
 import { PATHS } from '../../../routes/paths';
 
 /**
- * US-05 / RF-25: botón "Cerrar sesión" con la confirmación del wireframe. Lo usan el menú lateral (AppLayout)
- * y la garita, así todos los roles cierran sesión igual. Solo cambia el estilo del botón.
+ * US-05 / RF-25: botón "Cerrar sesión" con la confirmación del wireframe. Lo usan el menú lateral (AppLayout),
+ * la garita y las pantallas del registro, así todos cierran sesión igual. Solo cambia el estilo del botón.
  */
 export function BotonCerrarSesion({
   style,
   ayudaEn = 'right',
+  conTexto = false,
 }: {
   style?: CSSProperties;
   // Dónde aparece la ayuda "Cerrar sesión": a la derecha en el menú lateral, abajo en el encabezado de la garita
   ayudaEn?: TooltipPlacement;
+  // Link con el texto "Cerrar sesión" en lugar del ícono (pantallas sin menú: registro y estado de la solicitud)
+  conTexto?: boolean;
 }) {
   const navigate = useNavigate();
   const cerrarSesion = useLogout();
@@ -30,15 +33,21 @@ export function BotonCerrarSesion({
 
   return (
     <>
-      <Tooltip title="Cerrar sesión" placement={ayudaEn}>
-        <Button
-          type="text"
-          icon={<LogoutOutlined style={{ fontSize: 22 }} />}
-          onClick={() => setConfirmando(true)}
-          aria-label="Cerrar sesión"
-          style={{ width: 44, height: 44, ...style }}
-        />
-      </Tooltip>
+      {conTexto ? (
+        <Button type="link" onClick={() => setConfirmando(true)} style={style}>
+          Cerrar sesión
+        </Button>
+      ) : (
+        <Tooltip title="Cerrar sesión" placement={ayudaEn}>
+          <Button
+            type="text"
+            icon={<LogoutOutlined style={{ fontSize: 22 }} />}
+            onClick={() => setConfirmando(true)}
+            aria-label="Cerrar sesión"
+            style={{ width: 44, height: 44, ...style }}
+          />
+        </Tooltip>
+      )}
 
       <Modal
         open={confirmando}

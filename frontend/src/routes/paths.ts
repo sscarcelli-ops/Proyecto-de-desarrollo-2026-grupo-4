@@ -4,10 +4,12 @@ export const PATHS = {
   login: '/',
   activar: '/activar', // US-01 (dirección del manual de instalación: no hay link desde el login)
   registro: '/registro', // US-02
+  solicitarPerfil: '/solicitar-perfil', // US-03
   recuperarPassword: '/recuperar-contrasena', // US-06
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
+  estadoSolicitud: '/estado-solicitud', // US-08
   garita: '/garita', // US-37 a US-40 (Guardia)
   barrios: '/barrios', // US-10
   barrioNuevo: '/barrios/nuevo', // US-10

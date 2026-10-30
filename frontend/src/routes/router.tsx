@@ -5,8 +5,11 @@ import { RedirectIfAuthenticated, RequireAuth, RequireRole } from './guards';
 import { AppLayout } from '../app/layout/AppLayout';
 import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
+import { RegistroPage } from '../features/auth/pages/RegistroPage';
 import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
+import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
+import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
 import { PingPage } from '../features/health/pages/PingPage';
 import { GaritaPage } from '../features/garita/pages/GaritaPage';
 import { BarriosPage } from '../features/barrios/pages/BarriosPage';
@@ -17,7 +20,7 @@ import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNu
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 
 export const router = createBrowserRouter([
-  // Pantallas sin sesión: login (US-04) y activación del Administrador (US-01). Se suman registro (US-02)
+  // Pantallas sin sesión: login (US-04), activación del Administrador (US-01), registro (US-02)
   // y recuperar contraseña (US-06).
   {
     element: <PublicLayout />,
@@ -26,6 +29,7 @@ export const router = createBrowserRouter([
         element: <RedirectIfAuthenticated />,
         children: [
           { path: PATHS.login, element: <LoginPage /> },
+          { path: PATHS.registro, element: <RegistroPage /> },
           { path: PATHS.activar, element: <ActivacionPage /> },
         ],
       },
@@ -33,8 +37,21 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-  // Pantallas con sesión: menú lateral según el rol. Cada feature agrega acá sus páginas (bajo RequireRole)
-  // y su opción en menuItems.
+  // Pantallas con sesión pero estilo público / registro (wireframes "Datos de Empresa" y "Datos de Monotributista"):
+  // No llevan menú lateral oscuro ni "Inicio", tienen fondo gris y logo arriba a la izquierda.
+  {
+    element: <RequireAuth />,
+    children: [
+      {
+        element: <PublicLayout />,
+        children: [
+          { path: PATHS.solicitarPerfil, element: <SolicitarPerfilPage /> },
+          { path: PATHS.estadoSolicitud, element: <EstadoSolicitudPage /> },
+        ],
+      },
+    ],
+  },
+  // Pantallas autenticadas con menú lateral completo (AppLayout)
   {
     element: <RequireAuth />,
     children: [

@@ -1,6 +1,7 @@
 import { Flex, Spin } from 'antd';
 import { Navigate, Outlet } from 'react-router';
 import { useCurrentUserQuery } from '../features/auth/api/useCurrentUser';
+import { useMiSolicitud } from '../features/perfiles/api/perfiles';
 import { useAuthToken } from '../shared/lib/authToken';
 import { pantallaInicial } from './pantallaInicial';
 import { PATHS } from './paths';
@@ -56,12 +57,15 @@ export function RequireRole({ roles }: { roles: Rol[] }) {
 export function RedirectIfAuthenticated() {
   const token = useAuthToken();
   const { data, isPending, isError } = useCurrentUserQuery();
+  const { data: perfil, isPending: pendingPerfil } = useMiSolicitud({ enabled: data?.roles.length === 0 });
 
   if (token === null || isError) {
     return <Outlet />;
   }
-  if (isPending) {
+  if (isPending || (token && data?.roles.length === 0 && pendingPerfil)) {
     return <Cargando />;
   }
-  return <Navigate to={pantallaInicial(data.roles)} replace />;
+  // Si no tiene roles todavía (cuenta en proceso de alta):
+  // pantallaInicial se encarga de decidir si va a /estado-solicitud o a /solicitar-perfil
+  return <Navigate to={pantallaInicial(data.roles, perfil)} replace />;
 }

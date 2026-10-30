@@ -112,4 +112,18 @@ class AuthServiceTest {
             .hasMessage("Usuario o contraseña incorrectos");
         verify(usuarioService, never()).estadoDeAcceso(anyLong());
     }
+
+    @Test
+    void registrarCuentaCreaUsuarioYEmiteToken() {
+        Usuario nuevo = new Usuario();
+        nuevo.setId(50L);
+        nuevo.setEmail("nuevo@test.com");
+        when(usuarioService.crearUsuario("nuevo@test.com", "Password123")).thenReturn(nuevo);
+
+        LoginResponse response = authService.registrar(new ar.edu.grupo4.accesos.auth.dto.RegistroRequest("nuevo@test.com", "Password123"));
+
+        assertThat(response.token()).isEqualTo("token-de-prueba");
+        assertThat(response.email()).isEqualTo("nuevo@test.com");
+        assertThat(response.roles()).isEmpty();
+    }
 }

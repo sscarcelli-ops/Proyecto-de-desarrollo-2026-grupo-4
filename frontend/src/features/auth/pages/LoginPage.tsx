@@ -4,10 +4,13 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogin } from '../api/session';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { authToken } from '../../../shared/lib/authToken';
+import { httpClient } from '../../../shared/lib/httpClient';
 import type { ApiSchema } from '../../../shared/api/types';
 import { PATHS } from '../../../routes/paths';
 import { pantallaInicial } from '../../../routes/pantallaInicial';
 import { toCurrentUser } from '../api/useCurrentUser';
+import { useQueryClient } from '@tanstack/react-query';
+import { MI_SOLICITUD_KEY } from '../../perfiles/api/perfiles';
 import type { CuentaCreadaState } from './ActivacionPage';
 
 /**
@@ -17,6 +20,7 @@ import type { CuentaCreadaState } from './ActivacionPage';
 export function LoginPage() {
   const navigate = useNavigate();
   const login = useLogin();
+  const queryClient = useQueryClient();
   // Se lee al entrar y se olvida: si recarga el login, el aviso ya no aparece
   const [sesionVencida] = useState(authToken.sesionVencida);
   useEffect(() => authToken.olvidarSesionVencida(), []);
@@ -24,7 +28,21 @@ export function LoginPage() {
 
   const onFinish = (values: ApiSchema<'LoginRequest'>) =>
     login.mutate(values, {
-      onSuccess: (data) => navigate(pantallaInicial(toCurrentUser(data).roles), { replace: true }),
+      onSuccess: async (data) => {
+        const user = toCurrentUser(data);
+        if (user.roles.length === 0) {
+          try {
+            const perfilRes = await httpClient.get<ApiSchema<'PerfilResponse'>>('/perfil/mi-solicitud');
+            queryClient.setQueryData(MI_SOLICITUD_KEY, perfilRes.data);
+            navigate(pantallaInicial(user.roles, perfilRes.data), { replace: true });
+          } catch {
+            queryClient.setQueryData(MI_SOLICITUD_KEY, null);
+            navigate(pantallaInicial(user.roles, null), { replace: true });
+          }
+        } else {
+          navigate(pantallaInicial(user.roles), { replace: true });
+        }
+      },
     });
 
   return (

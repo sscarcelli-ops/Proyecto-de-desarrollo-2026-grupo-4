@@ -1,6 +1,8 @@
 package ar.edu.grupo4.accesos.usuario;
 
+import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,11 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorEmail(String email) {
         return usuarioRepository.findByEmailIgnoreCase(email.trim());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existePorEmail(String email) {
+        return usuarioRepository.existsByEmailIgnoreCase(email.trim());
     }
 
     @Transactional(readOnly = true)
@@ -42,15 +49,26 @@ public class UsuarioService {
         return Optional.ofNullable(usuarioRepository.nombreVisible(usuarioId));
     }
 
-    @Transactional(readOnly = true)
-    public boolean existePorEmail(String email) {
-        return usuarioRepository.existsByEmailIgnoreCase(email.trim());
-    }
-
     /** Si ya hay un Administrador: la activación inicial (US-01) deja de tener sentido. */
     @Transactional(readOnly = true)
     public boolean existeAdministrador() {
         return usuarioRepository.existsByRoles_Codigo("ADMIN");
+    }
+
+    /**
+     * US-02: crea un usuario base sin rol, con contraseña hasheada con bcrypt (RF-08, RN-12).
+     */
+    @Transactional
+    public Usuario crearUsuario(String email, String password) {
+        String emailLimpio = email.trim();
+        if (usuarioRepository.existsByEmailIgnoreCase(emailLimpio)) {
+            throw new BusinessException(
+                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        Usuario usuario = new Usuario();
+        usuario.setEmail(emailLimpio);
+        usuario.setPasswordHash(passwordEncoder.encode(password));
+        return usuarioRepository.save(usuario);
     }
 
     /**
