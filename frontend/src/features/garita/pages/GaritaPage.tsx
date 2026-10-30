@@ -11,17 +11,14 @@ import {
   Radio,
   Spin,
   Tag,
-  Tooltip,
   Typography,
 } from 'antd';
 import {
   ExclamationCircleOutlined,
-  LogoutOutlined,
   SearchOutlined,
   UserOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router';
 import { garitaTheme, palette, estadoTonos } from '../../../app/theme';
 import {
   useBuscarPorDni,
@@ -32,8 +29,7 @@ import {
 } from '../api/garitaApi';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { useCurrentUser } from '../../auth/api/useCurrentUser';
-import { useLogout } from '../../auth/api/session';
-import { PATHS } from '../../../routes/paths';
+import { BotonCerrarSesion } from '../../auth/components/BotonCerrarSesion';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -44,17 +40,13 @@ type PasoGarita = 'BUSQUEDA' | 'SELECCION_EMPRESA' | 'HABILITADO' | 'DENEGADO' |
 /* ========================================================================= */
 
 /** Barra superior fija del guardia (misma paleta azul institucional del menú general) */
-function GaritaHeader({
-  nombreGuardia,
-  onLogout,
-}: {
-  nombreGuardia: string;
-  onLogout: () => void;
-}) {
+function GaritaHeader({ nombreGuardia }: { nombreGuardia: string }) {
   return (
     <header
       style={{
         width: '100%',
+        // El padding va dentro del 100%: si no, el encabezado es 32 px más ancho que la pantalla (scroll horizontal)
+        boxSizing: 'border-box',
         backgroundColor: palette.sidebar,
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         padding: '12px 16px',
@@ -117,15 +109,8 @@ function GaritaHeader({
           }}
         />
 
-        <Tooltip title="Cerrar sesión">
-          <Button
-            type="text"
-            icon={<LogoutOutlined style={{ fontSize: 20, color: palette.sidebarTextActive }} />}
-            onClick={onLogout}
-            aria-label="Cerrar sesión"
-            style={{ padding: 4 }}
-          />
-        </Tooltip>
+        {/* US-05: el mismo botón y la misma confirmación que el menú lateral de los demás roles */}
+        <BotonCerrarSesion ayudaEn="bottom" style={{ color: palette.sidebarTextActive }} />
       </div>
     </header>
   );
@@ -233,9 +218,7 @@ function GaritaCard({
 /* PÁGINA PRINCIPAL DE GARITA (US-37 y US-38)                                 */
 /* ========================================================================= */
 export function GaritaPage() {
-  const navigate = useNavigate();
   const user = useCurrentUser();
-  const logout = useLogout();
 
   // Estados del flujo
   const [paso, setPaso] = useState<PasoGarita>('BUSQUEDA');
@@ -250,11 +233,6 @@ export function GaritaPage() {
 
   // Detecta si el motivo de denegación es un ingreso activo (para ofrecer registrar egreso)
   const esIngresoActivo = motivoDenegado.includes('ya tiene un ingreso activo');
-
-  const handleLogout = () => {
-    logout();
-    navigate(PATHS.login, { replace: true });
-  };
 
   // ── US-37: Búsqueda por DNI ────────────────────────────────────────────────
   const onBuscar = (values: { dni: string }) => {
@@ -339,16 +317,14 @@ export function GaritaPage() {
         }}
       >
         {/* Barra superior fija */}
-        <GaritaHeader
-          nombreGuardia={user?.nombre ?? user?.email ?? 'Guardia'}
-          onLogout={handleLogout}
-        />
+        <GaritaHeader nombreGuardia={user?.nombre ?? user?.email ?? 'Guardia'} />
 
         {/* Contenedor central (ancho móvil 420px centrado) */}
         <div
           style={{
             width: '100%',
             maxWidth: 420,
+            boxSizing: 'border-box',
             padding: '60px 16px 40px',
           }}
         >

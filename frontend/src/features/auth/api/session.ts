@@ -19,11 +19,10 @@ export function useLogin() {
   });
 }
 
-/** US-05 / RF-25: cierra la sesión. El token vive en localStorage: siempre se borra, junto con el usuario en caché. */
+/**
+ * US-05 / RF-25: cierra la sesión. El token vive en localStorage: siempre se borra. Al borrarlo se descarta toda la
+ * caché de datos (app/providers), no solo el usuario. Las demás pestañas se enteran por el evento storage.
+ */
 export function useLogout() {
-  const queryClient = useQueryClient();
-  return () => {
-    authToken.clear();
-    queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });
-  };
+  return () => authToken.clear();
 }

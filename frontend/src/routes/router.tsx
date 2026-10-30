@@ -5,6 +5,7 @@ import { RedirectIfAuthenticated, RequireAuth, RequireRole } from './guards';
 import { AppLayout } from '../app/layout/AppLayout';
 import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
+import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { PingPage } from '../features/health/pages/PingPage';
 import { GaritaPage } from '../features/garita/pages/GaritaPage';
@@ -16,14 +17,17 @@ import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNu
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 
 export const router = createBrowserRouter([
-  // Pantallas sin sesión: login (US-04). Se suman activación del Administrador (US-01), registro (US-02)
+  // Pantallas sin sesión: login (US-04) y activación del Administrador (US-01). Se suman registro (US-02)
   // y recuperar contraseña (US-06).
   {
     element: <PublicLayout />,
     children: [
       {
         element: <RedirectIfAuthenticated />,
-        children: [{ path: PATHS.login, element: <LoginPage /> }],
+        children: [
+          { path: PATHS.login, element: <LoginPage /> },
+          { path: PATHS.activar, element: <ActivacionPage /> },
+        ],
       },
       { path: PATHS.ping, element: <PingPage /> },
       { path: '*', element: <NotFoundPage /> },

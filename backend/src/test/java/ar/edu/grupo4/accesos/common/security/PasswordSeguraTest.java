@@ -67,12 +67,21 @@ class PasswordSeguraTest {
         "PruebaClave",   // sin número
         "        ",      // solo espacios
     })
-    @NullAndEmptySource
     void unaContrasenaQueNoCumpleSeRechazaConElMensajeDeLaUs(String password) {
         assertThat(validar(password))
             .singleElement()
             .extracting(ConstraintViolation::getMessage)
             .isEqualTo("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número");
+    }
+
+    // Campo vacío: "[Campo] es obligatorio", como el resto de los campos (US-01)
+    @ParameterizedTest
+    @NullAndEmptySource
+    void unaContrasenaVaciaSeRechazaComoObligatoria(String password) {
+        assertThat(validar(password))
+            .singleElement()
+            .extracting(ConstraintViolation::getMessage)
+            .isEqualTo("La contraseña es obligatoria");
     }
 
     @Test

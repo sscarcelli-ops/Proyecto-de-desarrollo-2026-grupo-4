@@ -13,6 +13,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @EntityGraph(attributePaths = "roles")
     Optional<Usuario> findByEmailIgnoreCase(String email);
 
+    boolean existsByEmailIgnoreCase(String email);
+
+    /** Si alguna cuenta tiene ese rol (ej. "ADMIN"). */
+    boolean existsByRoles_Codigo(String codigoRol);
+
     @EntityGraph(attributePaths = "roles")
     Optional<Usuario> findWithRolesById(Long id);
 

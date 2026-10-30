@@ -29,6 +29,9 @@ docker compose --env-file backend/.env up -d   # PostgreSQL 17 en el puerto DB_P
 - Si ya tenés PostgreSQL instalado usando el 5432, poné `DB_PORT=5433` en `backend/.env`.
 - El contenedor crea dos bases: `accesos_db` (la de trabajo) y `accesos_vacia` (siempre sin datos de
   prueba, para probar la activación del Administrador, US-01: `DB_NAME=accesos_vacia`).
+- Activación del Administrador (US-01): con una base sin Administrador, el backend carga al arrancar el código
+  de `ACTIVACION_TOKEN` (`GRUPO4-ACTIVAR-2026` en `.env.example`), que vence a los `ACTIVACION_VIGENCIA_DIAS` y
+  sirve una sola vez. Para probarlo de nuevo, usar otro valor y reiniciar (o borrar los datos de `accesos_vacia`).
 - `docker compose down -v` borra los datos; al volver a levantar, las bases se crean vacías.
 
 ## Backend
