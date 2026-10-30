@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Button, Flex, Modal, Tooltip, Typography } from 'antd';
 import { LogoutOutlined } from '@ant-design/icons';
+import type { TooltipPlacement } from 'antd/es/tooltip';
 import { useNavigate } from 'react-router';
 import { useLogout } from '../api/session';
 import { PATHS } from '../../../routes/paths';
@@ -9,7 +10,14 @@ import { PATHS } from '../../../routes/paths';
  * US-05 / RF-25: botón "Cerrar sesión" con la confirmación del wireframe. Lo usan el menú lateral (AppLayout)
  * y la garita, así todos los roles cierran sesión igual. Solo cambia el estilo del botón.
  */
-export function BotonCerrarSesion({ style }: { style?: CSSProperties }) {
+export function BotonCerrarSesion({
+  style,
+  ayudaEn = 'right',
+}: {
+  style?: CSSProperties;
+  // Dónde aparece la ayuda "Cerrar sesión": a la derecha en el menú lateral, abajo en el encabezado de la garita
+  ayudaEn?: TooltipPlacement;
+}) {
   const navigate = useNavigate();
   const cerrarSesion = useLogout();
   const [confirmando, setConfirmando] = useState(false);
@@ -22,7 +30,7 @@ export function BotonCerrarSesion({ style }: { style?: CSSProperties }) {
 
   return (
     <>
-      <Tooltip title="Cerrar sesión" placement="right">
+      <Tooltip title="Cerrar sesión" placement={ayudaEn}>
         <Button
           type="text"
           icon={<LogoutOutlined style={{ fontSize: 22 }} />}
