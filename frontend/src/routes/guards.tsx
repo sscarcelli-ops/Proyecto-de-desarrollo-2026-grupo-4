@@ -5,6 +5,7 @@ import { useMiSolicitud } from '../features/perfiles/api/perfiles';
 import { useAuthToken } from '../shared/lib/authToken';
 import { pantallaInicial } from './pantallaInicial';
 import { PATHS } from './paths';
+import type { Rol } from '../shared/types/rol';
 
 function Cargando() {
   return (
@@ -30,6 +31,25 @@ export function RequireAuth() {
   if (isPending) {
     return <Cargando />;
   }
+  return <Outlet />;
+}
+
+/**
+ * Restringe rutas a roles específicos (RF-22 / CA-5).
+ * Si el usuario no tiene ninguno de los roles requeridos, se lo redirige a su pantalla inicial.
+ */
+export function RequireRole({ roles }: { roles: Rol[] }) {
+  const { data: user, isPending } = useCurrentUserQuery();
+
+  if (isPending) {
+    return <Cargando />;
+  }
+
+  const tieneRol = user?.roles.some((r) => roles.includes(r)) ?? false;
+  if (!tieneRol) {
+    return <Navigate to={pantallaInicial(user?.roles ?? [])} replace />;
+  }
+
   return <Outlet />;
 }
 

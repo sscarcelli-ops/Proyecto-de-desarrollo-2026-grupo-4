@@ -18,3 +18,18 @@ body {
 .ant-form.ant-form-vertical .ant-form-item .ant-form-item-label > label {
   height: auto;
 }
+
+/* Tabla con bordes redondeados completos en las 4 esquinas (superiores e inferiores) */
+.ant-table-wrapper.tabla-redondeada .ant-table {
+  border-radius: 8px !important;
+}
+.ant-table-wrapper.tabla-redondeada .ant-table-container {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+.ant-table-wrapper.tabla-redondeada .ant-table-tbody > tr:last-child > td:first-child {
+  border-bottom-left-radius: 8px !important;
+}
+.ant-table-wrapper.tabla-redondeada .ant-table-tbody > tr:last-child > td:last-child {
+  border-bottom-right-radius: 8px !important;
+}

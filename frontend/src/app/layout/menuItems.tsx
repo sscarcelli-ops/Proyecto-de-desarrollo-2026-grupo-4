@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { HomeOutlined } from '@ant-design/icons';
+import { ApartmentOutlined, HomeOutlined, TeamOutlined } from '@ant-design/icons';
 import type { Rol } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
 
@@ -11,11 +11,13 @@ export interface AppMenuItem {
   roles: Rol[];
 }
 
-// Cada feature agrega acá su opción del menú lateral (una línea por pantalla), en el orden en que se muestra.
-// Ej. según wireframes: { path: '/barrios', label: 'Barrios', icon: <HomeOutlined />, roles: ['ADMIN'] }
-// "Inicio" es provisorio: cada rol tendrá su pantalla principal según los wireframes.
+// Opciones del menú lateral según wireframes y rol del usuario
 export const MENU_ITEMS: AppMenuItem[] = [
-  { path: PATHS.inicio, label: 'Inicio', icon: <HomeOutlined />, roles: [] },
+  // Inicio solo para roles que lo tienen como dashboard (ej. Admin / Operador)
+  { path: PATHS.inicio, label: 'Inicio', icon: <HomeOutlined />, roles: ['ADMIN', 'OPERADOR'] },
+  { path: PATHS.barrios, label: 'Barrios privados', icon: <ApartmentOutlined />, roles: ['ADMIN'] },
+  // US-25, US-26: Trabajadores de la Empresa
+  { path: PATHS.trabajadores, label: 'Trabajadores', icon: <TeamOutlined />, roles: ['EMPRESA'] },
 ];
 
 /** Opciones visibles para los roles del usuario (RF-22). */

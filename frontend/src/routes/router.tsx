@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { PATHS } from './paths';
 import { NotFoundPage } from './NotFoundPage';
-import { RedirectIfAuthenticated, RequireAuth } from './guards';
+import { RedirectIfAuthenticated, RequireAuth, RequireRole } from './guards';
 import { AppLayout } from '../app/layout/AppLayout';
 import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
@@ -10,6 +10,13 @@ import { InicioPage } from '../features/auth/pages/InicioPage';
 import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
 import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
 import { PingPage } from '../features/health/pages/PingPage';
+import { GaritaPage } from '../features/garita/pages/GaritaPage';
+import { BarriosPage } from '../features/barrios/pages/BarriosPage';
+import { BarrioNuevoPage } from '../features/barrios/pages/BarrioNuevoPage';
+import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
+import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
+import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
+import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04), registro (US-02).
@@ -46,11 +53,35 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
+      // Menú lateral para roles de administración / oficina
       {
         element: <AppLayout />,
         children: [
           { path: PATHS.inicio, element: <InicioPage /> },
+          // Barrios: exclusivo del Administrador (US-10, US-11)
+          {
+            element: <RequireRole roles={['ADMIN']} />,
+            children: [
+              { path: PATHS.barrios, element: <BarriosPage /> },
+              { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
+              { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
+            ],
+          },
+          // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)
+          {
+            element: <RequireRole roles={['EMPRESA']} />,
+            children: [
+              { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
+              { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
+              { path: PATHS.trabajadorEditar, element: <TrabajadorEditarPage /> },
+            ],
+          },
         ],
+      },
+      // Garita (Guardia): pantalla móvil dedicada sin sidebar (wireframe RNF-05)
+      {
+        element: <RequireRole roles={['GUARDIA']} />,
+        children: [{ path: PATHS.garita, element: <GaritaPage /> }],
       },
     ],
   },

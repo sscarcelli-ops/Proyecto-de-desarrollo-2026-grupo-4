@@ -1,36 +1,43 @@
 package ar.edu.grupo4.accesos.usuario;
 
-import ar.edu.grupo4.accesos.common.exception.BusinessException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import ar.edu.grupo4.accesos.common.exception.BusinessException;
+
+@ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
-    private final UsuarioRepository usuarioRepository = mock(UsuarioRepository.class);
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
+    @Mock
+    private UsuarioRepository usuarioRepository;
+
+    private PasswordEncoder passwordEncoder;
     private UsuarioService usuarioService;
 
     @BeforeEach
     void setUp() {
+        passwordEncoder = new BCryptPasswordEncoder();
         usuarioService = new UsuarioService(usuarioRepository, passwordEncoder);
     }
 
     @Test
-    void crearUsuarioGuardaConHashYEmailLimpio() {
+    void crearUsuarioHasheaPasswordYGuardaEmailLimpio() {
         when(usuarioRepository.existsByEmailIgnoreCase("nuevo@empresa.com")).thenReturn(false);
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
-            Usuario u = inv.getArgument(0);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario u = invocation.getArgument(0);
             u.setId(10L);
             return u;
         });
@@ -50,7 +57,7 @@ class UsuarioServiceTest {
             .isInstanceOf(BusinessException.class)
             .hasMessage("Este email ya se encuentra registrado")
             .hasFieldOrPropertyWithValue("code", "EMAIL_DUPLICADO")
-            .hasFieldOrPropertyWithValue("status", HttpStatus.BAD_REQUEST);
+            .hasFieldOrPropertyWithValue("status", HttpStatus.UNPROCESSABLE_ENTITY);
 
         verify(usuarioRepository, never()).save(any());
     }
