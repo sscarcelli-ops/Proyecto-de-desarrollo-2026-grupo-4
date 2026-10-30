@@ -48,7 +48,7 @@ public class PerfilService {
 
         if (perfilRepository.existsByUsuarioId(usuarioId)) {
             throw new BusinessException("SOLICITUD_DUPLICADA",
-                "Ya posees una solicitud de perfil registrada", HttpStatus.UNPROCESSABLE_ENTITY);
+                "Ya posees una solicitud de perfil registrada");
         }
 
         validarArchivoConstancia(request.constancia());
@@ -101,7 +101,7 @@ public class PerfilService {
             throw new BusinessException("FORMATO_INVALIDO", "Formato de CUIT no válido", HttpStatus.BAD_REQUEST);
         }
         if (perfilRepository.existsByCuitCuil(cuit)) {
-            throw new BusinessException("CUIT_DUPLICADO", "Este CUIT ya se encuentra registrado", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new BusinessException("CUIT_DUPLICADO", "Este CUIT ya se encuentra registrado");
         }
 
         if (request.razonSocial() == null || request.razonSocial().isBlank()) {
@@ -126,7 +126,7 @@ public class PerfilService {
             throw new BusinessException("FORMATO_INVALIDO", "Formato de CUIL no válido", HttpStatus.BAD_REQUEST);
         }
         if (perfilRepository.existsByCuitCuil(cuil)) {
-            throw new BusinessException("CUIL_DUPLICADO", "Este CUIL ya se encuentra registrado", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new BusinessException("CUIL_DUPLICADO", "Este CUIL ya se encuentra registrado");
         }
 
         if (request.nombre() == null || request.nombre().isBlank()) {
@@ -145,7 +145,7 @@ public class PerfilService {
         }
 
         if (perfilRepository.existsByDniTitularAndTipo(dni, TipoPerfil.MONOTRIBUTISTA)) {
-            throw new BusinessException("DNI_DUPLICADO", "Este DNI ya está asociado a un Monotributista", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new BusinessException("DNI_DUPLICADO", "Este DNI ya está asociado a un Monotributista");
         }
 
         Perfil p = new Perfil();

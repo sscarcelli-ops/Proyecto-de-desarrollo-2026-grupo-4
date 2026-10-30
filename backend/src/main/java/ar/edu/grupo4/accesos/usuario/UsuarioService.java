@@ -2,7 +2,6 @@ package ar.edu.grupo4.accesos.usuario;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,7 +62,7 @@ public class UsuarioService {
         String emailLimpio = email.trim();
         if (usuarioRepository.existsByEmailIgnoreCase(emailLimpio)) {
             throw new BusinessException(
-                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado", HttpStatus.UNPROCESSABLE_ENTITY);
+                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado");
         }
         Usuario usuario = new Usuario();
         usuario.setEmail(emailLimpio);
