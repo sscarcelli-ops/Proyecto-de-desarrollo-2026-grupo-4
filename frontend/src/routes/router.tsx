@@ -7,6 +7,7 @@ import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { PingPage } from '../features/health/pages/PingPage';
+import { GaritaPage } from '../features/garita/pages/GaritaPage';
 import { BarriosPage } from '../features/barrios/pages/BarriosPage';
 import { BarrioNuevoPage } from '../features/barrios/pages/BarrioNuevoPage';
 import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
+      // Menú lateral para roles de administración / oficina
       {
         element: <AppLayout />,
         children: [
@@ -56,6 +58,11 @@ export const router = createBrowserRouter([
             ],
           },
         ],
+      },
+      // Garita (Guardia): pantalla móvil dedicada sin sidebar (wireframe RNF-05)
+      {
+        element: <RequireRole roles={['GUARDIA']} />,
+        children: [{ path: PATHS.garita, element: <GaritaPage /> }],
       },
     ],
   },
