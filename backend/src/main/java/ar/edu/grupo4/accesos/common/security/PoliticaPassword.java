@@ -20,6 +20,9 @@ public final class PoliticaPassword {
 
     public static final String MENSAJE_LARGO = "La contraseña no puede tener más de 72 caracteres";
 
+    /** Campo vacío: "[Campo] es obligatorio", como el resto de los campos de las US. */
+    public static final String MENSAJE_OBLIGATORIA = "La contraseña es obligatoria";
+
     private PoliticaPassword() {
     }
 

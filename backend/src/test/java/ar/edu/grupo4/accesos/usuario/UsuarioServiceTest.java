@@ -24,13 +24,16 @@ class UsuarioServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository;
 
+    @Mock
+    private RolRepository rolRepository;
+
     private PasswordEncoder passwordEncoder;
     private UsuarioService usuarioService;
 
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
-        usuarioService = new UsuarioService(usuarioRepository, passwordEncoder);
+        usuarioService = new UsuarioService(usuarioRepository, rolRepository, passwordEncoder);
     }
 
     @Test

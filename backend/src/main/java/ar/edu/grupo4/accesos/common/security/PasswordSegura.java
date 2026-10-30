@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  *
  * <pre>public record AltaGuardiaRequest(@NotBlank @Email String email, @PasswordSegura String password) {}</pre>
  *
- * Una contraseña vacía o nula también se rechaza, con el mismo mensaje: no hace falta sumar @NotBlank.
+ * Una contraseña vacía o nula también se rechaza, con "La contraseña es obligatoria": no hace falta sumar @NotBlank.
  * Si no cumple, el backend responde 400 VALIDATION_ERROR con el mensaje en el campo (también si llega
  * directo por API, CA-4).
  */

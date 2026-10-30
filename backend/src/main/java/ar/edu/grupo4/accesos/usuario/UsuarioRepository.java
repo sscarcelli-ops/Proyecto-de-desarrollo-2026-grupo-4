@@ -15,6 +15,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    /** Si alguna cuenta tiene ese rol (ej. "ADMIN"). */
+    boolean existsByRoles_Codigo(String codigoRol);
+
     @EntityGraph(attributePaths = "roles")
     Optional<Usuario> findWithRolesById(Long id);
 
@@ -42,15 +45,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
         """)
     String estadoDeAcceso(@Param("usuarioId") Long usuarioId);
 
-    /**
-     * Nombre para mostrar (ej. "Guardia: Carlos Gómez"): nombre y apellido del Guardia u Operador, razón social
-     * de la Empresa o nombre del Monotributista. NULL si la cuenta no tiene esos datos (Administrador, sin perfil).
-     */
+    /** Nombre para mostrar en el encabezado. null para Administrador o una cuenta que todavía no cargó el perfil. */
     @Query(nativeQuery = true, value = """
-        SELECT COALESCE(
+        SELECT coalesce(
+            (SELECT p.razon_social FROM perfil p WHERE p.usuario_id = :usuarioId AND p.tipo = 'EMPRESA'),
+            (SELECT p.nombre || ' ' || p.apellido FROM perfil p WHERE p.usuario_id = :usuarioId AND p.tipo = 'MONOTRIBUTISTA'),
             (SELECT g.nombre || ' ' || g.apellido FROM guardia g WHERE g.usuario_id = :usuarioId),
-            (SELECT o.nombre || ' ' || o.apellido FROM operador o WHERE o.usuario_id = :usuarioId),
-            (SELECT COALESCE(p.razon_social, p.nombre || ' ' || p.apellido) FROM perfil p WHERE p.usuario_id = :usuarioId)
+            (SELECT o.nombre || ' ' || o.apellido FROM operador o WHERE o.usuario_id = :usuarioId)
         )
         """)
     String nombreVisible(@Param("usuarioId") Long usuarioId);

@@ -6,6 +6,7 @@ import { AppLayout } from '../app/layout/AppLayout';
 import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegistroPage } from '../features/auth/pages/RegistroPage';
+import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
 import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
@@ -19,8 +20,8 @@ import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNu
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 
 export const router = createBrowserRouter([
-  // Pantallas sin sesión: login (US-04), registro (US-02).
-  // Se suman activación del Administrador (US-01) y recuperar contraseña (US-06).
+  // Pantallas sin sesión: login (US-04), activación del Administrador (US-01), registro (US-02)
+  // y recuperar contraseña (US-06).
   {
     element: <PublicLayout />,
     children: [
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
         children: [
           { path: PATHS.login, element: <LoginPage /> },
           { path: PATHS.registro, element: <RegistroPage /> },
+          { path: PATHS.activar, element: <ActivacionPage /> },
         ],
       },
       { path: PATHS.ping, element: <PingPage /> },

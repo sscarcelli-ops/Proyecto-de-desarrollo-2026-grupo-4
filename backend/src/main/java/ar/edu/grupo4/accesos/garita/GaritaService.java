@@ -3,7 +3,6 @@ package ar.edu.grupo4.accesos.garita;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.garita.dto.BusquedaDniResponse;
 import ar.edu.grupo4.accesos.garita.dto.IngresoActivoInfo;
-import ar.edu.grupo4.accesos.garita.dto.IngresoRequest;
 import ar.edu.grupo4.accesos.garita.dto.MovimientoResponse;
 import ar.edu.grupo4.accesos.garita.dto.VerificacionResponse;
 import ar.edu.grupo4.accesos.garita.dto.VinculoResultado;

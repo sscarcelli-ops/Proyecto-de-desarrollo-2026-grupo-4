@@ -2,6 +2,7 @@
 export const PATHS = {
   // Sin sesión
   login: '/',
+  activar: '/activar', // US-01 (dirección del manual de instalación: no hay link desde el login)
   registro: '/registro', // US-02
   solicitarPerfil: '/solicitar-perfil', // US-03
   recuperarPassword: '/recuperar-contrasena', // US-06
