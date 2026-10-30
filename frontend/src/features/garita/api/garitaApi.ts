@@ -12,23 +12,27 @@ export type VerificacionRequest = ApiSchema<'VerificacionRequest'>;
 export type IngresoRequest = ApiSchema<'IngresoRequest'>;
 export type EgresoRequest = ApiSchema<'EgresoRequest'>;
 
+// En la garita el Guardia no puede quedar esperando: si el servidor no responde en 10 s, se muestra el error.
+// Va solo en estas consultas (no en el httpClient compartido) para no cortar subidas de archivos lentas.
+const GARITA = { timeout: 10_000 };
+
 async function buscarPorDni(dni: string): Promise<BusquedaDniResponse> {
-  const { data } = await httpClient.get<BusquedaDniResponse>('/garita/buscar', { params: { dni } });
+  const { data } = await httpClient.get<BusquedaDniResponse>('/garita/buscar', { ...GARITA, params: { dni } });
   return data;
 }
 
 async function verificarAcceso(trabajadorId: number): Promise<VerificacionResponse> {
-  const { data } = await httpClient.post<VerificacionResponse>('/garita/verificar', { trabajadorId });
+  const { data } = await httpClient.post<VerificacionResponse>('/garita/verificar', { trabajadorId }, GARITA);
   return data;
 }
 
 async function registrarIngreso(trabajadorId: number): Promise<MovimientoResponse> {
-  const { data } = await httpClient.post<MovimientoResponse>('/garita/ingreso', { trabajadorId });
+  const { data } = await httpClient.post<MovimientoResponse>('/garita/ingreso', { trabajadorId }, GARITA);
   return data;
 }
 
 async function registrarEgreso(trabajadorId: number): Promise<MovimientoResponse> {
-  const { data } = await httpClient.post<MovimientoResponse>('/garita/egreso', { trabajadorId });
+  const { data } = await httpClient.post<MovimientoResponse>('/garita/egreso', { trabajadorId }, GARITA);
   return data;
 }
 
