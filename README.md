@@ -80,6 +80,9 @@ base queda sin usuarios. Todos los usuarios tienen la contraseña **`Prueba123`*
 | `guardia.deshabilitado@seed.test` | Guardia deshabilitado de *Los Álamos* | Login rechazado: "Tu usuario se encuentra deshabilitado" (US-04) |
 | `guardia.inactivo@seed.test` | Guardia de *San Jorge* (Inactivo) | Login rechazado: "Tu barrio se encuentra inactivo" (US-04) |
 | `operador.inactivo@seed.test` | Operador de *Barrio Las Lomas* (Inactivo) | Login rechazado: "Tu barrio se encuentra inactivo" (RN-15) |
+| `operador.robles@seed.test` | Operador de *Barrio Los Robles* (Activo, segundo barrio) | Aislamiento entre barrios (US-42) |
+| `guardia.robles@seed.test` | Guardia de *Los Robles* | Garita de otro barrio: no ve lo de *Los Álamos* (US-42). Sofía Sur (DNI 31222333) entra habilitada |
+| `empresa.sur@seed.test` | Empresa aprobada (*Jardines del Sur S.R.L.*), habilitada solo en *Los Robles*, con un trabajador | Aislamiento entre Empresas (US-41): no ve los trabajadores de *Limpiezas del Norte* |
 
 Trabajadores de la Empresa (DNI → caso): `30111222` vigente y **con ingreso abierto** (mismo DNI que el
 Monotributista: dos vínculos), `30777888` vigente listo para ingresar (sin foto), `30333444` ART vencida,
