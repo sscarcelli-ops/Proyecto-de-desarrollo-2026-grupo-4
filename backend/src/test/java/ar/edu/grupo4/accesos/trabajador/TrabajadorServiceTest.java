@@ -5,6 +5,7 @@ import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
+import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,16 +22,15 @@ import static org.mockito.Mockito.*;
 class TrabajadorServiceTest {
 
     private final TrabajadorRepository trabajadorRepository = mock(TrabajadorRepository.class);
-    private final PerfilIdResolver perfilIdResolver = mock(PerfilIdResolver.class);
+    private final UsuarioActual usuarioActual = mock(UsuarioActual.class);
     private TrabajadorService service;
 
-    private static final Long USUARIO_ID = 10L;
     private static final Long PERFIL_ID = 100L;
 
     @BeforeEach
     void setUp() {
-        service = new TrabajadorService(trabajadorRepository, perfilIdResolver);
-        when(perfilIdResolver.resolver(USUARIO_ID)).thenReturn(PERFIL_ID);
+        service = new TrabajadorService(trabajadorRepository, usuarioActual);
+        when(usuarioActual.perfilIdAprobado()).thenReturn(PERFIL_ID);
     }
 
     @Test
@@ -48,7 +48,7 @@ class TrabajadorServiceTest {
         guardado.setDocumentos(new ArrayList<>());
         when(trabajadorRepository.save(any(Trabajador.class))).thenReturn(guardado);
 
-        TrabajadorResponse response = service.crear(USUARIO_ID, request);
+        TrabajadorResponse response = service.crear(request);
 
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.nombre()).isEqualTo("Lucas");
@@ -64,7 +64,7 @@ class TrabajadorServiceTest {
         TrabajadorRequest request = new TrabajadorRequest("Ana", "Vigente", "30777888");
         when(trabajadorRepository.existsByPerfilIdAndDniIgnoreCase(PERFIL_ID, "30777888")).thenReturn(true);
 
-        assertThatThrownBy(() -> service.crear(USUARIO_ID, request))
+        assertThatThrownBy(() -> service.crear(request))
             .isInstanceOf(BusinessException.class)
             .hasMessageContaining("Este trabajador ya está registrado en tu empresa");
 
@@ -77,7 +77,7 @@ class TrabajadorServiceTest {
         Long trabajadorAjenoId = 99L;
         when(trabajadorRepository.findByIdAndPerfilId(trabajadorAjenoId, PERFIL_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.obtener(USUARIO_ID, trabajadorAjenoId))
+        assertThatThrownBy(() -> service.obtener(trabajadorAjenoId))
             .isInstanceOf(NotFoundException.class);
     }
 
@@ -96,7 +96,7 @@ class TrabajadorServiceTest {
         when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(existente));
 
         TrabajadorEditarRequest request = new TrabajadorEditarRequest("Carlos Alberto", "Vencido Gómez");
-        TrabajadorResponse response = service.editar(USUARIO_ID, trabajadorId, request);
+        TrabajadorResponse response = service.editar(trabajadorId, request);
 
         assertThat(response.nombre()).isEqualTo("Carlos Alberto");
         assertThat(response.apellido()).isEqualTo("Vencido Gómez");

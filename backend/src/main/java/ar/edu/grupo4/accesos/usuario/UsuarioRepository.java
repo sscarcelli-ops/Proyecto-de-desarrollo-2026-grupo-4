@@ -2,6 +2,7 @@ package ar.edu.grupo4.accesos.usuario;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,12 +23,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findWithRolesById(Long id);
 
     /**
-     * Estado de acceso de una cuenta (nombre de EstadoAcceso), en una sola consulta de solo lectura sobre las
-     * tablas de perfil, guardia y barrio: así no depende de las entidades de esos módulos.
+     * Estado de acceso de una cuenta (nombre de EstadoAcceso), sobre las tablas de perfil, guardia y barrio: así no
+     * depende de las entidades de esos módulos.
      * Prioridad si se cumple más de uno: suspendido, Guardia deshabilitado, barrio inactivo, Operador sin barrio.
      */
-    @Query(nativeQuery = true, value = """
-        SELECT CASE
+    String ESTADO_DE_ACCESO = """
+        CASE
             WHEN EXISTS (SELECT 1 FROM perfil p
                          WHERE p.usuario_id = :usuarioId AND p.estado = 'SUSPENDIDO') THEN 'SUSPENDIDO'
             WHEN EXISTS (SELECT 1 FROM guardia g
@@ -42,8 +43,42 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                 THEN 'OPERADOR_SIN_BARRIO'
             ELSE 'HABILITADO'
         END
-        """)
+        """;
+
+    @Query(nativeQuery = true, value = "SELECT " + ESTADO_DE_ACCESO)
     String estadoDeAcceso(@Param("usuarioId") Long usuarioId);
+
+    /**
+     * Lo que cada petición necesita saber del usuario del token, en una sola consulta (T-03): la versión de sesión,
+     * su estado de acceso, su barrio (el del Guardia o el que tiene a cargo el Operador) y su perfil aprobado.
+     * Vacío si la cuenta ya no existe.
+     */
+    @Query(nativeQuery = true, value = """
+        SELECT u.version_sesion AS versionSesion,
+               """ + ESTADO_DE_ACCESO + """
+                AS estado,
+               coalesce((SELECT g.barrio_id FROM guardia g WHERE g.usuario_id = u.id),
+                        (SELECT b.id FROM barrio b WHERE b.operador_id = u.id)) AS barrioId,
+               (SELECT p.id FROM perfil p WHERE p.usuario_id = u.id AND p.estado = 'APROBADO') AS perfilAprobadoId
+        FROM usuario u
+        WHERE u.id = :usuarioId
+        """)
+    Optional<DatosDeSesion> datosDeSesion(@Param("usuarioId") Long usuarioId);
+
+    interface DatosDeSesion {
+        int getVersionSesion();
+
+        String getEstado();
+
+        Long getBarrioId();
+
+        Long getPerfilAprobadoId();
+    }
+
+    /** Cierra todas las sesiones del usuario: los tokens emitidos con la versión anterior dejan de valer. */
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE usuario SET version_sesion = version_sesion + 1 WHERE id = :usuarioId")
+    void incrementarVersionSesion(@Param("usuarioId") Long usuarioId);
 
     /** Nombre para mostrar en el encabezado. null para Administrador o una cuenta que todavía no cargó el perfil. */
     @Query(nativeQuery = true, value = """

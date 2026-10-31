@@ -22,8 +22,8 @@ export function LoginPage() {
   const login = useLogin();
   const queryClient = useQueryClient();
   // Se lee al entrar y se olvida: si recarga el login, el aviso ya no aparece
-  const [sesionVencida] = useState(authToken.sesionVencida);
-  useEffect(() => authToken.olvidarSesionVencida(), []);
+  const [avisoSesion] = useState(authToken.avisoLogin);
+  useEffect(() => authToken.olvidarAvisoLogin(), []);
   const cuentaCreada = (useLocation().state as CuentaCreadaState | null)?.cuentaCreada;
 
   const onFinish = (values: ApiSchema<'LoginRequest'>) =>
@@ -51,14 +51,10 @@ export function LoginPage() {
         Bienvenido
       </Typography.Title>
 
-      {/* El backend rechazó el token guardado (vencido o alterado): mismo mensaje para los dos casos */}
-      {sesionVencida && login.isIdle && (
-        <Alert
-          type="warning"
-          showIcon
-          title="Tu sesión expiró. Iniciá sesión de nuevo."
-          style={{ marginBottom: 24 }}
-        />
+      {/* El backend cortó la sesión: vencida, alterada o cerrada en otro dispositivo ("Tu sesión expiró"), o la
+          cuenta dejó de poder operar con la sesión abierta (suspendida, deshabilitada...) */}
+      {avisoSesion && login.isIdle && (
+        <Alert type="warning" showIcon title={avisoSesion} style={{ marginBottom: 24 }} />
       )}
 
       {/* Recién activó la cuenta del Administrador (US-01): el email ya queda cargado */}

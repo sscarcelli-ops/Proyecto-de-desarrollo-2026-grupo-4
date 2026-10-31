@@ -245,20 +245,4 @@ public class GaritaRepository {
             return new MovimientoResponse(movId, tipo, fechaHora, nombreTrabajador, nombreVinculo);
         }, trabajadorId);
     }
-
-    // ──────────────────────────────────────────────────────────────────
-    // Resolución del barrio del guardia desde el JWT (sub = usuarioId)
-    // ──────────────────────────────────────────────────────────────────
-
-    /**
-     * Obtiene el barrio_id del guardia autenticado.
-     * El JWT lleva {@code sub} = usuarioId; la tabla guardia tiene el barrio_id.
-     */
-    public Long obtenerBarrioDelGuardia(Long usuarioId) {
-        return jdbc.queryForObject(
-                "SELECT barrio_id FROM guardia WHERE usuario_id = ?",
-                Long.class,
-                usuarioId
-        );
-    }
 }

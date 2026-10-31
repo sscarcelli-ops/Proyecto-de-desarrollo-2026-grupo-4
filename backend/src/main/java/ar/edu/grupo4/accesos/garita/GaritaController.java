@@ -10,8 +10,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,7 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>POST /api/garita/egreso                – Registrar egreso</li>
  * </ul>
  *
- * {@code barrioId} y {@code guardiaId} se extraen siempre del JWT ({@code sub} = usuarioId del guardia).
+ * El barrio y el guardia los resuelve GaritaService desde el usuario autenticado (UsuarioActual, T-03), nunca
+ * desde el body: el Guardia solo opera sobre su barrio (US-42 CA-3).
  */
 @RestController
 @RequestMapping("/api/garita")
@@ -39,7 +38,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class GaritaController {
 
     private final GaritaService garitaService;
-    private final GaritaRepository garitaRepository;
 
     // ──────────────────────────────────────────────────────────────────
     // US-37 – Búsqueda por DNI
@@ -51,13 +49,9 @@ public class GaritaController {
      */
     @GetMapping("/buscar")
     public BusquedaDniResponse buscar(
-            @RequestParam @NotBlank String dni,
-            @AuthenticationPrincipal Jwt jwt) {
+            @RequestParam @NotBlank String dni) {
 
-        Long guardiaId = Long.valueOf(jwt.getSubject());
-        Long barrioId = garitaRepository.obtenerBarrioDelGuardia(guardiaId);
-
-        return garitaService.buscarPorDni(dni, barrioId);
+        return garitaService.buscarPorDni(dni);
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -70,13 +64,9 @@ public class GaritaController {
      */
     @PostMapping("/verificar")
     public VerificacionResponse verificar(
-            @Valid @RequestBody VerificacionRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Valid @RequestBody VerificacionRequest request) {
 
-        Long guardiaId = Long.valueOf(jwt.getSubject());
-        Long barrioId = garitaRepository.obtenerBarrioDelGuardia(guardiaId);
-
-        return garitaService.verificarAcceso(request.trabajadorId(), barrioId);
+        return garitaService.verificarAcceso(request.trabajadorId());
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -89,13 +79,9 @@ public class GaritaController {
      */
     @PostMapping("/ingreso")
     public MovimientoResponse ingreso(
-            @Valid @RequestBody IngresoRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Valid @RequestBody IngresoRequest request) {
 
-        Long guardiaId = Long.valueOf(jwt.getSubject());
-        Long barrioId = garitaRepository.obtenerBarrioDelGuardia(guardiaId);
-
-        return garitaService.registrarIngreso(request.trabajadorId(), barrioId, guardiaId);
+        return garitaService.registrarIngreso(request.trabajadorId());
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -108,12 +94,8 @@ public class GaritaController {
      */
     @PostMapping("/egreso")
     public MovimientoResponse egreso(
-            @Valid @RequestBody EgresoRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Valid @RequestBody EgresoRequest request) {
 
-        Long guardiaId = Long.valueOf(jwt.getSubject());
-        Long barrioId = garitaRepository.obtenerBarrioDelGuardia(guardiaId);
-
-        return garitaService.registrarEgreso(request.trabajadorId(), barrioId, guardiaId);
+        return garitaService.registrarEgreso(request.trabajadorId());
     }
 }

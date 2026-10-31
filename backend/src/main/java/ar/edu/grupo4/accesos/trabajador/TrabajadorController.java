@@ -10,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
  * - Todos los endpoints requieren un JWT válido (SecurityConfig exige token para /api/**).
  * - @PreAuthorize restringe el acceso al rol EMPRESA.
  *   Otros roles (ADMIN, GUARDIA, OPERADOR, MONOTRIBUTISTA) recibirán HTTP 403.
- * - El perfilId NUNCA se recibe del frontend: se resuelve internamente desde el JWT
- *   (vía PerfilIdResolver), garantizando aislamiento entre empresas (RF-23).
+ * - El perfilId NUNCA se recibe del frontend: el Service lo toma del usuario autenticado
+ *   (UsuarioActual, T-03), garantizando aislamiento entre empresas (RF-23).
  *
  * Paginación:
  * - Por defecto se muestran 10 trabajadores por página, ordenados alfabéticamente por nombre (A-Z).
@@ -52,17 +50,15 @@ public class TrabajadorController {
      * Crea un nuevo trabajador para el perfil del usuario autenticado.
      * En S1 solo se envían nombre, apellido y DNI (sin archivos).
      *
-     * @param jwt   token del usuario autenticado (inyectado por Spring Security)
      * @param request datos del trabajador validados por Bean Validation
      * @return el trabajador creado con su estado documental calculado
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED) // 201: recurso creado correctamente
     public TrabajadorResponse crear(
-            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody TrabajadorRequest request) {
 
-        return trabajadorService.crear(usuarioId(jwt), request);
+        return trabajadorService.crear(request);
     }
 
     // ========================================================================================
@@ -79,10 +75,9 @@ public class TrabajadorController {
      */
     @GetMapping
     public PageResponse<TrabajadorResponse> listar(
-            @AuthenticationPrincipal Jwt jwt,
             @PageableDefault(size = 10, sort = {"nombre", "apellido"}) Pageable pageable) {
 
-        return trabajadorService.listar(usuarioId(jwt), pageable);
+        return trabajadorService.listar(pageable);
     }
 
     /**
@@ -92,10 +87,9 @@ public class TrabajadorController {
      */
     @GetMapping("/{id}")
     public TrabajadorResponse obtener(
-            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
 
-        return trabajadorService.obtener(usuarioId(jwt), id);
+        return trabajadorService.obtener(id);
     }
 
     /**
@@ -105,22 +99,9 @@ public class TrabajadorController {
      */
     @PutMapping("/{id}")
     public TrabajadorResponse editar(
-            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody TrabajadorEditarRequest request) {
 
-        return trabajadorService.editar(usuarioId(jwt), id, request);
-    }
-
-    // ========================================================================================
-    // Helper privado
-    // ========================================================================================
-
-    /**
-     * Extrae el ID del usuario del claim "sub" del JWT.
-     * Este es el patrón establecido en AuthController.me() por Persona 1.
-     */
-    private static Long usuarioId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
+        return trabajadorService.editar(id, request);
     }
 }
