@@ -57,6 +57,12 @@ docker compose --env-file docker/base-vacia.env --profile app up -d --build
   `backend/.env`, sus valores tienen prioridad, y conviene agregar `--env-file backend/.env` antes de los demás
   (así la base usa tu `DB_PORT` y tu contraseña). **Una instalación real** define en `backend/.env` sus propios
   `DB_PASSWORD`, `JWT_SECRET` y `ACTIVACION_TOKEN` antes del primer arranque.
+- **Instalación real:** copiar `backend/.env.example` a `backend/.env`, cambiar `DB_PASSWORD`, `JWT_SECRET`,
+  `ACTIVACION_TOKEN` y `CORS_ALLOWED_ORIGINS`, y definir `DOCKER_PERFILES=prod` y `VITE_API_URL` con la dirección
+  pública (las dos líneas están comentadas al final del archivo). Levantar con
+  `docker compose --env-file backend/.env --profile app up -d --build`. Con `prod` no se cargan datos de prueba y
+  Swagger queda apagado. En Docker, `SPRING_PROFILES_ACTIVE` del `.env` no aplica: el perfil lo define
+  `DOCKER_PERFILES`.
 - Los archivos subidos quedan en el volumen `archivos`.
 - Usa los mismos puertos que el desarrollo: apagar antes el backend y el frontend del IDE.
 - Apagar solo la app y seguir desarrollando con la base: `docker compose --profile app rm -sf backend frontend`.
