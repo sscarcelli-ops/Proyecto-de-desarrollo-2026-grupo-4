@@ -1,0 +1,5 @@
+# Se instalan y compilan adentro; la dirección de la API llega como argumento (VITE_API_URL)
+node_modules/
+dist/
+.env
+*.log

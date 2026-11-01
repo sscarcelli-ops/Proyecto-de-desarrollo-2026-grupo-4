@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { authToken } from './authToken';
 
-// URL base del backend tomada de variables de entorno o por defecto localhost:8080
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// URL base del backend: siempre desde la configuración, sin valor por defecto en el código
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) {
+  throw new Error('Falta VITE_API_URL: copiar frontend/.env.example a frontend/.env');
+}
 
 export const httpClient = axios.create({
   baseURL: API_URL,

@@ -48,7 +48,7 @@ public class SecurityConfig {
     );
 
     // Spring convierte la lista separada por comas en List<String>
-    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
     // RF-21: contraseñas con hash bcrypt (mismo formato que los usuarios del seed)

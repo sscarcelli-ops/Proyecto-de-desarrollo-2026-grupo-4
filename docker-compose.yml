@@ -1,13 +1,23 @@
-# Infraestructura local para desarrollo: solo PostgreSQL (Mailpit se suma con T-04).
-# Backend y frontend corren desde el IDE. Los Dockerfiles y el compose completo llegan en S4.
+# Infraestructura con Docker. Dos formas de usarlo (Mailpit se suma con T-04):
 #
-#   Levantar:            docker compose --env-file backend/.env up -d
-#   Ver estado:          docker compose ps
-#   Apagar:              docker compose down
-#   Borrar los datos:    docker compose down -v   (vuelve a crear las bases vacías al levantar)
+# 1) Desarrollo (lo de siempre): solo PostgreSQL; backend y frontend corren desde el IDE.
+#      Levantar:            docker compose --env-file backend/.env up -d
+#      Ver estado:          docker compose ps
+#      Apagar:              docker compose down
+#      Borrar los datos:    docker compose down -v   (vuelve a crear las bases vacías al levantar)
 #
-# Toma DB_NAME, DB_USER, DB_PASSWORD y DB_PORT de backend/.env, así el backend y el contenedor usan
-# los mismos valores. Si tenés PostgreSQL instalado en tu máquina usando el 5432, poné DB_PORT=5433.
+# 2) Todo en contenedores (T-09: máquina limpia, manual de instalación, revisar un PR sin instalar Java ni Node).
+#    No hace falta copiar ni editar ningún archivo:
+#      Con datos de prueba: docker compose --profile app up -d --build
+#      Base vacía (US-01):  docker compose --env-file docker/base-vacia.env --profile app up -d --build
+#      Apagar la app:       docker compose --profile app rm -sf backend frontend   (la base sigue, para el IDE)
+#      Apagar todo:         docker compose --profile app down                      (con -v borra también los datos)
+#    Para pasar de una base a la otra se ejecuta el otro comando: cada base conserva sus datos.
+#    La app queda en http://localhost:5173 y la API en http://localhost:8080. Usa los mismos puertos que el
+#    desarrollo: apagar el backend y el frontend del IDE antes de levantarla. Si ya tenés un backend/.env, agregá
+#    "--env-file backend/.env" antes de los demás, así la base usa tu puerto (DB_PORT) y tu contraseña.
+#
+# Si tenés PostgreSQL instalado en tu máquina usando el 5432, poné DB_PORT=5433 en backend/.env.
 name: accesos
 
 services:
@@ -32,5 +42,51 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Perfil "app": solo arranca con --profile app. Sin ese flag, el comando de desarrollo no lo toca.
+  backend:
+    profiles: ["app"]
+    build: ./backend
+    container_name: accesos-backend
+    # Variables de la plantilla (.env.example funciona tal cual para una instalación de prueba). Si existe
+    # backend/.env, sus valores tienen prioridad. Una instalación real define ahí sus propias credenciales.
+    env_file:
+      - path: backend/.env.example
+      - path: backend/.env
+        required: false
+    # Tienen prioridad sobre los archivos de arriba:
+    # - Adentro de Docker la base se llama "postgres" y escucha en su puerto interno.
+    # - Los archivos subidos van a un volumen, para no perderse al recrear el contenedor.
+    # - Qué base usa: por defecto la de trabajo con datos de prueba. docker/base-vacia.env cambia estos dos valores.
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DOCKER_BASE:-accesos_db}
+      SPRING_PROFILES_ACTIVE: ${DOCKER_PERFILES:-dev,seed}
+      PORT: "8080"
+      STORAGE_PATH: /data/archivos
+    ports:
+      - "8080:8080"
+    volumes:
+      - archivos:/data/archivos
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      args:
+        # El navegador llama a la API desde la máquina del usuario, por eso es localhost y no "backend"
+        VITE_API_URL: http://localhost:8080/api
+    container_name: accesos-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres-data:
+  archivos:

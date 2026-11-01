@@ -30,7 +30,7 @@ public class DiscoFileStorageService implements FileStorageService {
 
     private final Path rootLocation;
 
-    public DiscoFileStorageService(@Value("${app.storage.base-path:./uploads}") String basePath) {
+    public DiscoFileStorageService(@Value("${app.storage.base-path}") String basePath) {
         this.rootLocation = Paths.get(basePath).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.rootLocation);
