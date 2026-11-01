@@ -38,12 +38,19 @@ export function useRegistro() {
 }
 
 /**
- * US-05 / RF-25: cierra la sesión. El token vive en localStorage: siempre se borra. Al borrarlo se descarta toda la
- * caché de datos (app/providers), no solo el usuario. Las demás pestañas se enteran por el evento storage.
+ * US-05 / RF-25: cierra la sesión. Avisa al backend, que invalida el token (y las sesiones del usuario en otros
+ * dispositivos), y lo borra del navegador sin esperar la respuesta: aunque el backend no conteste, la sesión se cierra
+ * acá. Al borrarlo se descarta toda la caché de datos (app/providers). Las demás pestañas se enteran por el evento
+ * storage.
  */
 export function useLogout() {
   const queryClient = useQueryClient();
   return () => {
+    const token = authToken.get();
+    if (token) {
+      // El token va explícito: el interceptor corre después de que se borra abajo y lo mandaría sin token
+      httpClient.post('/auth/logout', null, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    }
     authToken.clear();
     sessionStorage.removeItem('registro_tipo');
     queryClient.removeQueries({ queryKey: CURRENT_USER_KEY });

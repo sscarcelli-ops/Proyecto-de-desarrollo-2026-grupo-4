@@ -1,5 +1,7 @@
 package ar.edu.grupo4.accesos.common.config;
 
+import ar.edu.grupo4.accesos.usuario.SesionVigenteFilter;
+import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
@@ -60,7 +63,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) throws Exception {
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver,
+            UsuarioActual usuarioActual) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // Deshabilitado para APIs REST stateless
@@ -79,7 +83,9 @@ public class SecurityConfig {
                 .bearerTokenResolver(tokenSoloEnRutasProtegidas())
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint((request, response, e) -> exceptionResolver.resolveException(request, response, null, e))
-            );
+            )
+            // T-03: con la firma ya validada, la sesión tiene que seguir vigente en la base en cada petición
+            .addFilterAfter(new SesionVigenteFilter(usuarioActual, exceptionResolver), BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }

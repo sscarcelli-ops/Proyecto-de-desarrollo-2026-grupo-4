@@ -2,7 +2,6 @@ package ar.edu.grupo4.accesos.usuario;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +34,23 @@ public class UsuarioService {
 
     /**
      * Si la cuenta puede operar (perfil no suspendido, Guardia habilitado, barrio del Guardia u Operador activo,
-     * Operador con barrio asignado).
-     * La usa el login (US-04 CA-3) y la va a usar el chequeo en cada petición (US-43, T-03).
+     * Operador con barrio asignado). La usa el login (US-04 CA-3); en cada petición lo controla UsuarioActual.
      */
     @Transactional(readOnly = true)
     public EstadoAcceso estadoDeAcceso(Long usuarioId) {
         return EstadoAcceso.valueOf(usuarioRepository.estadoDeAcceso(usuarioId));
+    }
+
+    /** Versión de sesión, estado, barrio y perfil aprobado del usuario (T-03). Vacío si la cuenta ya no existe. */
+    @Transactional(readOnly = true)
+    public Optional<UsuarioRepository.DatosDeSesion> datosDeSesion(Long usuarioId) {
+        return usuarioRepository.datosDeSesion(usuarioId);
+    }
+
+    /** US-05: invalida todos los tokens emitidos hasta ahora para este usuario. */
+    @Transactional
+    public void cerrarSesiones(Long usuarioId) {
+        usuarioRepository.incrementarVersionSesion(usuarioId);
     }
 
     /** Nombre para mostrar en la interfaz; vacío para el Administrador o una cuenta sin perfil. */
@@ -63,7 +73,7 @@ public class UsuarioService {
         String emailLimpio = email.trim();
         if (usuarioRepository.existsByEmailIgnoreCase(emailLimpio)) {
             throw new BusinessException(
-                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado", HttpStatus.UNPROCESSABLE_ENTITY);
+                "EMAIL_DUPLICADO", "Este email ya se encuentra registrado");
         }
         Usuario usuario = new Usuario();
         usuario.setEmail(emailLimpio);
