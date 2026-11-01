@@ -56,6 +56,18 @@ class TokenServiceTest {
     }
 
     @Test
+    void elTokenLlevaLaVersionDeSesionDelUsuario() {
+        JwtProperties p = propiedades(SECRETO, 28800);
+        Usuario usuario = admin();
+        usuario.setVersionSesion(3);
+
+        String token = new TokenService(jwtConfig.jwtEncoder(p), p).emitir(usuario).token();
+
+        Number version = jwtConfig.jwtDecoder(p).decode(token).getClaim(TokenService.CLAIM_VERSION);
+        assertThat(version.intValue()).isEqualTo(3);
+    }
+
+    @Test
     void unTokenAlteradoSeRechaza() {
         JwtProperties p = propiedades(SECRETO, 28800);
         String token = emitir(p).token();

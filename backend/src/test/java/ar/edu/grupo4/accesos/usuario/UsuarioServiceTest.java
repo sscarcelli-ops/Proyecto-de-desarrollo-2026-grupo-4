@@ -60,7 +60,7 @@ class UsuarioServiceTest {
             .isInstanceOf(BusinessException.class)
             .hasMessage("Este email ya se encuentra registrado")
             .hasFieldOrPropertyWithValue("code", "EMAIL_DUPLICADO")
-            .hasFieldOrPropertyWithValue("status", HttpStatus.UNPROCESSABLE_ENTITY);
+            .hasFieldOrPropertyWithValue("status", HttpStatus.UNPROCESSABLE_CONTENT);
 
         verify(usuarioRepository, never()).save(any());
     }

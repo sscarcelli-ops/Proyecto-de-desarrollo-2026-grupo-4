@@ -39,6 +39,10 @@ public class Usuario {
     @Column(name = "creado_en", insertable = false, updatable = false)
     private OffsetDateTime creadoEn;
 
+    // Va en el token (claim "ver"); al cerrar sesión se incrementa y los tokens anteriores dejan de valer (T-03)
+    @Column(name = "version_sesion")
+    private int versionSesion;
+
     @ManyToMany
     @JoinTable(name = "usuario_rol",
         joinColumns = @JoinColumn(name = "usuario_id"),

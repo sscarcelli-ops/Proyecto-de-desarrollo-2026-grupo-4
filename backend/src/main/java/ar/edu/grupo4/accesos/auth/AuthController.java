@@ -41,4 +41,11 @@ public class AuthController {
     public UsuarioActualResponse me(@AuthenticationPrincipal Jwt jwt) {
         return authService.usuarioActual(Long.valueOf(jwt.getSubject()));
     }
+
+    // US-05: cierra todas las sesiones del usuario. El token que se usó deja de valer aunque no haya vencido
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@AuthenticationPrincipal Jwt jwt) {
+        authService.cerrarSesion(Long.valueOf(jwt.getSubject()));
+    }
 }

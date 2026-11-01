@@ -6,6 +6,7 @@ import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
+import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,17 +17,16 @@ import java.util.List;
 /**
  * Reglas de negocio del módulo de trabajadores (US-25, US-26, y base para US-27 a 30).
  *
- * Todas las operaciones reciben el usuarioId del token JWT. Internamente, el Service
- * resuelve el perfilId asociado. Ese perfilId NUNCA sale del request del frontend:
- * se obtiene desde la BD a partir del usuario autenticado, garantizando el aislamiento
- * entre Empresas (RF-23, US-41).
+ * Todas las operaciones trabajan sobre el perfil aprobado del usuario autenticado (UsuarioActual, T-03).
+ * Ese perfilId NUNCA sale del request del frontend: se obtiene desde la BD a partir del token,
+ * garantizando el aislamiento entre Empresas (RF-23, US-41).
  */
 @Service
 @RequiredArgsConstructor
 public class TrabajadorService {
 
     private final TrabajadorRepository trabajadorRepository;
-    private final PerfilIdResolver perfilIdResolver;
+    private final UsuarioActual usuarioActual;
 
     // ========================================================================================
     // US-25: Registrar trabajador
@@ -42,8 +42,8 @@ public class TrabajadorService {
      *   tiene su propio registro independiente de la misma persona.
      */
     @Transactional
-    public TrabajadorResponse crear(Long usuarioId, TrabajadorRequest request) {
-        Long perfilId = perfilIdResolver.resolver(usuarioId);
+    public TrabajadorResponse crear(TrabajadorRequest request) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
 
         if (trabajadorRepository.existsByPerfilIdAndDniIgnoreCase(perfilId, request.dni())) {
             throw new BusinessException("TRABAJADOR_DUPLICADO",
@@ -70,8 +70,8 @@ public class TrabajadorService {
      * Orden por defecto: alfabético por apellido (configurado en el Controller).
      */
     @Transactional(readOnly = true)
-    public PageResponse<TrabajadorResponse> listar(Long usuarioId, Pageable pageable) {
-        Long perfilId = perfilIdResolver.resolver(usuarioId);
+    public PageResponse<TrabajadorResponse> listar(Pageable pageable) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
         return PageResponse.from(
             trabajadorRepository.findByPerfilId(perfilId, pageable),
             t -> TrabajadorResponse.from(t, calcularEstadoDocumental(t))
@@ -84,8 +84,8 @@ public class TrabajadorService {
      * revelar la existencia de trabajadores ajenos.
      */
     @Transactional(readOnly = true)
-    public TrabajadorResponse obtener(Long usuarioId, Long trabajadorId) {
-        Long perfilId = perfilIdResolver.resolver(usuarioId);
+    public TrabajadorResponse obtener(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
         return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
     }
@@ -95,8 +95,8 @@ public class TrabajadorService {
      * Foto y documentación se modifican por separado (US-28, S2).
      */
     @Transactional
-    public TrabajadorResponse editar(Long usuarioId, Long trabajadorId, TrabajadorEditarRequest request) {
-        Long perfilId = perfilIdResolver.resolver(usuarioId);
+    public TrabajadorResponse editar(Long trabajadorId, TrabajadorEditarRequest request) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
 
         trabajador.setNombre(request.nombre().trim());

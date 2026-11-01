@@ -19,10 +19,16 @@ public class TokenService {
     private final JwtEncoder jwtEncoder;
     private final JwtProperties jwtProperties;
 
+    /** Versión de sesión del usuario al emitir el token: si después cambia (cerró sesión), el token deja de valer. */
+    public static final String CLAIM_VERSION = "ver";
+
     public record TokenEmitido(String token, Instant expiraEn) {
     }
 
-    /** Token de sesión: id del usuario (sub), email y roles; vence a las 8 horas (JWT_EXPIRATION_SECONDS). */
+    /**
+     * Token de sesión: id del usuario (sub), email, roles y versión de sesión; vence a las 8 horas
+     * (JWT_EXPIRATION_SECONDS).
+     */
     public TokenEmitido emitir(Usuario usuario) {
         // En segundos enteros, como los guarda el token: así expiraEn coincide exactamente con su vencimiento
         Instant ahora = Instant.now().truncatedTo(ChronoUnit.SECONDS);
@@ -35,6 +41,7 @@ public class TokenService {
             .subject(usuario.getId().toString())
             .claim("email", usuario.getEmail())
             .claim("roles", usuario.codigosDeRoles())
+            .claim(CLAIM_VERSION, usuario.getVersionSesion())
             .build();
 
         // Sin este header el encoder busca una clave RSA (RS256 por defecto) y falla con la clave HMAC

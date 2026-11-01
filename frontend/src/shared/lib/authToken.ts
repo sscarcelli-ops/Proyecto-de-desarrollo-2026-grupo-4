@@ -5,24 +5,27 @@ import { useSyncExternalStore } from 'react';
 // o el usuario cierra sesión, por eso el logout (RF-25) siempre debe llamar a clear().
 const TOKEN_KEY = 'accesos.token';
 
+export const AVISO_SESION_VENCIDA = 'Tu sesión expiró. Iniciá sesión de nuevo.';
+
 const listeners = new Set<() => void>();
 const avisar = () => listeners.forEach((listener) => listener());
 
-// El backend rechazó el token (vencido o alterado): el login lo avisa una vez. Se olvida al iniciar o cerrar sesión.
-let sesionVencida = false;
+// Por qué el backend cortó la sesión (vencida, cerrada en otro dispositivo, cuenta suspendida...): el login lo
+// muestra una vez. Se olvida al iniciar o cerrar sesión.
+let avisoLogin: string | null = null;
 
 // Otra pestaña inició o cerró sesión: esta también se entera
 window.addEventListener('storage', (event) => {
   if (event.key === TOKEN_KEY || event.key === null) avisar();
 });
 
-function borrar(vencida: boolean): void {
+function borrar(aviso: string | null): void {
   try {
     localStorage.removeItem(TOKEN_KEY);
   } catch {
     // nada que limpiar
   }
-  sesionVencida = vencida;
+  avisoLogin = aviso;
   avisar();
 }
 
@@ -41,21 +44,25 @@ export const authToken = {
     } catch {
       // sin almacenamiento disponible el usuario tendrá que volver a iniciar sesión
     }
-    sesionVencida = false;
+    avisoLogin = null;
     avisar();
   },
   clear(): void {
-    borrar(false);
+    borrar(null);
   },
-  /** El backend respondió 401 a un pedido con token: se borra y el login muestra "Tu sesión expiró". */
-  expirar(): void {
-    borrar(true);
+  /**
+   * El backend rechazó la sesión: se borra el token y el login muestra el motivo. Por defecto "Tu sesión expiró"
+   * (401: vencida, alterada o cerrada en otro dispositivo); con el mensaje del backend si la cuenta ya no puede
+   * operar (403: suspendida, Guardia deshabilitado, barrio inactivo).
+   */
+  expirar(aviso: string = AVISO_SESION_VENCIDA): void {
+    borrar(aviso);
   },
-  sesionVencida(): boolean {
-    return sesionVencida;
+  avisoLogin(): string | null {
+    return avisoLogin;
   },
-  olvidarSesionVencida(): void {
-    sesionVencida = false;
+  olvidarAvisoLogin(): void {
+    avisoLogin = null;
   },
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
