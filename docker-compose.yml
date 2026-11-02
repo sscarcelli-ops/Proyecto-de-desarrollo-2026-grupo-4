@@ -61,11 +61,14 @@ services:
     # Tienen prioridad sobre los archivos de arriba:
     # - Adentro de Docker la base se llama "postgres" y escucha en su puerto interno.
     # - Los archivos subidos van a un volumen, para no perderse al recrear el contenedor.
+    # - Usuario y contraseña: los mismos con los que se crea la base, vengan de la terminal o de --env-file.
     # - Qué base y qué perfiles usa: por defecto la de trabajo con datos de prueba. Los cambian docker/base-vacia.env
     #   o DOCKER_PERFILES=prod en backend/.env. SPRING_PROFILES_ACTIVE del .env no aplica acá.
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DOCKER_BASE:-accesos_db}
       SPRING_PROFILES_ACTIVE: ${DOCKER_PERFILES:-dev,seed}
       PORT: "8080"
