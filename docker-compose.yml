@@ -17,8 +17,10 @@
 #    desarrollo: apagar el backend y el frontend del IDE antes de levantarla. Si ya tenés un backend/.env, agregá
 #    "--env-file backend/.env" antes de los demás, así la base usa tu puerto (DB_PORT) y tu contraseña.
 #
-# 3) Instalación real: credenciales propias y DOCKER_PERFILES=prod en backend/.env (sin datos de prueba ni Swagger).
+# 3) Con credenciales propias y DOCKER_PERFILES=prod en backend/.env (sin datos de prueba ni Swagger):
 #      Levantar:            docker compose --env-file backend/.env --profile app up -d --build
+#
+# Es para instalaciones de prueba o locales: no exponerlo a internet (sin HTTPS y con puertos publicados).
 #
 # Si tenés PostgreSQL instalado en tu máquina usando el 5432, poné DB_PORT=5433 en backend/.env.
 name: accesos
@@ -51,7 +53,7 @@ services:
     build: ./backend
     container_name: accesos-backend
     # Variables de la plantilla (.env.example funciona tal cual para una instalación de prueba). Si existe
-    # backend/.env, sus valores tienen prioridad. Una instalación real define ahí sus propias credenciales.
+    # backend/.env, sus valores tienen prioridad: ahí se definen las credenciales propias.
     env_file:
       - path: backend/.env.example
       - path: backend/.env
@@ -60,7 +62,7 @@ services:
     # - Adentro de Docker la base se llama "postgres" y escucha en su puerto interno.
     # - Los archivos subidos van a un volumen, para no perderse al recrear el contenedor.
     # - Qué base y qué perfiles usa: por defecto la de trabajo con datos de prueba. Los cambian docker/base-vacia.env
-    #   o, en una instalación real, DOCKER_PERFILES=prod en backend/.env. SPRING_PROFILES_ACTIVE del .env no aplica acá.
+    #   o DOCKER_PERFILES=prod en backend/.env. SPRING_PROFILES_ACTIVE del .env no aplica acá.
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -83,7 +85,7 @@ services:
       context: ./frontend
       args:
         # El navegador llama a la API desde la máquina del usuario, por eso es localhost y no "backend".
-        # En un servidor real se define VITE_API_URL con su dirección pública.
+        # Si la API está en otra dirección, se define VITE_API_URL.
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
     container_name: accesos-frontend
     ports:
