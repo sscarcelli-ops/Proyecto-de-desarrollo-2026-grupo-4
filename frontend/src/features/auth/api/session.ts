@@ -8,6 +8,7 @@ import { MI_SOLICITUD_KEY } from '../../perfiles/api/perfiles';
 type LoginRequest = ApiSchema<'LoginRequest'>;
 type LoginResponse = ApiSchema<'LoginResponse'>;
 type RegistroRequest = ApiSchema<'RegistroRequest'>;
+type CambiarPasswordRequest = ApiSchema<'CambiarPasswordRequest'>;
 
 /** US-04: inicia sesión, guarda el token y deja el usuario en la caché (sin otra consulta a /me). */
 export function useLogin() {
@@ -33,6 +34,19 @@ export function useRegistro() {
       queryClient.setQueryData(CURRENT_USER_KEY, toCurrentUser(data));
       // Invalida la query de solicitud para que las páginas con sesión reconozcan que no tiene perfil aún
       queryClient.invalidateQueries({ queryKey: MI_SOLICITUD_KEY });
+    },
+  });
+}
+
+/** US-07: cambia la contraseña. El token anterior ya no vale: se guarda el nuevo para que esta sesión siga abierta. */
+export function useCambiarPassword() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: CambiarPasswordRequest) =>
+      (await httpClient.post<LoginResponse>('/auth/cambiar-contrasena', body)).data,
+    onSuccess: (data) => {
+      authToken.set(data.token);
+      queryClient.setQueryData(CURRENT_USER_KEY, toCurrentUser(data));
     },
   });
 }

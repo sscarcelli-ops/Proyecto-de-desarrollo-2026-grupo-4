@@ -29,7 +29,9 @@ import {
 } from '../api/garitaApi';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { useCurrentUser } from '../../auth/api/useCurrentUser';
+import { BotonCambiarPassword } from '../../auth/components/BotonCambiarPassword';
 import { BotonCerrarSesion } from '../../auth/components/BotonCerrarSesion';
+import { Logo } from '../../../shared/components/Logo';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -67,14 +69,7 @@ function GaritaHeader({ nombreGuardia }: { nombreGuardia: string }) {
           justifyContent: 'space-between',
         }}
       >
-        <Avatar
-          size={36}
-          style={{
-            backgroundColor: palette.sidebarHover,
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            flexShrink: 0,
-          }}
-        />
+        <Logo size={32} sobreOscuro />
 
         <div
           style={{
@@ -397,6 +392,9 @@ export function GaritaPage() {
                   </Flex>
                 </Form>
               </GaritaCard>
+
+              {/* US-07 */}
+              <BotonCambiarPassword forma="boton" />
             </Flex>
           )}
 
