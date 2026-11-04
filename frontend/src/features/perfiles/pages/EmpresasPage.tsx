@@ -180,17 +180,16 @@ export function EmpresasPage() {
           allowClear
           style={{ maxWidth: 360, height: 38, borderRadius: 6 }}
         />
-        <Select
+        <Select<string>
           placeholder="Filtrar por estado"
-          value={filtroEstado}
+          value={filtroEstado ?? 'TODOS'}
           onChange={(val) => {
-            setFiltroEstado(val);
+            setFiltroEstado(val === 'TODOS' ? undefined : (val as PerfilResponse['estado']));
             setPagina(1);
           }}
-          allowClear
           style={{ width: 200, height: 38 }}
           options={[
-            { label: 'Todos los estados', value: undefined },
+            { label: 'Todos los estados', value: 'TODOS' },
             { label: 'Pendiente de aprobación', value: 'PENDIENTE' },
             { label: 'Aprobado', value: 'APROBADO' },
             { label: 'Rechazado', value: 'RECHAZADO' },
