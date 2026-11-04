@@ -2,13 +2,21 @@ package ar.edu.grupo4.accesos.perfil;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
+import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
+import ar.edu.grupo4.accesos.usuario.Rol;
+import ar.edu.grupo4.accesos.usuario.RolRepository;
 import ar.edu.grupo4.accesos.usuario.Usuario;
+import ar.edu.grupo4.accesos.usuario.UsuarioRepository;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.OffsetDateTime;
 import java.util.regex.Pattern;
 
 @Service
@@ -31,6 +40,8 @@ public class PerfilService {
     private final PerfilRepository perfilRepository;
     private final UsuarioService usuarioService;
     private final FileStorageService fileStorageService;
+    private final RolRepository rolRepository;
+    private final UsuarioRepository usuarioRepository;
 
     /**
      * US-03: Solicita perfil de Empresa o Monotributista para el usuario autenticado.
@@ -90,6 +101,95 @@ public class PerfilService {
         return perfilRepository.findByUsuarioId(usuarioId)
             .map(PerfilResponse::from)
             .orElseThrow(NotFoundException::new);
+    }
+
+    /**
+     * US-18: Listado paginado de Empresas y Monotributistas para el Administrador.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<PerfilResponse> listar(EstadoPerfil estado, String q, Pageable pageable) {
+        String filtroTexto = (q != null && !q.isBlank()) ? q.trim() : null;
+        Page<Perfil> pagina = perfilRepository.listarConFiltros(estado, filtroTexto, pageable);
+        return PageResponse.from(pagina.map(PerfilResponse::from));
+    }
+
+    /**
+     * US-18: Detalle de un perfil por ID para el Administrador.
+     */
+    @Transactional(readOnly = true)
+    public PerfilResponse obtenerPorId(Long id) {
+        return perfilRepository.findById(id)
+            .map(PerfilResponse::from)
+            .orElseThrow(NotFoundException::new);
+    }
+
+    /**
+     * US-18: Carga el archivo de constancia de inscripción en PDF para su visualización o descarga.
+     */
+    @Transactional(readOnly = true)
+    public Resource obtenerConstancia(Long id) {
+        Perfil perfil = perfilRepository.findById(id)
+            .orElseThrow(NotFoundException::new);
+        return fileStorageService.cargar(perfil.getConstanciaRuta());
+    }
+
+    /**
+     * US-20: Aprueba la solicitud de perfil, actualiza el estado a APROBADO y asigna
+     * el rol EMPRESA o MONOTRIBUTISTA al usuario.
+     */
+    @Transactional
+    public PerfilResponse aprobar(Long id) {
+        Perfil perfil = perfilRepository.findById(id)
+            .orElseThrow(NotFoundException::new);
+
+        if (perfil.getEstado() != EstadoPerfil.PENDIENTE) {
+            throw new BusinessException("ESTADO_INVALIDO",
+                "Solo se pueden aprobar solicitudes en estado pendiente", HttpStatus.BAD_REQUEST);
+        }
+
+        String codigoRol = (perfil.getTipo() == TipoPerfil.EMPRESA) ? "EMPRESA" : "MONOTRIBUTISTA";
+        Rol rol = rolRepository.findByCodigo(codigoRol)
+            .orElseThrow(() -> new BusinessException("ROL_NO_ENCONTRADO",
+                "No se encontró el rol " + codigoRol, HttpStatus.INTERNAL_SERVER_ERROR));
+
+        Usuario usuario = perfil.getUsuario();
+        usuario.getRoles().add(rol);
+        usuarioRepository.save(usuario);
+
+        perfil.setEstado(EstadoPerfil.APROBADO);
+        perfil.setMotivoRechazo(null);
+        perfil.setResueltoEn(OffsetDateTime.now());
+
+        Perfil guardado = perfilRepository.save(perfil);
+        log.info("Perfil {} ({}) aprobado para el usuario {}", id, perfil.getTipo(), usuario.getId());
+        return PerfilResponse.from(guardado);
+    }
+
+    /**
+     * US-20: Rechaza la solicitud de perfil requiriendo obligatoriamente un motivo.
+     */
+    @Transactional
+    public PerfilResponse rechazar(Long id, RechazarPerfilRequest request) {
+        if (request == null || request.motivo() == null || request.motivo().trim().isBlank()) {
+            throw new BusinessException("CAMPO_OBLIGATORIO",
+                "El motivo de rechazo es obligatorio", HttpStatus.BAD_REQUEST);
+        }
+
+        Perfil perfil = perfilRepository.findById(id)
+            .orElseThrow(NotFoundException::new);
+
+        if (perfil.getEstado() != EstadoPerfil.PENDIENTE) {
+            throw new BusinessException("ESTADO_INVALIDO",
+                "Solo se pueden rechazar solicitudes en estado pendiente", HttpStatus.BAD_REQUEST);
+        }
+
+        perfil.setEstado(EstadoPerfil.RECHAZADO);
+        perfil.setMotivoRechazo(request.motivo().trim());
+        perfil.setResueltoEn(OffsetDateTime.now());
+
+        Perfil guardado = perfilRepository.save(perfil);
+        log.info("Perfil {} ({}) rechazado: {}", id, perfil.getTipo(), request.motivo().trim());
+        return PerfilResponse.from(guardado);
     }
 
     private Perfil procesarEmpresa(Usuario usuario, SolicitarPerfilRequest request) {

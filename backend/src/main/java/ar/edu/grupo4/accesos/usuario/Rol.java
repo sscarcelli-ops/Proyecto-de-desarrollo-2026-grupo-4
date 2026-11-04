@@ -7,11 +7,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /** Rol fijo del sistema (tabla rol, cargada por la migración inicial). Solo lectura. */
 @Entity
 @Table(name = "rol")
 @Getter
+@Setter
 @NoArgsConstructor
 public class Rol {
 
@@ -23,4 +25,9 @@ public class Rol {
     private String codigo;
 
     private String nombre;
+
+    public Rol(String codigo, String nombre) {
+        this.codigo = codigo;
+        this.nombre = nombre;
+    }
 }
