@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { httpClient } from '../../../shared/lib/httpClient';
 import { authToken } from '../../../shared/lib/authToken';
 import type { ApiSchema } from '../../../shared/api/types';
@@ -100,14 +101,42 @@ export function usePerfil(id: number) {
 
 /**
  * Descarga o visualiza la constancia de inscripción en PDF mediante el cliente autenticado.
+ * Abre la nueva pestaña de inmediato durante el gesto del usuario para evitar bloqueos del navegador.
+ * En caso de error, si la respuesta viene encapsulada como Blob se parsea a JSON para mostrar el detalle del backend.
  */
 export async function verConstanciaPdf(id: number): Promise<void> {
-  const response = await httpClient.get<Blob>(`/perfiles/${id}/constancia`, {
-    responseType: 'blob',
-  });
-  const blob = new Blob([response.data], { type: 'application/pdf' });
-  const url = window.URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  const nuevaVentana = window.open('', '_blank');
+  try {
+    const response = await httpClient.get<Blob>(`/perfiles/${id}/constancia`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    if (nuevaVentana) {
+      nuevaVentana.location.href = url;
+    } else {
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.target = '_blank';
+      enlace.rel = 'noopener noreferrer';
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+    }
+  } catch (error) {
+    if (nuevaVentana) {
+      nuevaVentana.close();
+    }
+    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+      try {
+        const texto = await error.response.data.text();
+        error.response.data = JSON.parse(texto);
+      } catch {
+        // mantener el error original si no era JSON
+      }
+    }
+    throw error;
+  }
 }
 
 // =========================================================================

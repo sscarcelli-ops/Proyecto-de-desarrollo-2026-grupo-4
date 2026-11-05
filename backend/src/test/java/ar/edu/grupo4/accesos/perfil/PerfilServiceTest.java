@@ -7,10 +7,7 @@ import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
 import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
-import ar.edu.grupo4.accesos.usuario.Rol;
-import ar.edu.grupo4.accesos.usuario.RolRepository;
 import ar.edu.grupo4.accesos.usuario.Usuario;
-import ar.edu.grupo4.accesos.usuario.UsuarioRepository;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,12 +44,6 @@ class PerfilServiceTest {
 
     @Mock
     private FileStorageService fileStorageService;
-
-    @Mock
-    private RolRepository rolRepository;
-
-    @Mock
-    private UsuarioRepository usuarioRepository;
 
     @InjectMocks
     private PerfilService perfilService;
@@ -276,6 +267,19 @@ class PerfilServiceTest {
     }
 
     @Test
+    @DisplayName("US-18: búsqueda con porcentaje escapa el comodín para no traer todo")
+    void listarPerfilesEscapaPorcentaje() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(perfilRepository.listarConFiltros(null, "\\%", pageable))
+            .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        PageResponse<PerfilResponse> resultado = perfilService.listar(null, "%", pageable);
+
+        assertThat(resultado.totalElements()).isZero();
+        verify(perfilRepository).listarConFiltros(null, "\\%", pageable);
+    }
+
+    @Test
     @DisplayName("US-18: obtener perfil por ID existente devuelve PerfilResponse")
     void obtenerPorIdExistente() {
         Perfil p = new Perfil();
@@ -326,7 +330,7 @@ class PerfilServiceTest {
     // =========================================================================
 
     @Test
-    @DisplayName("US-20: aprobar solicitud pendiente asigna rol EMPRESA y pasa a APROBADO")
+    @DisplayName("US-20: aprobar solicitud delega en UsuarioService asignarRol y cerrarSesiones")
     void aprobarSolicitudEmpresaExitosa() {
         Perfil p = new Perfil();
         p.setId(100L);
@@ -335,16 +339,14 @@ class PerfilServiceTest {
         p.setEstado(EstadoPerfil.PENDIENTE);
         p.setCuitCuil("30-99887766-5");
 
-        Rol rolEmpresa = new Rol("EMPRESA", "Empresa");
         when(perfilRepository.findById(100L)).thenReturn(Optional.of(p));
-        when(rolRepository.findByCodigo("EMPRESA")).thenReturn(Optional.of(rolEmpresa));
         when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> inv.getArgument(0));
 
         PerfilResponse res = perfilService.aprobar(100L);
 
         assertThat(res.estado()).isEqualTo(EstadoPerfil.APROBADO);
-        assertThat(usuario.getRoles()).contains(rolEmpresa);
-        verify(usuarioRepository).save(usuario);
+        verify(usuarioService).asignarRol(10L, "EMPRESA");
+        verify(usuarioService).cerrarSesiones(10L);
         verify(perfilRepository).save(p);
     }
 

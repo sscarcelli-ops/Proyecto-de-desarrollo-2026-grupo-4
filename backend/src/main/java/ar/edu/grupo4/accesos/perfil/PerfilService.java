@@ -7,10 +7,7 @@ import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
 import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
-import ar.edu.grupo4.accesos.usuario.Rol;
-import ar.edu.grupo4.accesos.usuario.RolRepository;
 import ar.edu.grupo4.accesos.usuario.Usuario;
-import ar.edu.grupo4.accesos.usuario.UsuarioRepository;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +37,6 @@ public class PerfilService {
     private final PerfilRepository perfilRepository;
     private final UsuarioService usuarioService;
     private final FileStorageService fileStorageService;
-    private final RolRepository rolRepository;
-    private final UsuarioRepository usuarioRepository;
 
     /**
      * US-03: Solicita perfil de Empresa o Monotributista para el usuario autenticado.
@@ -108,9 +103,16 @@ public class PerfilService {
      */
     @Transactional(readOnly = true)
     public PageResponse<PerfilResponse> listar(EstadoPerfil estado, String q, Pageable pageable) {
-        String filtroTexto = (q != null && !q.isBlank()) ? q.trim() : null;
+        String filtroTexto = (q != null && !q.isBlank()) ? escaparLike(q.trim()) : null;
         Page<Perfil> pagina = perfilRepository.listarConFiltros(estado, filtroTexto, pageable);
         return PageResponse.from(pagina.map(PerfilResponse::from));
+    }
+
+    private String escaparLike(String texto) {
+        return texto
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
     }
 
     /**
@@ -134,8 +136,9 @@ public class PerfilService {
     }
 
     /**
-     * US-20: Aprueba la solicitud de perfil, actualiza el estado a APROBADO y asigna
-     * el rol EMPRESA o MONOTRIBUTISTA al usuario.
+     * US-20: Aprueba la solicitud de perfil, actualiza el estado a APROBADO, asigna
+     * el rol EMPRESA o MONOTRIBUTISTA al usuario a través de UsuarioService y cierra
+     * las sesiones activas para obligar a refrescar el token con el nuevo rol.
      */
     @Transactional
     public PerfilResponse aprobar(Long id) {
@@ -148,13 +151,10 @@ public class PerfilService {
         }
 
         String codigoRol = (perfil.getTipo() == TipoPerfil.EMPRESA) ? "EMPRESA" : "MONOTRIBUTISTA";
-        Rol rol = rolRepository.findByCodigo(codigoRol)
-            .orElseThrow(() -> new BusinessException("ROL_NO_ENCONTRADO",
-                "No se encontró el rol " + codigoRol, HttpStatus.INTERNAL_SERVER_ERROR));
-
         Usuario usuario = perfil.getUsuario();
-        usuario.getRoles().add(rol);
-        usuarioRepository.save(usuario);
+
+        usuarioService.asignarRol(usuario.getId(), codigoRol);
+        usuarioService.cerrarSesiones(usuario.getId());
 
         perfil.setEstado(EstadoPerfil.APROBADO);
         perfil.setMotivoRechazo(null);

@@ -1,7 +1,9 @@
 package ar.edu.grupo4.accesos.usuario;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +65,20 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public boolean existeAdministrador() {
         return usuarioRepository.existsByRoles_Codigo("ADMIN");
+    }
+
+    /**
+     * US-20: Asigna un rol a un usuario existente (aprobación de Empresa o Monotributista).
+     */
+    @Transactional
+    public void asignarRol(Long usuarioId, String codigoRol) {
+        Usuario usuario = usuarioRepository.findWithRolesById(usuarioId)
+            .orElseThrow(NotFoundException::new);
+        Rol rol = rolRepository.findByCodigo(codigoRol)
+            .orElseThrow(() -> new BusinessException("ROL_NO_ENCONTRADO",
+                "No se encontró el rol " + codigoRol, HttpStatus.INTERNAL_SERVER_ERROR));
+        usuario.getRoles().add(rol);
+        usuarioRepository.save(usuario);
     }
 
     /**

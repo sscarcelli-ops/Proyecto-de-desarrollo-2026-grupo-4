@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  App,
   Button,
   Flex,
   Input,
@@ -10,7 +11,6 @@ import {
   Space,
   Table,
   Typography,
-  message,
 } from 'antd';
 import {
   EyeOutlined,
@@ -30,6 +30,7 @@ import {
 import { getErrorMessage } from '../../../shared/lib/apiError';
 
 export function EmpresasPage() {
+  const { message } = App.useApp();
   const [pagina, setPagina] = useState(1);
   const [tamano, setTamano] = useState(10);
   const [busqueda, setBusqueda] = useState('');
@@ -142,6 +143,11 @@ export function EmpresasPage() {
       : `${perfilDetalle.nombre ?? ''} ${perfilDetalle.apellido ?? ''}`.trim()
     : '';
 
+  const hayFiltrosActivos = Boolean(busqueda.trim() || filtroEstado);
+  const textoVacio = hayFiltrosActivos
+    ? 'No se encontraron resultados para los filtros aplicados.'
+    : 'No hay Empresas ni Monotributistas registradas aún.';
+
   return (
     <div
       style={{
@@ -216,7 +222,7 @@ export function EmpresasPage() {
           locale={{
             emptyText: (
               <div style={{ padding: '40px 16px', color: palette.textSecondary, fontSize: 15 }}>
-                No hay Empresas ni Monotributistas registradas aún.
+                {textoVacio}
               </div>
             ),
           }}
@@ -244,7 +250,7 @@ export function EmpresasPage() {
         onCancel={() => setPerfilDetalle(null)}
         footer={null}
         width={460}
-        destroyOnClose
+        destroyOnHidden
         styles={{ body: { padding: '24px 20px' } }}
       >
         {perfilDetalle && (
@@ -264,7 +270,7 @@ export function EmpresasPage() {
             <div style={{ borderTop: `1px solid ${palette.border}`, margin: '14px 0' }} />
 
             {/* Datos fiscales y de contacto */}
-            <Space direction="vertical" size={10} style={{ width: '100%', marginBottom: 16 }}>
+            <Space orientation="vertical" size={10} style={{ width: '100%', marginBottom: 16 }}>
               {perfilDetalle.tipo === 'EMPRESA' ? (
                 <>
                   <div>
@@ -339,8 +345,8 @@ export function EmpresasPage() {
             {perfilDetalle.estado === 'RECHAZADO' && perfilDetalle.motivoRechazo && (
               <div
                 style={{
-                  backgroundColor: '#FEF2F2',
-                  border: '1px solid #FCA5A5',
+                  backgroundColor: palette.rechazoFondo,
+                  border: `1px solid ${palette.rechazoBorde}`,
                   borderRadius: 6,
                   padding: '12px 14px',
                   marginBottom: 16,
@@ -349,7 +355,7 @@ export function EmpresasPage() {
                 <Typography.Text type="danger" strong style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>
                   Motivo de rechazo:
                 </Typography.Text>
-                <Typography.Text style={{ fontSize: 13, color: '#991B1B' }}>
+                <Typography.Text style={{ fontSize: 13, color: palette.rechazoTexto }}>
                   {perfilDetalle.motivoRechazo}
                 </Typography.Text>
               </div>
@@ -370,8 +376,8 @@ export function EmpresasPage() {
                     type="primary"
                     style={{
                       flex: 1,
-                      backgroundColor: '#10B981',
-                      borderColor: '#10B981',
+                      backgroundColor: palette.botonAprobar,
+                      borderColor: palette.botonAprobar,
                       fontWeight: 600,
                     }}
                   >

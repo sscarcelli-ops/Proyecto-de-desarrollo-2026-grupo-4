@@ -32,10 +32,12 @@ public interface PerfilRepository extends JpaRepository<Perfil, Long> {
         WHERE (:estado IS NULL OR p.estado = :estado)
           AND (
             :q IS NULL OR :q = '' OR
-            LOWER(p.cuitCuil) LIKE LOWER(CONCAT('%', :q, '%')) OR
-            LOWER(p.razonSocial) LIKE LOWER(CONCAT('%', :q, '%')) OR
-            LOWER(p.nombre) LIKE LOWER(CONCAT('%', :q, '%')) OR
-            LOWER(p.apellido) LIKE LOWER(CONCAT('%', :q, '%'))
+            LOWER(p.cuitCuil) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(p.razonSocial) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(p.nombre) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(p.apellido) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(CONCAT(COALESCE(p.nombre, ''), ' ', COALESCE(p.apellido, ''))) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(CONCAT(COALESCE(p.apellido, ''), ' ', COALESCE(p.nombre, ''))) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\'
           )
         ORDER BY LOWER(COALESCE(p.razonSocial, p.nombre)) ASC
     """)
