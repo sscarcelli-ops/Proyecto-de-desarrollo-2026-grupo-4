@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { authToken } from './authToken';
 
-// URL base del backend tomada de variables de entorno o por defecto localhost:8080
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// URL base del backend: siempre desde la configuración, sin valor por defecto en el código
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) {
+  throw new Error('Falta VITE_API_URL: copiar frontend/.env.example a frontend/.env');
+}
 
 // 403 que significan "esta cuenta ya no puede operar" (mismos códigos que el login): se cierra la sesión
 const CUENTA_SIN_ACCESO = new Set(['CUENTA_SUSPENDIDA', 'USUARIO_DESHABILITADO', 'BARRIO_INACTIVO', 'OPERADOR_SIN_BARRIO']);

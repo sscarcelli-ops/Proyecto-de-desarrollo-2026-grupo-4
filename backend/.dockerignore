@@ -1,0 +1,10 @@
+# Lo que no entra en la imagen: se compila adentro y la configuración llega por variables de entorno
+target/
+uploads/
+.env
+.mvn/
+mvnw
+mvnw.cmd
+*.log
+.idea/
+.vscode/

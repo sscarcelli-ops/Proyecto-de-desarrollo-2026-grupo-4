@@ -12,6 +12,7 @@ Plataforma de control de accesos para barrios privados.
 - JDK 17 o superior
 - Node.js 20 o superior
 - Docker (para PostgreSQL). Alternativa: PostgreSQL 15+ instalado, con una base vacía `accesos_db`
+- Solo para usar la app sin desarrollar: alcanza con Docker (ver "Todo en Docker")
 
 ## Ramas (gitflow)
 
@@ -33,6 +34,41 @@ docker compose --env-file backend/.env up -d   # PostgreSQL 17 en el puerto DB_P
   de `ACTIVACION_TOKEN` (`GRUPO4-ACTIVAR-2026` en `.env.example`), que vence a los `ACTIVACION_VIGENCIA_DIAS` y
   sirve una sola vez. Para probarlo de nuevo, usar otro valor y reiniciar (o borrar los datos de `accesos_vacia`).
 - `docker compose down -v` borra los datos; al volver a levantar, las bases se crean vacías.
+
+## Todo en Docker (sin instalar Java ni Node)
+
+Para levantar la app completa (base + backend + frontend) en una máquina que solo tiene Docker: instalación limpia,
+revisar un PR. No hace falta copiar ni editar ningún archivo.
+
+```bash
+# Con datos de prueba (usuarios de la tabla de abajo): para ejecutar los casos de prueba
+docker compose --profile app up -d --build
+
+# Base vacía, sin datos de prueba: activación del Administrador (US-01) y camino feliz desde cero
+docker compose --env-file docker/base-vacia.env --profile app up -d --build
+```
+
+- La app queda en http://localhost:5173, la API en http://localhost:8080 y Swagger en
+  http://localhost:8080/swagger-ui.html. La activación está en http://localhost:5173/activar, con el código
+  `GRUPO4-ACTIVAR-2026`.
+- Para pasar de una base a la otra se ejecuta el otro comando: se recrea solo el backend y cada base conserva sus
+  datos. Para empezar de cero de verdad: `docker compose --profile app down -v` (borra los datos).
+- La configuración sale de `backend/.env.example`, que funciona tal cual para una instalación de prueba. Si existe
+  `backend/.env`, sus valores tienen prioridad, y conviene agregar `--env-file backend/.env` antes de los demás
+  (así la base usa tu `DB_PORT` y tu contraseña).
+- **Instalación con credenciales propias:** copiar `backend/.env.example` a `backend/.env`, cambiar `DB_PASSWORD`,
+  `JWT_SECRET`, `ACTIVACION_TOKEN` y `CORS_ALLOWED_ORIGINS`, y definir `DOCKER_PERFILES=prod` y, si hace falta,
+  `VITE_API_URL` (las dos líneas están comentadas al final del archivo). Levantar con
+  `docker compose --env-file backend/.env --profile app up -d --build`. Con `prod` no se cargan datos de prueba y
+  Swagger queda apagado. En Docker, `SPRING_PROFILES_ACTIVE` del `.env` no aplica: el perfil lo define
+  `DOCKER_PERFILES`.
+- **Este compose es para instalaciones de prueba o locales: no exponerlo a internet.** Todavía no tiene HTTPS y
+  publica los puertos de la base y del backend.
+- Los archivos subidos quedan en el volumen `archivos`.
+- Usa los mismos puertos que el desarrollo: apagar antes el backend y el frontend del IDE.
+- Apagar solo la app y seguir desarrollando con la base: `docker compose --profile app rm -sf backend frontend`.
+- La primera vez tarda varios minutos (descarga las dependencias); después, `--build` solo recompila lo que cambió.
+- Para desarrollar no hace falta: sin `--profile app`, el compose levanta solo PostgreSQL, como siempre.
 
 ## Backend
 
