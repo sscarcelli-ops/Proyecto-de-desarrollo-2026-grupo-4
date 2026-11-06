@@ -52,6 +52,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/trabajadores/{id}/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["descargarFoto"];
+        put?: never;
+        post: operations["cargarFoto"];
+        delete: operations["eliminarFoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trabajadores/{id}/documentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cargarDocumento"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/perfil": {
         parameters: {
             query?: never;
@@ -212,6 +244,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/trabajadores/{id}/documentos/{tipo}/archivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["descargarDocumento"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ping": {
         parameters: {
             query?: never;
@@ -276,6 +324,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/trabajadores/{id}/documentos/{tipo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["eliminarDocumento"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -283,6 +347,16 @@ export interface components {
         TrabajadorEditarRequest: {
             nombre: string;
             apellido: string;
+        };
+        DocumentoResponse: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            tipo: "ART" | "SEGURO_VIDA";
+            archivoNombre: string;
+            /** Format: date */
+            fechaVencimiento: string;
+            vencido: boolean;
         };
         TrabajadorResponse: {
             /** Format: int64 */
@@ -293,6 +367,8 @@ export interface components {
             estadoDocumental: string;
             tieneFoto: boolean;
             dadoDeBaja: boolean;
+            documentos: components["schemas"]["DocumentoResponse"][];
+            fotoUrl: string | null;
         };
         BarrioRequest: {
             nombre: string;
@@ -313,6 +389,14 @@ export interface components {
             nombre: string;
             apellido: string;
             dni: string;
+        };
+        DocumentoRequest: {
+            /** @enum {string} */
+            tipo: "ART" | "SEGURO_VIDA";
+            /** Format: binary */
+            archivo?: string;
+            /** Format: date */
+            fechaVencimiento: string;
         };
         SolicitarPerfilRequest: {
             /** @enum {string} */
@@ -601,6 +685,105 @@ export interface operations {
             };
         };
     };
+    descargarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    cargarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    foto: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    eliminarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    cargarDocumento: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["DocumentoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
     solicitar: {
         parameters: {
             query?: never;
@@ -851,6 +1034,29 @@ export interface operations {
             };
         };
     };
+    descargarDocumento: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                tipo: "ART" | "SEGURO_VIDA";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
     ping: {
         parameters: {
             query?: never;
@@ -929,6 +1135,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["UsuarioActualResponse"];
+                };
+            };
+        };
+    };
+    eliminarDocumento: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                tipo: "ART" | "SEGURO_VIDA";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
                 };
             };
         };

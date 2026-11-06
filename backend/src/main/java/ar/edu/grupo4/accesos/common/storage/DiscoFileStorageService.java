@@ -28,6 +28,13 @@ import java.util.UUID;
 @Slf4j
 public class DiscoFileStorageService implements FileStorageService {
 
+    private static final long MAX_PDF_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB (RNF-10)
+    private static final byte[] PDF_MAGIC_BYTES = new byte[]{0x25, 0x50, 0x44, 0x46}; // %PDF
+
+    private static final long MAX_FOTO_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB (RNF-10)
+    private static final byte[] JPG_MAGIC_BYTES = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+    private static final byte[] PNG_MAGIC_BYTES = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47};
+
     private final Path rootLocation;
 
     public DiscoFileStorageService(@Value("${app.storage.base-path}") String basePath) {
@@ -98,6 +105,73 @@ public class DiscoFileStorageService implements FileStorageService {
             }
         } catch (IOException e) {
             log.warn("No se pudo eliminar el archivo: {}", rutaRelativa, e);
+        }
+    }
+
+    @Override
+    public void validarPdf(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new BusinessException("ARCHIVO_VACIO", "El archivo no puede estar vacío", HttpStatus.BAD_REQUEST);
+        }
+
+        if (archivo.getSize() > MAX_PDF_SIZE_BYTES) {
+            throw new BusinessException("ARCHIVO_TAMANIO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
+        }
+
+        String originalName = archivo.getOriginalFilename();
+        if (originalName == null || !originalName.toLowerCase().endsWith(".pdf")) {
+            throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
+        }
+
+        // Validación estricta del encabezado mágico %PDF
+        try (InputStream is = archivo.getInputStream()) {
+            byte[] header = new byte[4];
+            int read = is.read(header);
+            if (read < 4 || header[0] != PDF_MAGIC_BYTES[0]
+                         || header[1] != PDF_MAGIC_BYTES[1]
+                         || header[2] != PDF_MAGIC_BYTES[2]
+                         || header[3] != PDF_MAGIC_BYTES[3]) {
+                throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
+            }
+        } catch (IOException e) {
+            log.error("Error al leer archivo PDF", e);
+            throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public void validarFoto(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new BusinessException("ARCHIVO_VACIO", "El archivo no puede estar vacío", HttpStatus.BAD_REQUEST);
+        }
+
+        if (archivo.getSize() > MAX_FOTO_SIZE_BYTES) {
+            throw new BusinessException("ARCHIVO_TAMANIO", "La foto debe ser JPG o PNG de hasta 2 MB", HttpStatus.BAD_REQUEST);
+        }
+
+        String originalName = archivo.getOriginalFilename();
+        String extension = originalName != null ? StringUtils.getFilenameExtension(originalName) : null;
+        if (extension == null || (!extension.equalsIgnoreCase("jpg") && !extension.equalsIgnoreCase("jpeg") && !extension.equalsIgnoreCase("png"))) {
+            throw new BusinessException("ARCHIVO_FORMATO", "La foto debe ser JPG o PNG de hasta 2 MB", HttpStatus.BAD_REQUEST);
+        }
+
+        // Validación estricta de magic bytes para JPG (FF D8 FF) y PNG (89 50 4E 47)
+        try (InputStream is = archivo.getInputStream()) {
+            byte[] header = new byte[4];
+            int read = is.read(header);
+            boolean isJpg = read >= 3 && header[0] == JPG_MAGIC_BYTES[0]
+                                      && header[1] == JPG_MAGIC_BYTES[1]
+                                      && header[2] == JPG_MAGIC_BYTES[2];
+            boolean isPng = read >= 4 && header[0] == PNG_MAGIC_BYTES[0]
+                                      && header[1] == PNG_MAGIC_BYTES[1]
+                                      && header[2] == PNG_MAGIC_BYTES[2]
+                                      && header[3] == PNG_MAGIC_BYTES[3];
+            if (!isJpg && !isPng) {
+                throw new BusinessException("ARCHIVO_FORMATO", "La foto debe ser JPG o PNG de hasta 2 MB", HttpStatus.BAD_REQUEST);
+            }
+        } catch (IOException e) {
+            log.error("Error al leer archivo de foto", e);
+            throw new BusinessException("ARCHIVO_FORMATO", "La foto debe ser JPG o PNG de hasta 2 MB", HttpStatus.BAD_REQUEST);
         }
     }
 }
