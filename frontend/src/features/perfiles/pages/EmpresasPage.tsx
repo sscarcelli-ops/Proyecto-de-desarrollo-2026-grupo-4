@@ -18,7 +18,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { palette } from '../../../app/theme';
+import { estadoTonos, palette } from '../../../app/theme';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import {
   usePerfiles,
@@ -345,8 +345,8 @@ export function EmpresasPage() {
             {perfilDetalle.estado === 'RECHAZADO' && perfilDetalle.motivoRechazo && (
               <div
                 style={{
-                  backgroundColor: palette.rechazoFondo,
-                  border: `1px solid ${palette.rechazoBorde}`,
+                  backgroundColor: estadoTonos.error.background,
+                  border: `1px solid ${estadoTonos.error.borderColor}`,
                   borderRadius: 6,
                   padding: '12px 14px',
                   marginBottom: 16,
@@ -355,7 +355,7 @@ export function EmpresasPage() {
                 <Typography.Text type="danger" strong style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>
                   Motivo de rechazo:
                 </Typography.Text>
-                <Typography.Text style={{ fontSize: 13, color: palette.rechazoTexto }}>
+                <Typography.Text style={{ fontSize: 13, color: estadoTonos.error.color }}>
                   {perfilDetalle.motivoRechazo}
                 </Typography.Text>
               </div>
@@ -376,8 +376,8 @@ export function EmpresasPage() {
                     type="primary"
                     style={{
                       flex: 1,
-                      backgroundColor: palette.botonAprobar,
-                      borderColor: palette.botonAprobar,
+                      backgroundColor: palette.success,
+                      borderColor: palette.success,
                       fontWeight: 600,
                     }}
                   >

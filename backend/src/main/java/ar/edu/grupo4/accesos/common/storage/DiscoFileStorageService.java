@@ -4,7 +4,6 @@ import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -80,13 +79,6 @@ public class DiscoFileStorageService implements FileStorageService {
             Resource resource = new UrlResource(archivo.toUri());
             if (resource.exists() && resource.isReadable()) {
                 return resource;
-            }
-            // Fallback para constancias del seed si el archivo no existe en disco físico
-            if (rutaRelativa != null && rutaRelativa.startsWith("perfiles/seed/")) {
-                Resource fallback = new ClassPathResource("seed/constancia.pdf");
-                if (fallback.exists() && fallback.isReadable()) {
-                    return fallback;
-                }
             }
             throw new NotFoundException();
         } catch (MalformedURLException e) {
