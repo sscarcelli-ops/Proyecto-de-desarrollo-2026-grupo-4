@@ -109,7 +109,7 @@ class GaritaServiceTest {
     // ── US-39: Registrar ingreso ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("US-39: Registra ingreso cuando la verificación resulta habilitada")
+    @DisplayName("US-39: Toma bloqueo consultivo y registra ingreso cuando la verificación resulta habilitada")
     void registrarIngreso_cuandoHabilitado_registraMovimiento() {
         when(repository.verificarAcceso(10L, 1L)).thenReturn(new VerificacionResponse(true, ""));
         MovimientoResponse mockMov = new MovimientoResponse(1L, "INGRESO", OffsetDateTime.now(), "Juan Pérez", "Limpiezas S.A.");
@@ -118,11 +118,12 @@ class GaritaServiceTest {
         MovimientoResponse response = service.registrarIngreso(10L);
 
         assertThat(response.tipo()).isEqualTo("INGRESO");
+        verify(repository).bloquearPorDniYBarrio(10L, 1L);
         verify(repository).registrarIngreso(10L, 1L, 99L);
     }
 
     @Test
-    @DisplayName("US-39: Si está deshabilitado al registrar ingreso, rechaza con BusinessException")
+    @DisplayName("US-39: Si está deshabilitado al registrar ingreso, rechaza con BusinessException tras bloquear")
     void registrarIngreso_cuandoDeshabilitado_lanzaBusinessException() {
         when(repository.verificarAcceso(10L, 1L))
                 .thenReturn(new VerificacionResponse(false, "documentación vencida (ART)"));
@@ -131,13 +132,14 @@ class GaritaServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("documentación vencida (ART)");
 
+        verify(repository).bloquearPorDniYBarrio(10L, 1L);
         verify(repository, never()).registrarIngreso(anyLong(), anyLong(), anyLong());
     }
 
     // ── US-40: Registrar egreso ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("US-40: Registra egreso si el trabajador cuenta con un ingreso activo")
+    @DisplayName("US-40: Toma bloqueo consultivo y registra egreso si el trabajador cuenta con un ingreso activo")
     void registrarEgreso_cuandoTieneIngresoActivo_registraMovimiento() {
         when(repository.buscarIngresoActivoPorTrabajador(10L, 1L)).thenReturn(Optional.of(100L));
         MovimientoResponse mockMov = new MovimientoResponse(2L, "EGRESO", OffsetDateTime.now(), "Juan Pérez", "Limpiezas S.A.");
@@ -146,11 +148,12 @@ class GaritaServiceTest {
         MovimientoResponse response = service.registrarEgreso(10L);
 
         assertThat(response.tipo()).isEqualTo("EGRESO");
+        verify(repository).bloquearPorDniYBarrio(10L, 1L);
         verify(repository).registrarEgreso(10L, 1L, 99L);
     }
 
     @Test
-    @DisplayName("US-40: Si no tiene ingreso activo, no permite egreso y lanza BusinessException")
+    @DisplayName("US-40: Si no tiene ingreso activo, no permite egreso y lanza BusinessException tras bloquear")
     void registrarEgreso_cuandoNoTieneIngresoActivo_lanzaBusinessException() {
         when(repository.buscarIngresoActivoPorTrabajador(10L, 1L)).thenReturn(Optional.empty());
 
@@ -158,6 +161,7 @@ class GaritaServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("El trabajador no tiene un ingreso activo en este barrio");
 
+        verify(repository).bloquearPorDniYBarrio(10L, 1L);
         verify(repository, never()).registrarEgreso(anyLong(), anyLong(), anyLong());
     }
 }
