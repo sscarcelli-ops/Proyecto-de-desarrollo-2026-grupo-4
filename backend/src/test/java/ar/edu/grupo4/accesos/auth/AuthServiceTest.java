@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.auth;
 
+import ar.edu.grupo4.accesos.auth.dto.CambiarPasswordRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginResponse;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
@@ -59,6 +60,20 @@ class AuthServiceTest {
         assertThat(response.token()).isEqualTo("token-de-prueba");
         assertThat(response.email()).isEqualTo("admin@seed.test");
         assertThat(response.nombre()).isEqualTo("Carlos Gómez");
+    }
+
+    @Test
+    void cambiarPasswordDevuelveUnTokenNuevoParaLaCuentaActualizada() {
+        Usuario actualizado = new Usuario();
+        actualizado.setId(1L);
+        actualizado.setEmail("admin@seed.test");
+        when(usuarioService.cambiarPassword(1L, "Prueba123", "Nueva1234")).thenReturn(actualizado);
+        when(usuarioService.nombreVisible(1L)).thenReturn(Optional.empty());
+
+        LoginResponse response = authService.cambiarPassword(1L, new CambiarPasswordRequest("Prueba123", "Nueva1234"));
+
+        assertThat(response.token()).isEqualTo("token-de-prueba");
+        verify(tokenService).emitir(actualizado);
     }
 
     @Test

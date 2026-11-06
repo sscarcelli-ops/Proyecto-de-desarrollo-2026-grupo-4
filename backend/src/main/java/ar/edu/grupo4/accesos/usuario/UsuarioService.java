@@ -4,6 +4,7 @@ import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +54,23 @@ public class UsuarioService {
     @Transactional
     public void cerrarSesiones(Long usuarioId) {
         usuarioRepository.incrementarVersionSesion(usuarioId);
+    }
+
+    /**
+     * US-07: cambia la contraseña si la actual es correcta. También sube la versión de sesión, así los tokens
+     * emitidos hasta ahora (otros dispositivos, un token robado) dejan de valer. Devuelve la cuenta actualizada
+     * para emitir el token nuevo de esta sesión.
+     */
+    @Transactional
+    public Usuario cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva) {
+        Usuario usuario = usuarioRepository.findWithRolesById(usuarioId)
+            .orElseThrow(() -> new InsufficientAuthenticationException("La cuenta del token no existe"));
+        if (!passwordEncoder.matches(passwordActual, usuario.getPasswordHash())) {
+            throw new BusinessException("PASSWORD_ACTUAL_INCORRECTA", "La contraseña actual no es correcta");
+        }
+        usuario.setPasswordHash(passwordEncoder.encode(passwordNueva));
+        usuario.setVersionSesion(usuario.getVersionSesion() + 1);
+        return usuario;
     }
 
     /** Nombre para mostrar en la interfaz; vacío para el Administrador o una cuenta sin perfil. */

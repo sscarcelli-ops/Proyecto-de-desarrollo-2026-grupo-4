@@ -9,6 +9,7 @@ export const PATHS = {
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
+  cambiarPassword: '/cambiar-contrasena', // US-07
   estadoSolicitud: '/estado-solicitud', // US-08
   garita: '/garita', // US-37 a US-40 (Guardia)
   barrios: '/barrios', // US-10

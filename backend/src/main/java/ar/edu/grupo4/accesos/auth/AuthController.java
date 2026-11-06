@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.auth;
 
+import ar.edu.grupo4.accesos.auth.dto.CambiarPasswordRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginResponse;
 import ar.edu.grupo4.accesos.auth.dto.RegistroRequest;
@@ -47,5 +48,12 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@AuthenticationPrincipal Jwt jwt) {
         authService.cerrarSesion(Long.valueOf(jwt.getSubject()));
+    }
+
+    // US-07: con token, para cualquier cuenta (también sin rol aprobado). Devuelve el token nuevo de esta sesión
+    @PostMapping("/cambiar-contrasena")
+    public LoginResponse cambiarPassword(@AuthenticationPrincipal Jwt jwt,
+                                         @Valid @RequestBody CambiarPasswordRequest request) {
+        return authService.cambiarPassword(Long.valueOf(jwt.getSubject()), request);
     }
 }
