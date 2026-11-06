@@ -127,6 +127,24 @@ Monotributista: dos vínculos), `30777888` vigente listo para ingresar (sin foto
 Para agregar datos: un archivo nuevo y fechado por US (`V<fecha>__seed_<tema>.sql`), sin `id` escritos a mano
 (son `GENERATED ALWAYS`): las relaciones se arman buscando por email, CUIT o DNI. Ver el seed base como ejemplo.
 
+### 📋 Datos de Prueba de Garita (Seed Oficial - Barrio Los Álamos)
+
+**Usuario Guardia de prueba:**
+- **Email:** `guardia@seed.test`
+- **Contraseña:** `Password1!`
+- **Barrio:** Barrio Los Álamos (ID: 1)
+
+| DNI | Nombre y Apellido | Vínculo / Empresa | Documentación | Estado Inicial | Caso de prueba que cubre |
+|---|---|---|---|---|---|
+| `30444555` | **Luis Habilitado** | Limpiezas del Norte S.A. | ART y Seguro vigentes (nov 2027) | Habilitado (Afuera) | **Ingreso exitoso (US-39 Caso 1)** y concurrencia. Pantalla verde `ACCESO HABILITADO`. |
+| `30111222` | **Juan Pérez** | 1. Limpiezas del Norte S.A.<br>2. Juan Pérez (Monotributista) | ART y Seguro vigentes | Con ingreso activo (Adentro) | **Egreso exitoso (US-40 Caso 1)** y bloqueo por doble ingreso activo (US-39 Caso 3). Pantalla amarilla directa `REGISTRAR EGRESO`. |
+| `30333444` | **Carlos Vencido** | Limpiezas del Norte S.A. | ART vencida (expiró hace 10 días) | Inhabilitado | **Rechazo por documentación vencida (US-39 Caso 2)**. Pantalla roja: *"documentación vencida (ART)"*. |
+| `30777888` | **Ana Vigente** | Limpiezas del Norte S.A. | ART y Seguro vigentes | Habilitada (Sin foto) | **Múltiples ingresos en el día (US-39 Caso 4)** y aviso de **DNI físico por falta de foto (US-39 Caso 6)**. |
+| `30555666` | **Marta Pendiente** | Limpiezas del Norte S.A. | Sin documentación | Inhabilitada | **Rechazo por falta de papeles (US-38)**. Pantalla roja: *"documentación pendiente de carga"*. |
+| `30999000` | **Bruno Baja** | Limpiezas del Norte S.A. | Documentos vigentes | Dado de baja en vínculo | **Rechazo por trabajador dado de baja (US-38)**. Pantalla roja: *"baja en ese vínculo"*. |
+| `32555661` | **Sergio Suspendido** | Sergio Suspendido (Monotributista) | Documentos vigentes | Perfil Suspendido | **Rechazo por empleador suspendido (US-38)**. Pantalla roja: *"Monotributista suspendido"*. |
+| `31222333` | **Sofía Sur** | Jardines del Sur S.R.L. | Documentos vigentes | Pertenece a Los Robles | **Rechazo por aislamiento de barrios (US-38 / US-42)**. Pantalla roja: *"no habilitada en el barrio"*. |
+
 ## Autenticación (decisión del grupo)
 
 - JWT **stateless** firmado (RNF-01). Contraseñas con bcrypt (RF-21).
