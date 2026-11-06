@@ -416,6 +416,7 @@ export interface components {
             id: number;
             /** Format: int64 */
             usuarioId: number;
+            email: string | null;
             /** @enum {string} */
             tipo: "EMPRESA" | "MONOTRIBUTISTA";
             /** @enum {string} */

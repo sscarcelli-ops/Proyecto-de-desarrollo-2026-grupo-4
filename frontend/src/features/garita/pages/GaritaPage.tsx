@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  App,
   Avatar,
   Button,
   Card,
@@ -18,11 +19,13 @@ import {
   SearchOutlined,
   UserOutlined,
   CheckCircleOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import { garitaTheme, palette, estadoTonos } from '../../../app/theme';
 import {
   useBuscarPorDni,
   useVerificarAcceso,
+  useRegistrarIngreso,
   useRegistrarEgreso,
   type BusquedaDniResponse,
   type VinculoResultado,
@@ -215,10 +218,11 @@ function GaritaCard({
 }
 
 /* ========================================================================= */
-/* PÁGINA PRINCIPAL DE GARITA (US-37 y US-38)                                 */
+/* PÁGINA PRINCIPAL DE GARITA (US-37, US-38, US-39, US-40)                    */
 /* ========================================================================= */
 export function GaritaPage() {
   const user = useCurrentUser();
+  const { message } = App.useApp();
 
   // Estados del flujo
   const [paso, setPaso] = useState<PasoGarita>('BUSQUEDA');
@@ -229,6 +233,7 @@ export function GaritaPage() {
 
   const buscarMutation = useBuscarPorDni();
   const verificarMutation = useVerificarAcceso();
+  const ingresoMutation = useRegistrarIngreso();
   const egresoMutation = useRegistrarEgreso();
 
   // Detecta si el motivo de denegación es un ingreso activo (para ofrecer registrar egreso)
@@ -285,6 +290,34 @@ export function GaritaPage() {
       onError: (err) => {
         setMotivoDenegado(getErrorMessage(err));
         setPaso('DENEGADO');
+      },
+    });
+  };
+
+  // ── US-39: Registrar ingreso ───────────────────────────────────────────────
+  const onRegistrarIngreso = () => {
+    if (!vinculoSeleccionado?.trabajadorId) return;
+
+    ingresoMutation.mutate(vinculoSeleccionado.trabajadorId, {
+      onSuccess: () => {
+        message.success('Ingreso registrado correctamente');
+        volverABusqueda();
+      },
+      onError: (err) => {
+        message.error(getErrorMessage(err));
+      },
+    });
+  };
+
+  // ── US-40: Registrar egreso ────────────────────────────────────────────────
+  const onRegistrarEgreso = (trabajadorId: number) => {
+    egresoMutation.mutate(trabajadorId, {
+      onSuccess: () => {
+        message.success('Egreso registrado correctamente');
+        volverABusqueda();
+      },
+      onError: (err) => {
+        message.error(getErrorMessage(err));
       },
     });
   };
@@ -516,9 +549,7 @@ export function GaritaPage() {
                   loading={egresoMutation.isPending}
                   onClick={() => {
                     if (!trabajador.ingresoActivo?.trabajadorId) return;
-                    egresoMutation.mutate(trabajador.ingresoActivo.trabajadorId, {
-                      onSuccess: () => volverABusqueda(),
-                    });
+                    onRegistrarEgreso(trabajador.ingresoActivo.trabajadorId);
                   }}
                   style={{
                     flex: 1,
@@ -542,7 +573,7 @@ export function GaritaPage() {
           )}
 
           {/* ========================================================================= */}
-          {/* PANTALLA 3: ACCESO HABILITADO (Wireframe Screen 7)                         */}
+          {/* PANTALLA 3: ACCESO HABILITADO (Wireframe Screen 7) — US-39                */}
           {/* ========================================================================= */}
           {!verificarMutation.isPending && paso === 'HABILITADO' && trabajador && (
             <GaritaCard>
@@ -572,13 +603,22 @@ export function GaritaPage() {
                 ACCESO HABILITADO
               </div>
 
-              <Flex justify="center">
+              <Flex gap={12}>
                 <Button
                   type="primary"
-                  onClick={volverABusqueda}
-                  style={{ height: 46, paddingInline: 36, fontSize: 15, fontWeight: 600 }}
+                  icon={<LoginOutlined />}
+                  loading={ingresoMutation.isPending}
+                  onClick={onRegistrarIngreso}
+                  style={{ flex: 1, height: 46, fontSize: 15, fontWeight: 600 }}
                 >
-                  Nueva búsqueda
+                  Registrar ingreso
+                </Button>
+                <Button
+                  onClick={volverABusqueda}
+                  disabled={ingresoMutation.isPending}
+                  style={{ flex: 1, height: 46, fontSize: 15 }}
+                >
+                  Cancelar
                 </Button>
               </Flex>
             </GaritaCard>
@@ -655,9 +695,7 @@ export function GaritaPage() {
                     icon={<CheckCircleOutlined />}
                     onClick={() => {
                       if (!trabajador?.ingresoActivo?.trabajadorId) return;
-                      egresoMutation.mutate(trabajador.ingresoActivo!.trabajadorId, {
-                        onSuccess: () => volverABusqueda(),
-                      });
+                      onRegistrarEgreso(trabajador.ingresoActivo!.trabajadorId);
                     }}
                     style={{
                       flex: 1,
@@ -669,7 +707,7 @@ export function GaritaPage() {
                       color: palette.surface,
                     }}
                   >
-                    Registrar Egreso
+                    Registrar egreso
                   </Button>
                 ) : (
                   <Button
