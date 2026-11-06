@@ -3,934 +3,620 @@
  * Do not make direct changes to the file.
  */
 
+
 export interface paths {
-    "/api/trabajadores/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["obtener"];
-        put: operations["editar"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/barrios/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["obtener_1"];
-        put: operations["modificar"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/trabajadores": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar"];
-        put?: never;
-        post: operations["crear"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/perfil": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["solicitar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/garita/verificar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["verificar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/garita/ingreso": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["ingreso"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/garita/egreso": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["egreso"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/barrios": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_1"];
-        put?: never;
-        post: operations["crear_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/registro": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["registrar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["logout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/activacion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["activar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/activacion/validar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["validar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ping"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/perfil/mi-solicitud": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["miSolicitud"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/garita/buscar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["buscar"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["me"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  "/api/trabajadores/{id}": {
+    get: operations["obtener"];
+    put: operations["editar"];
+  };
+  "/api/barrios/{id}": {
+    get: operations["obtener_1"];
+    put: operations["modificar"];
+  };
+  "/api/barrios/{id}/operador": {
+    put: operations["asignarOperador"];
+  };
+  "/api/trabajadores": {
+    get: operations["listar"];
+    post: operations["crear"];
+  };
+  "/api/perfil": {
+    post: operations["solicitar"];
+  };
+  "/api/operadores": {
+    post: operations["crear_1"];
+  };
+  "/api/garita/verificar": {
+    post: operations["verificar"];
+  };
+  "/api/garita/ingreso": {
+    post: operations["ingreso"];
+  };
+  "/api/garita/egreso": {
+    post: operations["egreso"];
+  };
+  "/api/barrios": {
+    get: operations["listar_1"];
+    post: operations["crear_2"];
+  };
+  "/api/auth/registro": {
+    post: operations["registrar"];
+  };
+  "/api/auth/logout": {
+    post: operations["logout"];
+  };
+  "/api/auth/login": {
+    post: operations["login"];
+  };
+  "/api/auth/activacion": {
+    post: operations["activar"];
+  };
+  "/api/auth/activacion/validar": {
+    post: operations["validar"];
+  };
+  "/api/ping": {
+    get: operations["ping"];
+  };
+  "/api/perfil/mi-solicitud": {
+    get: operations["miSolicitud"];
+  };
+  "/api/operadores/disponibles": {
+    get: operations["disponibles"];
+  };
+  "/api/garita/buscar": {
+    get: operations["buscar"];
+  };
+  "/api/auth/me": {
+    get: operations["me"];
+  };
 }
+
 export type webhooks = Record<string, never>;
+
 export interface components {
-    schemas: {
-        TrabajadorEditarRequest: {
-            nombre: string;
-            apellido: string;
-        };
-        TrabajadorResponse: {
-            /** Format: int64 */
-            id: number;
-            nombre: string;
-            apellido: string;
-            dni: string;
-            estadoDocumental: string;
-            tieneFoto: boolean;
-            dadoDeBaja: boolean;
-        };
-        BarrioRequest: {
-            nombre: string;
-            localidadProvincia: string;
-            direccion: string;
-        };
-        BarrioResponse: {
-            /** Format: int64 */
-            id: number;
-            nombre: string;
-            localidadProvincia: string;
-            direccion: string;
-            estado: string;
-            /** Format: int64 */
-            operadorId: number | null;
-        };
-        TrabajadorRequest: {
-            nombre: string;
-            apellido: string;
-            dni: string;
-        };
-        SolicitarPerfilRequest: {
-            /** @enum {string} */
-            tipo: "EMPRESA" | "MONOTRIBUTISTA";
-            cuit?: string;
-            razonSocial?: string;
-            cuil?: string;
-            nombre?: string;
-            apellido?: string;
-            dni?: string;
-            telefono?: string;
-            /** Format: binary */
-            constancia?: string;
-        };
-        PerfilResponse: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int64 */
-            usuarioId: number;
-            /** @enum {string} */
-            tipo: "EMPRESA" | "MONOTRIBUTISTA";
-            /** @enum {string} */
-            estado: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "SUSPENDIDO";
-            cuitCuil: string;
-            razonSocial: string | null;
-            nombre: string | null;
-            apellido: string | null;
-            dniTitular: string | null;
-            telefono: string | null;
-            motivoRechazo: string | null;
-            /** Format: date-time */
-            creadoEn: string;
-        };
-        VerificacionRequest: {
-            /** Format: int64 */
-            trabajadorId: number;
-        };
-        VerificacionResponse: {
-            habilitado: boolean;
-            motivo: string;
-        };
-        IngresoRequest: {
-            /** Format: int64 */
-            trabajadorId: number;
-        };
-        MovimientoResponse: {
-            /** Format: int64 */
-            id: number;
-            tipo: string;
-            /** Format: date-time */
-            fechaHora: string;
-            nombreTrabajador: string;
-            nombreVinculo: string;
-        };
-        EgresoRequest: {
-            /** Format: int64 */
-            trabajadorId: number;
-        };
-        RegistroRequest: {
-            /** Format: email */
-            email: string;
-            password?: string;
-        };
-        LoginResponse: {
-            token: string;
-            /** Format: date-time */
-            expiraEn: string;
-            email: string;
-            nombre: string | null;
-            roles: string[];
-        };
-        LoginRequest: {
-            email: string;
-            password: string;
-        };
-        ActivacionRequest: {
-            token: string;
-            /** Format: email */
-            email: string;
-            password?: string;
-        };
-        ValidarActivacionRequest: {
-            token: string;
-        };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
-        };
-        PageResponseTrabajadorResponse: {
-            content: components["schemas"]["TrabajadorResponse"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            size: number;
-            /** Format: int64 */
-            totalElements: number;
-            /** Format: int32 */
-            totalPages: number;
-        };
-        PingResponse: {
-            status: string;
-            message: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BusquedaDniResponse: {
-            nombre: string;
-            apellido: string;
-            dni: string;
-            tieneFoto: boolean;
-            vinculosBusqueda: components["schemas"]["VinculoResultado"][];
-            ingresoActivo: components["schemas"]["IngresoActivoInfo"];
-        };
-        IngresoActivoInfo: {
-            /** Format: int64 */
-            movimientoId?: number;
-            /** Format: int64 */
-            trabajadorId?: number;
-            nombreVinculo?: string;
-            tipo?: string;
-        };
-        VinculoResultado: {
-            /** Format: int64 */
-            trabajadorId?: number;
-            /** Format: int64 */
-            perfilId?: number;
-            nombreVinculo?: string;
-            tipo?: string;
-        };
-        UsuarioActualResponse: {
-            email: string;
-            nombre: string | null;
-            roles: string[];
-        };
+  schemas: {
+    TrabajadorEditarRequest: {
+      nombre: string;
+      apellido: string;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    TrabajadorResponse: {
+      /** Format: int64 */
+      id: number;
+      nombre: string;
+      apellido: string;
+      dni: string;
+      estadoDocumental: string;
+      tieneFoto: boolean;
+      dadoDeBaja: boolean;
+    };
+    BarrioRequest: {
+      nombre: string;
+      localidadProvincia: string;
+      direccion: string;
+    };
+    BarrioResponse: {
+      /** Format: int64 */
+      id: number;
+      nombre: string;
+      localidadProvincia: string;
+      direccion: string;
+      estado: string;
+      /** Format: int64 */
+      operadorId: number | null;
+    };
+    AsignarOperadorRequest: {
+      /** Format: int64 */
+      operadorId?: number;
+      nuevoOperador?: components["schemas"]["OperadorRequest"];
+    };
+    OperadorRequest: {
+      nombre: string;
+      apellido: string;
+      /** Format: email */
+      email: string;
+      telefono: string;
+      password?: string;
+    };
+    TrabajadorRequest: {
+      nombre: string;
+      apellido: string;
+      dni: string;
+    };
+    SolicitarPerfilRequest: {
+      /** @enum {string} */
+      tipo: "EMPRESA" | "MONOTRIBUTISTA";
+      cuit?: string;
+      razonSocial?: string;
+      cuil?: string;
+      nombre?: string;
+      apellido?: string;
+      dni?: string;
+      telefono?: string;
+      /** Format: binary */
+      constancia?: string;
+    };
+    PerfilResponse: {
+      /** Format: int64 */
+      id: number;
+      /** Format: int64 */
+      usuarioId: number;
+      /** @enum {string} */
+      tipo: "EMPRESA" | "MONOTRIBUTISTA";
+      /** @enum {string} */
+      estado: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "SUSPENDIDO";
+      cuitCuil: string;
+      razonSocial: string | null;
+      nombre: string | null;
+      apellido: string | null;
+      dniTitular: string | null;
+      telefono: string | null;
+      motivoRechazo: string | null;
+      /** Format: date-time */
+      creadoEn: string;
+    };
+    OperadorResponse: {
+      /** Format: int64 */
+      id: number;
+      nombre: string;
+      apellido: string;
+      email: string;
+      telefono: string;
+    };
+    VerificacionRequest: {
+      /** Format: int64 */
+      trabajadorId: number;
+    };
+    VerificacionResponse: {
+      habilitado: boolean;
+      motivo: string;
+    };
+    IngresoRequest: {
+      /** Format: int64 */
+      trabajadorId: number;
+    };
+    MovimientoResponse: {
+      /** Format: int64 */
+      id: number;
+      tipo: string;
+      /** Format: date-time */
+      fechaHora: string;
+      nombreTrabajador: string;
+      nombreVinculo: string;
+    };
+    EgresoRequest: {
+      /** Format: int64 */
+      trabajadorId: number;
+    };
+    RegistroRequest: {
+      /** Format: email */
+      email: string;
+      password?: string;
+    };
+    LoginResponse: {
+      token: string;
+      /** Format: date-time */
+      expiraEn: string;
+      email: string;
+      nombre: string | null;
+      roles: string[];
+    };
+    LoginRequest: {
+      email: string;
+      password: string;
+    };
+    ActivacionRequest: {
+      token: string;
+      /** Format: email */
+      email: string;
+      password?: string;
+    };
+    ValidarActivacionRequest: {
+      token: string;
+    };
+    Pageable: {
+      /** Format: int32 */
+      page?: number;
+      /** Format: int32 */
+      size?: number;
+      sort?: string[];
+    };
+    PageResponseTrabajadorResponse: {
+      content: components["schemas"]["TrabajadorResponse"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+    };
+    PingResponse: {
+      status: string;
+      message: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BusquedaDniResponse: {
+      nombre: string;
+      apellido: string;
+      dni: string;
+      tieneFoto: boolean;
+      vinculosBusqueda: components["schemas"]["VinculoResultado"][];
+      ingresoActivo: components["schemas"]["IngresoActivoInfo"];
+    };
+    IngresoActivoInfo: {
+      /** Format: int64 */
+      movimientoId?: number;
+      /** Format: int64 */
+      trabajadorId?: number;
+      nombreVinculo?: string;
+      tipo?: string;
+    };
+    VinculoResultado: {
+      /** Format: int64 */
+      trabajadorId?: number;
+      /** Format: int64 */
+      perfilId?: number;
+      nombreVinculo?: string;
+      tipo?: string;
+    };
+    UsuarioActualResponse: {
+      email: string;
+      nombre: string | null;
+      roles: string[];
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
+
 export type $defs = Record<string, never>;
+
+export type external = Record<string, never>;
+
 export interface operations {
-    obtener: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TrabajadorResponse"];
-                };
-            };
-        };
+
+  obtener: {
+    parameters: {
+      path: {
+        id: number;
+      };
     };
-    editar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrabajadorEditarRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TrabajadorResponse"];
-                };
-            };
-        };
+      };
     };
-    obtener_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BarrioResponse"];
-                };
-            };
-        };
+  };
+  editar: {
+    parameters: {
+      path: {
+        id: number;
+      };
     };
-    modificar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BarrioRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BarrioResponse"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TrabajadorEditarRequest"];
+      };
     };
-    listar: {
-        parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
         };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageResponseTrabajadorResponse"];
-                };
-            };
-        };
+      };
     };
-    crear: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TrabajadorRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TrabajadorResponse"];
-                };
-            };
-        };
+  };
+  obtener_1: {
+    parameters: {
+      path: {
+        id: number;
+      };
     };
-    solicitar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["BarrioResponse"];
         };
-        requestBody?: {
-            content: {
-                "multipart/form-data": components["schemas"]["SolicitarPerfilRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PerfilResponse"];
-                };
-            };
-        };
+      };
     };
-    verificar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VerificacionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["VerificacionResponse"];
-                };
-            };
-        };
+  };
+  modificar: {
+    parameters: {
+      path: {
+        id: number;
+      };
     };
-    ingreso: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IngresoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MovimientoResponse"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BarrioRequest"];
+      };
     };
-    egreso: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["BarrioResponse"];
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EgresoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MovimientoResponse"];
-                };
-            };
-        };
+      };
     };
-    listar_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BarrioResponse"][];
-                };
-            };
-        };
+  };
+  asignarOperador: {
+    parameters: {
+      path: {
+        id: number;
+      };
     };
-    crear_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BarrioRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BarrioResponse"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AsignarOperadorRequest"];
+      };
     };
-    registrar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["BarrioResponse"];
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegistroRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["LoginResponse"];
-                };
-            };
-        };
+      };
     };
-    logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  listar: {
+    parameters: {
+      query: {
+        pageable: components["schemas"]["Pageable"];
+      };
     };
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PageResponseTrabajadorResponse"];
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["LoginResponse"];
-                };
-            };
-        };
+      };
     };
-    activar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ActivacionRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  crear: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TrabajadorRequest"];
+      };
     };
-    validar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ValidarActivacionRequest"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+      };
     };
-    ping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PingResponse"];
-                };
-            };
-        };
+  };
+  solicitar: {
+    requestBody?: {
+      content: {
+        "multipart/form-data": components["schemas"]["SolicitarPerfilRequest"];
+      };
     };
-    miSolicitud: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "*/*": components["schemas"]["PerfilResponse"];
         };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PerfilResponse"];
-                };
-            };
-        };
+      };
     };
-    buscar: {
-        parameters: {
-            query: {
-                dni: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BusquedaDniResponse"];
-                };
-            };
-        };
+  };
+  crear_1: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["OperadorRequest"];
+      };
     };
-    me: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "*/*": components["schemas"]["OperadorResponse"];
         };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UsuarioActualResponse"];
-                };
-            };
-        };
+      };
     };
+  };
+  verificar: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerificacionRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["VerificacionResponse"];
+        };
+      };
+    };
+  };
+  ingreso: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["IngresoRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["MovimientoResponse"];
+        };
+      };
+    };
+  };
+  egreso: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EgresoRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["MovimientoResponse"];
+        };
+      };
+    };
+  };
+  listar_1: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["BarrioResponse"][];
+        };
+      };
+    };
+  };
+  crear_2: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BarrioRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "*/*": components["schemas"]["BarrioResponse"];
+        };
+      };
+    };
+  };
+  registrar: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegistroRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "*/*": components["schemas"]["LoginResponse"];
+        };
+      };
+    };
+  };
+  logout: {
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+    };
+  };
+  login: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["LoginResponse"];
+        };
+      };
+    };
+  };
+  activar: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ActivacionRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: never;
+      };
+    };
+  };
+  validar: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ValidarActivacionRequest"];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+    };
+  };
+  ping: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PingResponse"];
+        };
+      };
+    };
+  };
+  miSolicitud: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PerfilResponse"];
+        };
+      };
+    };
+  };
+  disponibles: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["OperadorResponse"][];
+        };
+      };
+    };
+  };
+  buscar: {
+    parameters: {
+      query: {
+        dni: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["BusquedaDniResponse"];
+        };
+      };
+    };
+  };
+  me: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["UsuarioActualResponse"];
+        };
+      };
+    };
+  };
 }

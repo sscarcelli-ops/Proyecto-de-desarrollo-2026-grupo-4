@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.barrio;
 
+import ar.edu.grupo4.accesos.barrio.dto.AsignarOperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioResponse;
 import jakarta.validation.Valid;
@@ -39,5 +40,11 @@ public class BarrioController {
     @PutMapping("/{id}")
     public BarrioResponse modificar(@PathVariable Long id, @Valid @RequestBody BarrioRequest request) {
         return BarrioResponse.from(barrioService.modificar(id, request));
+    }
+
+    // US-45: asigna un Operador (disponible o nuevo) al barrio y lo activa
+    @PutMapping("/{id}/operador")
+    public BarrioResponse asignarOperador(@PathVariable Long id, @Valid @RequestBody AsignarOperadorRequest request) {
+        return BarrioResponse.from(barrioService.asignarOperador(id, request));
     }
 }

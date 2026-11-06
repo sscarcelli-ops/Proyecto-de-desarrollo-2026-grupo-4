@@ -1,8 +1,11 @@
 package ar.edu.grupo4.accesos.barrio;
 
+import ar.edu.grupo4.accesos.barrio.dto.AsignarOperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioRequest;
+import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BarrioService {
 
+    static final String OPERADOR_OCUPADO = "El Operador ya está asignado a otro barrio";
+
     private final BarrioRepository barrioRepository;
+    private final OperadorService operadorService;
 
     /** US-10: el barrio nace Inactivo y sin Operador (RN-10). */
     @Transactional
@@ -47,5 +53,51 @@ public class BarrioService {
         barrio.setLocalidadProvincia(request.localidadProvincia().trim());
         barrio.setDireccion(request.direccion().trim());
         return barrioRepository.save(barrio);
+    }
+
+    /**
+     * US-45: asigna un Operador a un barrio sin Operador y lo deja Activo (RF-34, RN-10), todo en una transacción.
+     * El Operador puede ser uno disponible o uno nuevo, que se crea en la misma operación (si algo falla, no queda
+     * creado). Si otro Administrador lo asignó mientras tanto, no se asigna y se informa.
+     */
+    @Transactional
+    public Barrio asignarOperador(Long barrioId, AsignarOperadorRequest request) {
+        boolean conOperadorExistente = request.operadorId() != null;
+        boolean conOperadorNuevo = request.nuevoOperador() != null;
+        if (!conOperadorExistente && !conOperadorNuevo) {
+            throw new BusinessException("OPERADOR_REQUERIDO", "Debe seleccionar un Operador");
+        }
+        if (conOperadorExistente && conOperadorNuevo) {
+            throw new BusinessException("OPERADOR_AMBIGUO", "Indicá un Operador existente o uno nuevo, no ambos.");
+        }
+
+        Barrio barrio = barrioRepository.findByIdForUpdate(barrioId)
+            .orElseThrow(() -> new NotFoundException("El barrio no existe."));
+        if (barrio.getOperadorId() != null) {
+            throw new BusinessException("BARRIO_CON_OPERADOR",
+                "El barrio ya tiene un Operador asignado. Para cambiarlo, reemplácelo.");
+        }
+
+        Long operadorId;
+        if (conOperadorExistente) {
+            operadorId = request.operadorId();
+            if (!operadorService.existe(operadorId)) {
+                throw new NotFoundException("El Operador no existe.");
+            }
+            if (barrioRepository.existsByOperadorId(operadorId)) {
+                throw new BusinessException("OPERADOR_OCUPADO", OPERADOR_OCUPADO);
+            }
+        } else {
+            operadorId = operadorService.crear(request.nuevoOperador()).id();
+        }
+
+        barrio.setOperadorId(operadorId);
+        barrio.setEstado(EstadoBarrio.ACTIVO);
+        try {
+            return barrioRepository.saveAndFlush(barrio);
+        } catch (DataIntegrityViolationException e) {
+            // Otro Administrador asignó ese Operador entre la verificación y el guardado (la base lo impide: UNIQUE)
+            throw new BusinessException("OPERADOR_OCUPADO", OPERADOR_OCUPADO);
+        }
     }
 }

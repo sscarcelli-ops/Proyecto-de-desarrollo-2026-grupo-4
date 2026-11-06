@@ -18,6 +18,7 @@ import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
 import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
+import { OperadorNuevoPage } from '../features/operadores/pages/OperadorNuevoPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04), activación del Administrador (US-01), registro (US-02)
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
               { path: PATHS.barrios, element: <BarriosPage /> },
               { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
               { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
+              { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
             ],
           },
           // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)

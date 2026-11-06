@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { httpClient } from '../../../shared/lib/httpClient';
+import { operadoresKeys } from '../../operadores/api/operadores';
 import type { ApiSchema } from '../../../shared/api/types';
 
 // Tipos generados desde los DTO del backend (npm run api:types)
 export type Barrio = ApiSchema<'BarrioResponse'>;
 export type BarrioRequest = ApiSchema<'BarrioRequest'>;
+export type AsignarOperadorRequest = ApiSchema<'AsignarOperadorRequest'>;
 
 export const barriosKeys = {
   all: ['barrios'] as const,
@@ -66,5 +68,23 @@ export function useModificarBarrio(id: string) {
     mutationFn: (request: BarrioRequest) => modificarBarrio(id, request),
     // barriosKeys.all es prefijo de detail: refresca el listado y el detalle
     onSuccess: () => queryClient.invalidateQueries({ queryKey: barriosKeys.all }),
+  });
+}
+
+// US-45: asigna al barrio un Operador disponible o uno nuevo (se crea en la misma operación) y lo activa
+async function asignarOperador(id: number, request: AsignarOperadorRequest): Promise<Barrio> {
+  const { data } = await httpClient.put<Barrio>(`/barrios/${id}/operador`, request);
+  return data;
+}
+
+export function useAsignarOperador(barrioId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: AsignarOperadorRequest) => asignarOperador(barrioId, request),
+    // También si falla: si otro Administrador tomó al Operador, la lista de disponibles se actualiza
+    onSettled: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: barriosKeys.all }),
+      queryClient.invalidateQueries({ queryKey: operadoresKeys.all }),
+    ]),
   });
 }
