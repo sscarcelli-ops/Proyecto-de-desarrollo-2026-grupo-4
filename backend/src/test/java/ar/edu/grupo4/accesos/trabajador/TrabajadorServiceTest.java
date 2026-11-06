@@ -162,18 +162,33 @@ class TrabajadorServiceTest {
     }
 
     @Test
-    @DisplayName("Cálculo de estado documental: un solo documento vigente es PENDIENTE_CARGA por faltar el otro requisito")
-    void calculoEstadoUnSoloDocumentoVigenteEsPendiente() {
+    @DisplayName("Cálculo de estado documental: un solo documento vigente (ART y/o Seguro) es VIGENTE")
+    void calculoEstadoUnSoloDocumentoVigenteEsVigente() {
         Trabajador t = new Trabajador();
         Documento d1 = new Documento();
-        d1.setTipo(TipoDocumento.ART);
+        d1.setTipo(TipoDocumento.SEGURO_VIDA);
         d1.setFechaVencimiento(LocalDate.now().plusDays(10));
 
         ArrayList<Documento> docs = new ArrayList<>();
         docs.add(d1);
         t.setDocumentos(docs);
 
-        assertThat(service.calcularEstadoDocumental(t)).isEqualTo("PENDIENTE_CARGA");
+        assertThat(service.calcularEstadoDocumental(t)).isEqualTo("VIGENTE");
+    }
+
+    @Test
+    @DisplayName("Cálculo de estado documental: el día del vencimiento todavía es VIGENTE")
+    void calculoEstadoVenceHoyEsVigente() {
+        Trabajador t = new Trabajador();
+        Documento d1 = new Documento();
+        d1.setTipo(TipoDocumento.ART);
+        d1.setFechaVencimiento(LocalDate.now());
+
+        ArrayList<Documento> docs = new ArrayList<>();
+        docs.add(d1);
+        t.setDocumentos(docs);
+
+        assertThat(service.calcularEstadoDocumental(t)).isEqualTo("VIGENTE");
     }
 
     @Test
@@ -215,8 +230,8 @@ class TrabajadorServiceTest {
         verify(documentoRepository).saveAndFlush(any(Documento.class));
         assertThat(response.documentos()).hasSize(1);
         assertThat(response.documentos().get(0).tipo()).isEqualTo(TipoDocumento.ART);
-        assertThat(response.documentos().get(0).archivoNombre()).isEqualTo("uuid-art.pdf");
-        assertThat(response.estadoDocumental()).isEqualTo("PENDIENTE_CARGA");
+        assertThat(response.documentos().get(0).archivoNombre()).isEqualTo("art.pdf");
+        assertThat(response.estadoDocumental()).isEqualTo("VIGENTE");
     }
 
     @Test

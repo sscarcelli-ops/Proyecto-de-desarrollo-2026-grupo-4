@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   App,
@@ -63,9 +63,8 @@ export function TrabajadorEditarPage() {
   const editar = useEditarTrabajador(trabajadorId);
 
   const [form] = Form.useForm();
-  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
-  const fotoBlobRef = useRef<string | null>(null);
-  const [cargandoFoto, setCargandoFoto] = useState(false);
+  // Foto guardada, como blob URL: null mientras no respondió el pedido; url null si falló
+  const [fotoBlob, setFotoBlob] = useState<{ url: string | null } | null>(null);
   const [errorArchivos, setErrorArchivos] = useState<string | null>(null);
   const [descargandoDoc, setDescargandoDoc] = useState<TipoDocumento | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -104,57 +103,37 @@ export function TrabajadorEditarPage() {
     }
   }, [trabajador, form]);
 
-  // Cargar foto autenticada con JWT mediante Blob si el trabajador tiene foto (M-3 fix)
+  // Cargar foto autenticada con JWT mediante Blob si el trabajador tiene foto (M-3 fix).
+  // El estado solo se actualiza cuando responde el pedido (no de forma sincrónica en el efecto),
+  // y la URL del blob se libera al salir de la pantalla o si cambia la foto.
+  const tieneFoto = trabajador?.tieneFoto ?? false;
   useEffect(() => {
+    if (!tieneFoto) return;
     let active = true;
+    let urlCreada: string | null = null;
 
-    if (trabajador?.tieneFoto) {
-      setCargandoFoto(true);
-      obtenerFotoBlob(trabajadorId)
-        .then((url) => {
-          if (!active) {
-            window.URL.revokeObjectURL(url);
-            return;
-          }
-          if (fotoBlobRef.current) {
-            window.URL.revokeObjectURL(fotoBlobRef.current);
-          }
-          fotoBlobRef.current = url;
-          setFotoUrl(url);
-        })
-        .catch(() => {
-          if (!active) return;
-          if (fotoBlobRef.current) {
-            window.URL.revokeObjectURL(fotoBlobRef.current);
-            fotoBlobRef.current = null;
-          }
-          setFotoUrl(null);
-        })
-        .finally(() => {
-          if (active) setCargandoFoto(false);
-        });
-    } else {
-      if (fotoBlobRef.current) {
-        window.URL.revokeObjectURL(fotoBlobRef.current);
-        fotoBlobRef.current = null;
-      }
-      setFotoUrl(null);
-    }
+    obtenerFotoBlob(trabajadorId)
+      .then((url) => {
+        if (!active) {
+          window.URL.revokeObjectURL(url);
+          return;
+        }
+        urlCreada = url;
+        setFotoBlob({ url });
+      })
+      .catch(() => {
+        if (active) setFotoBlob({ url: null });
+      });
 
     return () => {
       active = false;
+      if (urlCreada) window.URL.revokeObjectURL(urlCreada);
     };
-  }, [trabajador?.tieneFoto, trabajadorId]);
+  }, [tieneFoto, trabajadorId]);
 
-  // Cleanup de blob al desmontar el componente
-  useEffect(() => {
-    return () => {
-      if (fotoBlobRef.current) {
-        window.URL.revokeObjectURL(fotoBlobRef.current);
-        fotoBlobRef.current = null;
-      }
-    };
-  }, []);
+  // Sin respuesta todavía (fotoBlob null) = cargando
+  const cargandoFoto = tieneFoto && fotoBlob === null;
+  const fotoUrl = tieneFoto ? (fotoBlob?.url ?? null) : null;
 
   if (isLoading) {
     return (
@@ -171,7 +150,7 @@ export function TrabajadorEditarPage() {
           <Alert
             type="error"
             showIcon
-            message="No se pudo cargar el trabajador"
+            title="No se pudo cargar el trabajador"
             description={getErrorMessage(error)}
             style={{ marginBottom: 16 }}
           />
@@ -294,7 +273,7 @@ export function TrabajadorEditarPage() {
   const handleGuardarModalDoc = () => {
     if (!modalDocTipo) return;
     if (!modalDocArchivo) {
-      setModalDocError('Debe seleccionar un archivo PDF');
+      setModalDocError('Debe adjuntar el archivo del documento');
       return;
     }
     if (!modalDocFecha) {
@@ -347,7 +326,7 @@ export function TrabajadorEditarPage() {
           <Alert
             type="error"
             showIcon
-            message={errorArchivos || getErrorMessage(editar.error)}
+            title={errorArchivos || getErrorMessage(editar.error)}
             style={{ marginBottom: 20 }}
           />
         )}
@@ -645,7 +624,7 @@ export function TrabajadorEditarPage() {
         open={modalDocVisible}
         centered
         onCancel={() => setModalDocVisible(false)}
-        destroyOnClose
+        destroyOnHidden
         footer={
           <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
             <Button
@@ -670,7 +649,7 @@ export function TrabajadorEditarPage() {
         }
       >
         <Flex vertical gap={16} style={{ marginTop: 16 }}>
-          {modalDocError && <Alert type="error" showIcon message={modalDocError} />}
+          {modalDocError && <Alert type="error" showIcon title={modalDocError} />}
 
           <div>
             <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
@@ -720,7 +699,7 @@ export function TrabajadorEditarPage() {
         open={modalBorrarFotoVisible}
         centered
         onCancel={() => setModalBorrarFotoVisible(false)}
-        destroyOnClose
+        destroyOnHidden
         closable={false}
         width={420}
         footer={
@@ -759,7 +738,7 @@ export function TrabajadorEditarPage() {
         open={modalBorrarDocTipo !== null}
         centered
         onCancel={() => setModalBorrarDocTipo(null)}
-        destroyOnClose
+        destroyOnHidden
         closable={false}
         width={420}
         footer={

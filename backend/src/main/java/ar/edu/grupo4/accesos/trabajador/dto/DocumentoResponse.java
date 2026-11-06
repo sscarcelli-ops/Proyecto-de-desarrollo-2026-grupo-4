@@ -15,10 +15,14 @@ public record DocumentoResponse(
     LocalDate fechaVencimiento,
     boolean vencido
 ) {
+    /**
+     * archivoNombre es el nombre con el que se subió. Los documentos sin ese dato (seed, cargados antes)
+     * muestran uno por tipo; la ruta en disco (UUID) nunca sale del backend.
+     */
     public static DocumentoResponse from(Documento d) {
-        String nombre = d.getArchivoRuta();
-        if (nombre != null && nombre.contains("/")) {
-            nombre = nombre.substring(nombre.lastIndexOf('/') + 1);
+        String nombre = d.getArchivoNombre();
+        if (nombre == null) {
+            nombre = d.getTipo() == TipoDocumento.ART ? "ART.pdf" : "Seguro de Vida.pdf";
         }
         return new DocumentoResponse(
             d.getId(),

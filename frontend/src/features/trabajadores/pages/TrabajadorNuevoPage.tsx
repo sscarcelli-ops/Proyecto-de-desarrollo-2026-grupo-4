@@ -233,7 +233,7 @@ export function TrabajadorNuevoPage() {
           <Alert
             type="error"
             showIcon
-            message={errorArchivos || getErrorMessage(crear.error)}
+            title={errorArchivos || getErrorMessage(crear.error)}
             style={{ marginBottom: 20 }}
           />
         )}
@@ -499,7 +499,7 @@ export function TrabajadorNuevoPage() {
         open={modalDocTipo !== null}
         centered
         onCancel={handleCancelarModalFecha}
-        destroyOnClose
+        destroyOnHidden
         footer={
           <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
             <Button
@@ -542,7 +542,7 @@ export function TrabajadorNuevoPage() {
             <Alert
               type="warning"
               showIcon
-              message="La fecha ingresada ya venció. El estado documental quedará en 'Vencido' y no habilitará el ingreso en garita hasta que se renueve."
+              title="La fecha ingresada ya venció. El estado documental quedará en 'Vencido' y no habilitará el ingreso en garita hasta que se renueve."
               style={{ fontSize: 12 }}
             />
           )}

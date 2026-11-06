@@ -12,7 +12,9 @@ import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -126,6 +128,11 @@ public class TrabajadorService {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
 
+        // Sin archivo: mensaje propio de US-28 (validarPdf es común y usa uno genérico)
+        if (request.archivo() == null || request.archivo().isEmpty()) {
+            throw new BusinessException("ARCHIVO_OBLIGATORIO", "Debe adjuntar el archivo del documento", HttpStatus.BAD_REQUEST);
+        }
+
         // Validación de tipo y tamaño del archivo PDF (T-05, RNF-10)
         fileStorageService.validarPdf(request.archivo());
 
@@ -136,19 +143,16 @@ public class TrabajadorService {
         String subdirectorio = "trabajadores/" + trabajadorId + "/documentos";
         String nuevaRuta = fileStorageService.guardar(request.archivo(), subdirectorio);
 
-        Documento doc;
-        if (optDoc.isPresent()) {
-            doc = optDoc.get();
-            doc.setArchivoRuta(nuevaRuta);
-            doc.setFechaVencimiento(request.fechaVencimiento());
-        } else {
-            doc = new Documento();
-            doc.setTrabajador(trabajador);
-            doc.setTipo(request.tipo());
-            doc.setArchivoRuta(nuevaRuta);
-            doc.setFechaVencimiento(request.fechaVencimiento());
-            trabajador.getDocumentos().add(doc);
-        }
+        Documento doc = optDoc.orElseGet(() -> {
+            Documento nuevo = new Documento();
+            nuevo.setTrabajador(trabajador);
+            nuevo.setTipo(request.tipo());
+            trabajador.getDocumentos().add(nuevo);
+            return nuevo;
+        });
+        doc.setArchivoRuta(nuevaRuta);
+        doc.setArchivoNombre(nombreOriginal(request.archivo()));
+        doc.setFechaVencimiento(request.fechaVencimiento());
 
         try {
             documentoRepository.saveAndFlush(doc);
@@ -281,12 +285,27 @@ public class TrabajadorService {
     }
 
     /**
+     * Nombre con el que la Empresa subió el archivo, para mostrarlo en la edición (US-26 CA-3).
+     * Se queda solo con el nombre (sin carpetas que mande el navegador) y lo recorta al largo de la columna.
+     */
+    private static String nombreOriginal(MultipartFile archivo) {
+        String nombre = StringUtils.getFilename(archivo.getOriginalFilename());
+        if (nombre == null || nombre.isBlank()) {
+            return null;
+        }
+        nombre = nombre.substring(nombre.lastIndexOf('\\') + 1).strip();
+        return nombre.length() > 255 ? nombre.substring(nombre.length() - 255) : nombre;
+    }
+
+    /**
      * Calcula el estado documental de un trabajador en base a sus documentos (RN-03, RN-04, RF-10, RF-18).
      *
-     * Regla de negocio:
-     *   - Algún documento cargado con vencimiento < hoy → VENCIDO (prioridad de alerta según RN-03)
-     *   - Falta alguno de los documentos obligatorios (ART o Seguro de Vida) → PENDIENTE_CARGA
-     *   - Ambos documentos obligatorios (ART y Seguro de Vida) cargados y vigentes → VIGENTE
+     * Regla de negocio (US-28: "ART y/o Seguro de Vida"):
+     *   - Sin documentos cargados → PENDIENTE_CARGA
+     *   - Algún documento cargado con vencimiento < hoy → VENCIDO (se toma el vencimiento más próximo)
+     *   - Al menos uno cargado y todos vigentes → VIGENTE
+     *
+     * Es la misma regla que aplica la garita en la función verificar_acceso (paso 6).
      *
      * Este cálculo se hace cada vez que se consulta, nunca se almacena en la BD (RNF-04).
      * Así, cuando un documento vence, el estado cambia automáticamente sin que
@@ -299,21 +318,10 @@ public class TrabajadorService {
             return "PENDIENTE_CARGA";
         }
 
-        // 1. Si alguno de los documentos cargados está vencido, no habilita el ingreso (RN-03)
+        // Si alguno de los documentos cargados está vencido, no habilita el ingreso (RN-03)
         boolean algunoVencido = documentos.stream()
             .anyMatch(Documento::estaVencido);
-        if (algunoVencido) {
-            return "VENCIDO";
-        }
 
-        // 2. Para estar VIGENTE y habilitado en Garita se requieren ambos documentos (ART y SEGURO_VIDA)
-        boolean tieneArt = documentos.stream().anyMatch(d -> d.getTipo() == TipoDocumento.ART);
-        boolean tieneSeguro = documentos.stream().anyMatch(d -> d.getTipo() == TipoDocumento.SEGURO_VIDA);
-
-        if (!tieneArt || !tieneSeguro) {
-            return "PENDIENTE_CARGA";
-        }
-
-        return "VIGENTE";
+        return algunoVencido ? "VENCIDO" : "VIGENTE";
     }
 }
