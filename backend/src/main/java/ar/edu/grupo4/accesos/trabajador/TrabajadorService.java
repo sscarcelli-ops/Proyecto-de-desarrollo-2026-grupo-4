@@ -3,19 +3,26 @@ package ar.edu.grupo4.accesos.trabajador;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import ar.edu.grupo4.accesos.common.paging.PageResponse;
+import ar.edu.grupo4.accesos.common.storage.FileStorageService;
+import ar.edu.grupo4.accesos.trabajador.dto.DocumentoRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Reglas de negocio del módulo de trabajadores (US-25, US-26, y base para US-27 a 30).
+ * Reglas de negocio del módulo de trabajadores (US-25, US-26, US-28).
  *
  * Todas las operaciones trabajan sobre el perfil aprobado del usuario autenticado (UsuarioActual, T-03).
  * Ese perfilId NUNCA sale del request del frontend: se obtiene desde la BD a partir del token,
@@ -26,6 +33,8 @@ import java.util.List;
 public class TrabajadorService {
 
     private final TrabajadorRepository trabajadorRepository;
+    private final DocumentoRepository documentoRepository;
+    private final FileStorageService fileStorageService;
     private final UsuarioActual usuarioActual;
 
     // ========================================================================================
@@ -106,6 +115,163 @@ public class TrabajadorService {
     }
 
     // ========================================================================================
+    // US-28: Cargar, actualizar, renovar y eliminar documentación
+    // ========================================================================================
+
+    /**
+     * Carga o renueva un documento (ART o Seguro de Vida) para un trabajador.
+     * Si ya existe un documento del mismo tipo, se reemplaza el archivo en disco
+     * y se actualizan los datos en la BD.
+     */
+    @Transactional
+    public TrabajadorResponse cargarDocumento(Long trabajadorId, DocumentoRequest request) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        // Sin archivo: mensaje propio de US-28 (validarPdf es común y usa uno genérico)
+        if (request.archivo() == null || request.archivo().isEmpty()) {
+            throw new BusinessException("ARCHIVO_OBLIGATORIO", "Debe adjuntar el archivo del documento", HttpStatus.BAD_REQUEST);
+        }
+
+        // Validación de tipo y tamaño del archivo PDF (T-05, RNF-10)
+        fileStorageService.validarPdf(request.archivo());
+
+        Optional<Documento> optDoc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, request.tipo());
+        String rutaVieja = optDoc.map(Documento::getArchivoRuta).orElse(null);
+
+        // Subir nuevo archivo a disco: trabajadores/{id}/documentos/<uuid>.pdf
+        String subdirectorio = "trabajadores/" + trabajadorId + "/documentos";
+        String nuevaRuta = fileStorageService.guardar(request.archivo(), subdirectorio);
+
+        Documento doc = optDoc.orElseGet(() -> {
+            Documento nuevo = new Documento();
+            nuevo.setTrabajador(trabajador);
+            nuevo.setTipo(request.tipo());
+            trabajador.getDocumentos().add(nuevo);
+            return nuevo;
+        });
+        doc.setArchivoRuta(nuevaRuta);
+        doc.setArchivoNombre(nombreOriginal(request.archivo()));
+        doc.setFechaVencimiento(request.fechaVencimiento());
+
+        try {
+            documentoRepository.saveAndFlush(doc);
+        } catch (RuntimeException e) {
+            fileStorageService.eliminar(nuevaRuta);
+            throw e;
+        }
+
+        // Si se reemplazó un documento anterior, borramos el archivo viejo de disco
+        if (rutaVieja != null && !rutaVieja.equals(nuevaRuta)) {
+            fileStorageService.eliminar(rutaVieja);
+        }
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    /**
+     * Elimina un documento específico de un trabajador y su archivo de disco.
+     */
+    @Transactional
+    public TrabajadorResponse eliminarDocumento(Long trabajadorId, TipoDocumento tipo) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, tipo)
+            .orElseThrow(NotFoundException::new);
+
+        String ruta = doc.getArchivoRuta();
+        trabajador.getDocumentos().remove(doc);
+        documentoRepository.delete(doc);
+        documentoRepository.flush();
+        fileStorageService.eliminar(ruta);
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    /**
+     * Descarga el archivo PDF de un documento legal de un trabajador.
+     */
+    @Transactional(readOnly = true)
+    public Resource descargarDocumento(Long trabajadorId, TipoDocumento tipo) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        buscarDelPerfil(perfilId, trabajadorId);
+
+        Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, tipo)
+            .orElseThrow(NotFoundException::new);
+
+        return fileStorageService.cargar(doc.getArchivoRuta());
+    }
+
+    // ========================================================================================
+    // US-25 / US-26: Carga, reemplazo, eliminación y descarga de Foto
+    // ========================================================================================
+
+    /**
+     * Sube o reemplaza la foto del trabajador (JPG o PNG hasta 2 MB).
+     */
+    @Transactional
+    public TrabajadorResponse cargarFoto(Long trabajadorId, MultipartFile foto) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        // Validación de tipo y tamaño de la foto (T-05, RNF-10)
+        fileStorageService.validarFoto(foto);
+
+        String rutaVieja = trabajador.getFotoRuta();
+        String subdirectorio = "trabajadores/" + trabajadorId + "/foto";
+        String nuevaRuta = fileStorageService.guardar(foto, subdirectorio);
+
+        trabajador.setFotoRuta(nuevaRuta);
+
+        try {
+            trabajadorRepository.saveAndFlush(trabajador);
+        } catch (RuntimeException e) {
+            fileStorageService.eliminar(nuevaRuta);
+            throw e;
+        }
+
+        if (rutaVieja != null && !rutaVieja.equals(nuevaRuta)) {
+            fileStorageService.eliminar(rutaVieja);
+        }
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    /**
+     * Elimina la foto del trabajador y borra el archivo de disco.
+     */
+    @Transactional
+    public TrabajadorResponse eliminarFoto(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        String rutaVieja = trabajador.getFotoRuta();
+        if (rutaVieja != null) {
+            trabajador.setFotoRuta(null);
+            trabajadorRepository.saveAndFlush(trabajador);
+            fileStorageService.eliminar(rutaVieja);
+        }
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    /**
+     * Descarga la foto del trabajador.
+     */
+    @Transactional(readOnly = true)
+    public Resource descargarFoto(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        if (!trabajador.tieneFoto()) {
+            throw new NotFoundException();
+        }
+
+        return fileStorageService.cargar(trabajador.getFotoRuta());
+    }
+
+    // ========================================================================================
     // Lógica compartida
     // ========================================================================================
 
@@ -119,24 +285,40 @@ public class TrabajadorService {
     }
 
     /**
-     * Calcula el estado documental de un trabajador en base a sus documentos (RN-04, RNF-04).
+     * Nombre con el que la Empresa subió el archivo, para mostrarlo en la edición (US-26 CA-3).
+     * Se queda solo con el nombre (sin carpetas que mande el navegador) y lo recorta al largo de la columna.
+     */
+    private static String nombreOriginal(MultipartFile archivo) {
+        String nombre = StringUtils.getFilename(archivo.getOriginalFilename());
+        if (nombre == null || nombre.isBlank()) {
+            return null;
+        }
+        nombre = nombre.substring(nombre.lastIndexOf('\\') + 1).strip();
+        return nombre.length() > 255 ? nombre.substring(nombre.length() - 255) : nombre;
+    }
+
+    /**
+     * Calcula el estado documental de un trabajador en base a sus documentos (RN-03, RN-04, RF-10, RF-18).
      *
-     * Regla:
-     *   - Sin documentos cargados              → PENDIENTE_CARGA
-     *   - Algún documento con vencimiento < hoy → VENCIDO (se toma el más próximo)
-     *   - Todos los documentos vigentes         → VIGENTE
+     * Regla de negocio (US-28: "ART y/o Seguro de Vida"):
+     *   - Sin documentos cargados → PENDIENTE_CARGA
+     *   - Algún documento cargado con vencimiento < hoy → VENCIDO (se toma el vencimiento más próximo)
+     *   - Al menos uno cargado y todos vigentes → VIGENTE
      *
-     * Este cálculo se hace cada vez que se consulta, nunca se almacena en la BD.
+     * Es la misma regla que aplica la garita en la función verificar_acceso (paso 6).
+     *
+     * Este cálculo se hace cada vez que se consulta, nunca se almacena en la BD (RNF-04).
      * Así, cuando un documento vence, el estado cambia automáticamente sin que
-     * nadie tenga que ejecutar un proceso ni actualizar un campo.
+     * nadie tenga que ejecutar un proceso batch ni actualizar un campo.
      */
     String calcularEstadoDocumental(Trabajador trabajador) {
         List<Documento> documentos = trabajador.getDocumentos();
 
-        if (documentos.isEmpty()) {
+        if (documentos == null || documentos.isEmpty()) {
             return "PENDIENTE_CARGA";
         }
 
+        // Si alguno de los documentos cargados está vencido, no habilita el ingreso (RN-03)
         boolean algunoVencido = documentos.stream()
             .anyMatch(Documento::estaVencido);
 

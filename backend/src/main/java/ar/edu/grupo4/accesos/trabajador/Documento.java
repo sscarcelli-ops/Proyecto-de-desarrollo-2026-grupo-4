@@ -39,6 +39,10 @@ public class Documento {
     @Column(name = "archivo_ruta", nullable = false)
     private String archivoRuta;
 
+    // Nombre con el que se subió el archivo, solo para mostrarlo (US-26 CA-3). Null en los cargados antes de guardarlo.
+    @Column(name = "archivo_nombre")
+    private String archivoNombre;
+
     // Fecha declarada por la Empresa/Monotributista. Si es anterior a hoy → VENCIDO.
     // Se usa LocalDate (sin hora) porque solo importa el día, no el momento exacto.
     @Column(name = "fecha_vencimiento", nullable = false)

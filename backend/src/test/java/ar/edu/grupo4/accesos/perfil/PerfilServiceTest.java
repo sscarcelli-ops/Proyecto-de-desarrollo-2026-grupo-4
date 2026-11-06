@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -234,10 +235,14 @@ class PerfilServiceTest {
             null, null, null, null, null,
             noPdf
         );
+        // La validación del tipo real es la común de T-05 (probada en DiscoFileStorageServiceTest)
+        doThrow(new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB"))
+            .when(fileStorageService).validarPdf(noPdf);
 
         assertThatThrownBy(() -> perfilService.solicitar(10L, req))
             .isInstanceOf(BusinessException.class)
             .hasMessage("El archivo debe ser un PDF de hasta 8 MB");
+        verify(fileStorageService).validarPdf(noPdf);
     }
 
     // =========================================================================
