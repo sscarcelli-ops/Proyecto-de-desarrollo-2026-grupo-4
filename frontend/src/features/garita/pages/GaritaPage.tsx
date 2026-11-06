@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  App,
   Avatar,
   Button,
   Card,
@@ -12,7 +13,6 @@ import {
   Spin,
   Tag,
   Typography,
-  message,
 } from 'antd';
 import {
   ExclamationCircleOutlined,
@@ -222,6 +222,7 @@ function GaritaCard({
 /* ========================================================================= */
 export function GaritaPage() {
   const user = useCurrentUser();
+  const { message } = App.useApp();
 
   // Estados del flujo
   const [paso, setPaso] = useState<PasoGarita>('BUSQUEDA');
