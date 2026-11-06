@@ -82,13 +82,16 @@ public class GaritaService {
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * Re-verifica habilitación (evita race condition entre verificar y registrar) y registra el INGRESO.
+     * Toma bloqueo consultivo por DNI y barrio (RN-08), re-verifica habilitación
+     * (evita race condition entre verificar y registrar) y registra el INGRESO.
      *
      * @throws BusinessException INGRESO_DENEGADO si la verificación falla
      */
     @Transactional
     public MovimientoResponse registrarIngreso(Long trabajadorId) {
         Long barrioId = usuarioActual.barrioId();
+        repository.bloquearPorDniYBarrio(trabajadorId, barrioId);
+
         VerificacionResponse verificacion = repository.verificarAcceso(trabajadorId, barrioId);
         if (!verificacion.habilitado()) {
             throw new BusinessException(
@@ -104,13 +107,16 @@ public class GaritaService {
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * Verifica que exista un ingreso activo para el trabajador específico en el barrio y registra el EGRESO.
+     * Toma bloqueo consultivo por DNI y barrio (RN-08), verifica que exista un ingreso activo
+     * para el trabajador específico en el barrio y registra el EGRESO.
      *
      * @throws BusinessException SIN_INGRESO_ACTIVO si el trabajador no tiene ingreso abierto
      */
     @Transactional
     public MovimientoResponse registrarEgreso(Long trabajadorId) {
         Long barrioId = usuarioActual.barrioId();
+        repository.bloquearPorDniYBarrio(trabajadorId, barrioId);
+
         repository.buscarIngresoActivoPorTrabajador(trabajadorId, barrioId)
                 .orElseThrow(() -> new BusinessException(
                         "SIN_INGRESO_ACTIVO",

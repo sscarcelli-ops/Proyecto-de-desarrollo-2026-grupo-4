@@ -15,6 +15,7 @@ import { GaritaPage } from '../features/garita/pages/GaritaPage';
 import { BarriosPage } from '../features/barrios/pages/BarriosPage';
 import { BarrioNuevoPage } from '../features/barrios/pages/BarrioNuevoPage';
 import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
+import { EmpresasPage } from '../features/perfiles/pages/EmpresasPage';
 import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
@@ -61,13 +62,14 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: PATHS.inicio, element: <InicioPage /> },
-          // Barrios: exclusivo del Administrador (US-10, US-11)
+          // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
           {
             element: <RequireRole roles={['ADMIN']} />,
             children: [
               { path: PATHS.barrios, element: <BarriosPage /> },
               { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
               { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
+              { path: PATHS.empresas, element: <EmpresasPage /> },
               { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
             ],
           },

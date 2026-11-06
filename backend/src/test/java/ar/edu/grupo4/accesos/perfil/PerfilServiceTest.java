@@ -1,10 +1,12 @@
 package ar.edu.grupo4.accesos.perfil;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
+import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
-import ar.edu.grupo4.accesos.usuario.Rol;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,9 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -129,24 +136,30 @@ class PerfilServiceTest {
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
         when(perfilRepository.existsByCuitCuil("30-11223344-5")).thenReturn(false);
         when(fileStorageService.guardar(eq(constanciaPdf), any())).thenReturn("perfiles/10/constancia/uuid.pdf");
-        when(perfilRepository.saveAndFlush(any(Perfil.class)))
-            .thenThrow(new DataIntegrityViolationException("cuit_cuil duplicado"));
+        when(perfilRepository.saveAndFlush(any(Perfil.class))).thenThrow(new RuntimeException("DB error"));
 
         SolicitarPerfilRequest req = new SolicitarPerfilRequest(
-            TipoPerfil.EMPRESA, "30-11223344-5", "Mi Empresa S.A.", null, null, null, null, null, constanciaPdf
+            TipoPerfil.EMPRESA,
+            "30-11223344-5",
+            "Mi Empresa S.A.",
+            null, null, null, null,
+            "1122334455",
+            constanciaPdf
         );
 
-        assertThatThrownBy(() -> perfilService.solicitar(10L, req)).isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> perfilService.solicitar(10L, req))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessage("DB error");
+
         verify(fileStorageService).eliminar("perfiles/10/constancia/uuid.pdf");
     }
 
     @Test
-    @DisplayName("solicitar con usuario que ya tiene un rol es rechazado (restricción multirol)")
-    void rechazaUsuarioConRol() {
-        Usuario usuarioConRol = org.mockito.Mockito.mock(Usuario.class);
-        when(usuarioConRol.getRoles()).thenReturn(java.util.Set.of(org.mockito.Mockito.mock(Rol.class)));
-
-        when(usuarioService.buscarPorId(20L)).thenReturn(Optional.of(usuarioConRol));
+    @DisplayName("solicitar con CUIT duplicado lanza BusinessException con 400 (CA-3)")
+    void rechazaCuitDuplicado() {
+        when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
+        when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
+        when(perfilRepository.existsByCuitCuil("30-11223344-5")).thenReturn(true);
 
         SolicitarPerfilRequest req = new SolicitarPerfilRequest(
             TipoPerfil.EMPRESA,
@@ -156,13 +169,13 @@ class PerfilServiceTest {
             constanciaPdf
         );
 
-        assertThatThrownBy(() -> perfilService.solicitar(20L, req))
+        assertThatThrownBy(() -> perfilService.solicitar(10L, req))
             .isInstanceOf(BusinessException.class)
-            .hasMessage("Los usuarios con rol asignado no pueden solicitar un perfil");
+            .hasMessage("Este CUIT ya se encuentra registrado");
     }
 
     @Test
-    @DisplayName("solicitar con DNI duplicado para Monotributista lanza DNI_DUPLICADO (CA-3)")
+    @DisplayName("solicitar Monotributista con DNI duplicado lanza BusinessException (CA-3)")
     void rechazaDniDuplicado() {
         when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(false);
@@ -186,7 +199,7 @@ class PerfilServiceTest {
     }
 
     @Test
-    @DisplayName("solicitar cuando ya tiene perfil registrado lanza SOLICITUD_DUPLICADA (CA-6)")
+    @DisplayName("usuario que ya tiene solicitud pendiente no puede enviar otra (CA-6)")
     void rechazaSegundaSolicitud() {
         when(usuarioService.buscarPorId(10L)).thenReturn(Optional.of(usuario));
         when(perfilRepository.existsByUsuarioId(10L)).thenReturn(true);
@@ -225,5 +238,179 @@ class PerfilServiceTest {
         assertThatThrownBy(() -> perfilService.solicitar(10L, req))
             .isInstanceOf(BusinessException.class)
             .hasMessage("El archivo debe ser un PDF de hasta 8 MB");
+    }
+
+    // =========================================================================
+    // US-18 TESTS
+    // =========================================================================
+
+    @Test
+    @DisplayName("US-18: listar perfiles paginados devuelve PageResponse")
+    void listarPerfilesPaginados() {
+        Perfil p = new Perfil();
+        p.setId(1L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.EMPRESA);
+        p.setRazonSocial("Constructora Test");
+        p.setCuitCuil("30-11223344-5");
+        p.setEstado(EstadoPerfil.PENDIENTE);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(perfilRepository.listarConFiltros(null, "test", pageable))
+            .thenReturn(new PageImpl<>(List.of(p), pageable, 1));
+
+        PageResponse<PerfilResponse> resultado = perfilService.listar(null, "test", pageable);
+
+        assertThat(resultado.totalElements()).isEqualTo(1);
+        assertThat(resultado.content()).hasSize(1);
+        assertThat(resultado.content().get(0).razonSocial()).isEqualTo("Constructora Test");
+    }
+
+    @Test
+    @DisplayName("US-18: búsqueda con porcentaje escapa el comodín para no traer todo")
+    void listarPerfilesEscapaPorcentaje() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(perfilRepository.listarConFiltros(null, "\\%", pageable))
+            .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        PageResponse<PerfilResponse> resultado = perfilService.listar(null, "%", pageable);
+
+        assertThat(resultado.totalElements()).isZero();
+        verify(perfilRepository).listarConFiltros(null, "\\%", pageable);
+    }
+
+    @Test
+    @DisplayName("US-18: obtener perfil por ID existente devuelve PerfilResponse")
+    void obtenerPorIdExistente() {
+        Perfil p = new Perfil();
+        p.setId(5L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.MONOTRIBUTISTA);
+        p.setNombre("Mario");
+        p.setApellido("Bros");
+        p.setCuitCuil("20-11223344-5");
+
+        when(perfilRepository.findById(5L)).thenReturn(Optional.of(p));
+
+        PerfilResponse res = perfilService.obtenerPorId(5L);
+
+        assertThat(res.id()).isEqualTo(5L);
+        assertThat(res.nombre()).isEqualTo("Mario");
+        assertThat(res.email()).isEqualTo("usuario@test.com");
+    }
+
+    @Test
+    @DisplayName("US-18: obtener perfil por ID inexistente lanza NotFoundException")
+    void obtenerPorIdInexistente() {
+        when(perfilRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> perfilService.obtenerPorId(99L))
+            .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("US-18: obtener constancia devuelve el recurso del storage")
+    void obtenerConstanciaValida() {
+        Perfil p = new Perfil();
+        p.setId(1L);
+        p.setConstanciaRuta("perfiles/1/constancia/file.pdf");
+
+        Resource recursoMock = new ByteArrayResource("%PDF test".getBytes());
+        when(perfilRepository.findById(1L)).thenReturn(Optional.of(p));
+        when(fileStorageService.cargar("perfiles/1/constancia/file.pdf")).thenReturn(recursoMock);
+
+        Resource res = perfilService.obtenerConstancia(1L);
+
+        assertThat(res).isNotNull();
+        assertThat(res).isSameAs(recursoMock);
+    }
+
+    // =========================================================================
+    // US-20 TESTS
+    // =========================================================================
+
+    @Test
+    @DisplayName("US-20: aprobar solicitud delega en UsuarioService asignarRol y cerrarSesiones")
+    void aprobarSolicitudEmpresaExitosa() {
+        Perfil p = new Perfil();
+        p.setId(100L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.EMPRESA);
+        p.setEstado(EstadoPerfil.PENDIENTE);
+        p.setCuitCuil("30-99887766-5");
+
+        when(perfilRepository.findById(100L)).thenReturn(Optional.of(p));
+        when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PerfilResponse res = perfilService.aprobar(100L);
+
+        assertThat(res.estado()).isEqualTo(EstadoPerfil.APROBADO);
+        verify(usuarioService).asignarRol(10L, "EMPRESA");
+        verify(usuarioService).cerrarSesiones(10L);
+        verify(perfilRepository).save(p);
+    }
+
+    @Test
+    @DisplayName("US-20: aprobar solicitud que no está pendiente lanza BusinessException")
+    void aprobarSolicitudNoPendienteFalla() {
+        Perfil p = new Perfil();
+        p.setId(100L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.EMPRESA);
+        p.setEstado(EstadoPerfil.APROBADO);
+
+        when(perfilRepository.findById(100L)).thenReturn(Optional.of(p));
+
+        assertThatThrownBy(() -> perfilService.aprobar(100L))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("Solo se pueden aprobar solicitudes en estado pendiente");
+    }
+
+    @Test
+    @DisplayName("US-20: rechazar solicitud pendiente con motivo pasa a RECHAZADO y guarda motivo")
+    void rechazarSolicitudExitosa() {
+        Perfil p = new Perfil();
+        p.setId(101L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.MONOTRIBUTISTA);
+        p.setEstado(EstadoPerfil.PENDIENTE);
+        p.setCuitCuil("20-99887766-5");
+
+        when(perfilRepository.findById(101L)).thenReturn(Optional.of(p));
+        when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RechazarPerfilRequest req = new RechazarPerfilRequest("Constancia ilegible");
+        PerfilResponse res = perfilService.rechazar(101L, req);
+
+        assertThat(res.estado()).isEqualTo(EstadoPerfil.RECHAZADO);
+        assertThat(res.motivoRechazo()).isEqualTo("Constancia ilegible");
+        verify(perfilRepository).save(p);
+    }
+
+    @Test
+    @DisplayName("US-20: rechazar solicitud sin motivo obligatorio lanza BusinessException")
+    void rechazarSinMotivoFalla() {
+        RechazarPerfilRequest req = new RechazarPerfilRequest("   ");
+
+        assertThatThrownBy(() -> perfilService.rechazar(101L, req))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("El motivo de rechazo es obligatorio");
+    }
+
+    @Test
+    @DisplayName("US-20: rechazar solicitud que no está pendiente lanza BusinessException")
+    void rechazarSolicitudNoPendienteFalla() {
+        Perfil p = new Perfil();
+        p.setId(101L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.MONOTRIBUTISTA);
+        p.setEstado(EstadoPerfil.RECHAZADO);
+
+        when(perfilRepository.findById(101L)).thenReturn(Optional.of(p));
+
+        RechazarPerfilRequest req = new RechazarPerfilRequest("Nuevo motivo");
+        assertThatThrownBy(() -> perfilService.rechazar(101L, req))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("Solo se pueden rechazar solicitudes en estado pendiente");
     }
 }

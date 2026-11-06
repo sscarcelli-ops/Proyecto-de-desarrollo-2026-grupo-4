@@ -20,6 +20,12 @@ export interface paths {
     get: operations["listar"];
     post: operations["crear"];
   };
+  "/api/perfiles/{id}/rechazar": {
+    post: operations["rechazar"];
+  };
+  "/api/perfiles/{id}/aprobar": {
+    post: operations["aprobar"];
+  };
   "/api/perfil": {
     post: operations["solicitar"];
   };
@@ -56,6 +62,15 @@ export interface paths {
   };
   "/api/ping": {
     get: operations["ping"];
+  };
+  "/api/perfiles": {
+    get: operations["listar_2"];
+  };
+  "/api/perfiles/{id}": {
+    get: operations["obtenerPorId"];
+  };
+  "/api/perfiles/{id}/constancia": {
+    get: operations["obtenerConstancia"];
   };
   "/api/perfil/mi-solicitud": {
     get: operations["miSolicitud"];
@@ -122,24 +137,15 @@ export interface components {
       apellido: string;
       dni: string;
     };
-    SolicitarPerfilRequest: {
-      /** @enum {string} */
-      tipo: "EMPRESA" | "MONOTRIBUTISTA";
-      cuit?: string;
-      razonSocial?: string;
-      cuil?: string;
-      nombre?: string;
-      apellido?: string;
-      dni?: string;
-      telefono?: string;
-      /** Format: binary */
-      constancia?: string;
+    RechazarPerfilRequest: {
+      motivo: string;
     };
     PerfilResponse: {
       /** Format: int64 */
       id: number;
       /** Format: int64 */
       usuarioId: number;
+      email: string | null;
       /** @enum {string} */
       tipo: "EMPRESA" | "MONOTRIBUTISTA";
       /** @enum {string} */
@@ -153,6 +159,19 @@ export interface components {
       motivoRechazo: string | null;
       /** Format: date-time */
       creadoEn: string;
+    };
+    SolicitarPerfilRequest: {
+      /** @enum {string} */
+      tipo: "EMPRESA" | "MONOTRIBUTISTA";
+      cuit?: string;
+      razonSocial?: string;
+      cuil?: string;
+      nombre?: string;
+      apellido?: string;
+      dni?: string;
+      telefono?: string;
+      /** Format: binary */
+      constancia?: string;
     };
     OperadorResponse: {
       /** Format: int64 */
@@ -236,6 +255,17 @@ export interface components {
       message: string;
       /** Format: date-time */
       timestamp: string;
+    };
+    PageResponsePerfilResponse: {
+      content: components["schemas"]["PerfilResponse"][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
     };
     BusquedaDniResponse: {
       nombre: string;
@@ -396,6 +426,41 @@ export interface operations {
       201: {
         content: {
           "*/*": components["schemas"]["TrabajadorResponse"];
+        };
+      };
+    };
+  };
+  rechazar: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RechazarPerfilRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PerfilResponse"];
+        };
+      };
+    };
+  };
+  aprobar: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PerfilResponse"];
         };
       };
     };
@@ -570,6 +635,53 @@ export interface operations {
       200: {
         content: {
           "*/*": components["schemas"]["PingResponse"];
+        };
+      };
+    };
+  };
+  listar_2: {
+    parameters: {
+      query: {
+        estado?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "SUSPENDIDO";
+        q?: string;
+        pageable: components["schemas"]["Pageable"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PageResponsePerfilResponse"];
+        };
+      };
+    };
+  };
+  obtenerPorId: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["PerfilResponse"];
+        };
+      };
+    };
+  };
+  obtenerConstancia: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": string;
         };
       };
     };

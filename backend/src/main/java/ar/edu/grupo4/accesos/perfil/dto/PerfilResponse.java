@@ -10,6 +10,7 @@ import java.time.OffsetDateTime;
 public record PerfilResponse(
     Long id,
     Long usuarioId,
+    @Schema(types = {"string", "null"}) String email,
     TipoPerfil tipo,
     EstadoPerfil estado,
     String cuitCuil,
@@ -22,9 +23,12 @@ public record PerfilResponse(
     OffsetDateTime creadoEn
 ) {
     public static PerfilResponse from(Perfil p) {
+        String email = p.getUsuario() != null ? p.getUsuario().getEmail() : null;
+        Long usuarioId = p.getUsuario() != null ? p.getUsuario().getId() : null;
         return new PerfilResponse(
             p.getId(),
-            p.getUsuario().getId(),
+            usuarioId,
+            email,
             p.getTipo(),
             p.getEstado(),
             p.getCuitCuil(),
