@@ -59,7 +59,7 @@ export function AppLayout() {
       {esEscritorio ? (
         <Sider
           theme="dark"
-          width={240}
+          width={265}
           style={{
             position: 'sticky',
             top: 0,
@@ -71,7 +71,7 @@ export function AppLayout() {
       ) : (
         <Drawer
           placement="left"
-          size={240}
+          size={265}
           open={menuAbierto}
           onClose={() => setMenuAbierto(false)}
           closable={false}

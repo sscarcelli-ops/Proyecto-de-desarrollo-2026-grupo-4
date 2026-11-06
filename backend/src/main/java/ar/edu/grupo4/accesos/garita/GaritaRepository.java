@@ -164,6 +164,24 @@ public class GaritaRepository {
     }
 
     // ──────────────────────────────────────────────────────────────────
+    // Concurrencia y bloqueos consultivos (RN-08)
+    // ──────────────────────────────────────────────────────────────────
+
+    /**
+     * Adquiere un bloqueo consultivo exclusivo por DNI y barrio durante la transacción activa (RN-08).
+     * Se libera automáticamente al hacer commit o rollback (pg_advisory_xact_lock).
+     * Evita que dos guardias registren ingresos o egresos simultáneos para el mismo DNI en el mismo barrio.
+     */
+    public void bloquearPorDniYBarrio(Long trabajadorId, Long barrioId) {
+        String sql = """
+                SELECT pg_advisory_xact_lock(hashtext(t.dni), ?::integer)
+                FROM trabajador t
+                WHERE t.id = ?
+                """;
+        jdbc.query(sql, rs -> {}, barrioId, trabajadorId);
+    }
+
+    // ──────────────────────────────────────────────────────────────────
     // Verificación de acceso (stored procedure)
     // ──────────────────────────────────────────────────────────────────
 
@@ -224,10 +242,10 @@ public class GaritaRepository {
             long movId, String tipo, OffsetDateTime fechaHora, Long trabajadorId) {
         String sql = """
                 SELECT t.nombre, t.apellido,
-                       p.tipo      AS perfil_tipo,
-                       p.razon_social,
-                       p.nombre    AS perfil_nombre,
-                       p.apellido  AS perfil_apellido
+                p.tipo      AS perfil_tipo,
+                p.razon_social,
+                p.nombre    AS perfil_nombre,
+                p.apellido  AS perfil_apellido
                 FROM trabajador t
                 JOIN perfil p ON p.id = t.perfil_id
                 WHERE t.id = ?

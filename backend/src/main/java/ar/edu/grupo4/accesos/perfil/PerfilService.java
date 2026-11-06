@@ -2,20 +2,24 @@ package ar.edu.grupo4.accesos.perfil;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.common.storage.FileStorageService;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
+import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.time.OffsetDateTime;
 import java.util.regex.Pattern;
 
 @Service
@@ -23,8 +27,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class PerfilService {
 
-    private static final long MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB (RNF-10)
-    private static final byte[] PDF_MAGIC_BYTES = new byte[]{0x25, 0x50, 0x44, 0x46}; // %PDF
     private static final Pattern PATTERN_CUIT_CUIL = Pattern.compile("^\\d{2}-?\\d{8}-?\\d$");
     private static final Pattern PATTERN_DNI = Pattern.compile("^\\d{7,8}$");
 
@@ -90,6 +92,100 @@ public class PerfilService {
         return perfilRepository.findByUsuarioId(usuarioId)
             .map(PerfilResponse::from)
             .orElseThrow(NotFoundException::new);
+    }
+
+    /**
+     * US-18: Listado paginado de Empresas y Monotributistas para el Administrador.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<PerfilResponse> listar(EstadoPerfil estado, String q, Pageable pageable) {
+        String filtroTexto = (q != null && !q.isBlank()) ? escaparLike(q.trim()) : null;
+        Page<Perfil> pagina = perfilRepository.listarConFiltros(estado, filtroTexto, pageable);
+        return PageResponse.from(pagina.map(PerfilResponse::from));
+    }
+
+    private String escaparLike(String texto) {
+        return texto
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
+    }
+
+    /**
+     * US-18: Detalle de un perfil por ID para el Administrador.
+     */
+    @Transactional(readOnly = true)
+    public PerfilResponse obtenerPorId(Long id) {
+        return perfilRepository.findById(id)
+            .map(PerfilResponse::from)
+            .orElseThrow(NotFoundException::new);
+    }
+
+    /**
+     * US-18: Carga el archivo de constancia de inscripción en PDF para su visualización o descarga.
+     */
+    @Transactional(readOnly = true)
+    public Resource obtenerConstancia(Long id) {
+        Perfil perfil = perfilRepository.findById(id)
+            .orElseThrow(NotFoundException::new);
+        return fileStorageService.cargar(perfil.getConstanciaRuta());
+    }
+
+    /**
+     * US-20: Aprueba la solicitud de perfil, actualiza el estado a APROBADO, asigna
+     * el rol EMPRESA o MONOTRIBUTISTA al usuario a través de UsuarioService y cierra
+     * las sesiones activas para obligar a refrescar el token con el nuevo rol.
+     */
+    @Transactional
+    public PerfilResponse aprobar(Long id) {
+        Perfil perfil = perfilRepository.findById(id)
+            .orElseThrow(NotFoundException::new);
+
+        if (perfil.getEstado() != EstadoPerfil.PENDIENTE) {
+            throw new BusinessException("ESTADO_INVALIDO",
+                "Solo se pueden aprobar solicitudes en estado pendiente", HttpStatus.BAD_REQUEST);
+        }
+
+        String codigoRol = (perfil.getTipo() == TipoPerfil.EMPRESA) ? "EMPRESA" : "MONOTRIBUTISTA";
+        Usuario usuario = perfil.getUsuario();
+
+        usuarioService.asignarRol(usuario.getId(), codigoRol);
+        usuarioService.cerrarSesiones(usuario.getId());
+
+        perfil.setEstado(EstadoPerfil.APROBADO);
+        perfil.setMotivoRechazo(null);
+        perfil.setResueltoEn(OffsetDateTime.now());
+
+        Perfil guardado = perfilRepository.save(perfil);
+        log.info("Perfil {} ({}) aprobado para el usuario {}", id, perfil.getTipo(), usuario.getId());
+        return PerfilResponse.from(guardado);
+    }
+
+    /**
+     * US-20: Rechaza la solicitud de perfil requiriendo obligatoriamente un motivo.
+     */
+    @Transactional
+    public PerfilResponse rechazar(Long id, RechazarPerfilRequest request) {
+        if (request == null || request.motivo() == null || request.motivo().trim().isBlank()) {
+            throw new BusinessException("CAMPO_OBLIGATORIO",
+                "El motivo de rechazo es obligatorio", HttpStatus.BAD_REQUEST);
+        }
+
+        Perfil perfil = perfilRepository.findById(id)
+            .orElseThrow(NotFoundException::new);
+
+        if (perfil.getEstado() != EstadoPerfil.PENDIENTE) {
+            throw new BusinessException("ESTADO_INVALIDO",
+                "Solo se pueden rechazar solicitudes en estado pendiente", HttpStatus.BAD_REQUEST);
+        }
+
+        perfil.setEstado(EstadoPerfil.RECHAZADO);
+        perfil.setMotivoRechazo(request.motivo().trim());
+        perfil.setResueltoEn(OffsetDateTime.now());
+
+        Perfil guardado = perfilRepository.save(perfil);
+        log.info("Perfil {} ({}) rechazado: {}", id, perfil.getTipo(), request.motivo().trim());
+        return PerfilResponse.from(guardado);
     }
 
     private Perfil procesarEmpresa(Usuario usuario, SolicitarPerfilRequest request) {
@@ -164,29 +260,8 @@ public class PerfilService {
             throw new BusinessException("CONSTANCIA_OBLIGATORIA", "Debe adjuntar la constancia de inscripción", HttpStatus.BAD_REQUEST);
         }
 
-        if (archivo.getSize() > MAX_FILE_SIZE_BYTES) {
-            throw new BusinessException("ARCHIVO_TAMANIO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-        }
-
-        String originalName = archivo.getOriginalFilename();
-        if (originalName == null || !originalName.toLowerCase().endsWith(".pdf")) {
-            throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-        }
-
-        // Validación estricta del encabezado mágico %PDF
-        try (InputStream is = archivo.getInputStream()) {
-            byte[] header = new byte[4];
-            int read = is.read(header);
-            if (read < 4 || header[0] != PDF_MAGIC_BYTES[0]
-                         || header[1] != PDF_MAGIC_BYTES[1]
-                         || header[2] != PDF_MAGIC_BYTES[2]
-                         || header[3] != PDF_MAGIC_BYTES[3]) {
-                throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-            }
-        } catch (IOException e) {
-            log.error("Error al leer archivo de constancia", e);
-            throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-        }
+        // Tipo real (%PDF) y tamaño: validación común de T-05, la misma que usan los documentos de US-28
+        fileStorageService.validarPdf(archivo);
     }
 
     private String normalizarCuitCuil(String valor) {
