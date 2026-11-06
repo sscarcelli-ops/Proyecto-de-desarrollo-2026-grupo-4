@@ -19,8 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.regex.Pattern;
 
@@ -29,8 +27,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class PerfilService {
 
-    private static final long MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB (RNF-10)
-    private static final byte[] PDF_MAGIC_BYTES = new byte[]{0x25, 0x50, 0x44, 0x46}; // %PDF
     private static final Pattern PATTERN_CUIT_CUIL = Pattern.compile("^\\d{2}-?\\d{8}-?\\d$");
     private static final Pattern PATTERN_DNI = Pattern.compile("^\\d{7,8}$");
 
@@ -264,29 +260,8 @@ public class PerfilService {
             throw new BusinessException("CONSTANCIA_OBLIGATORIA", "Debe adjuntar la constancia de inscripción", HttpStatus.BAD_REQUEST);
         }
 
-        if (archivo.getSize() > MAX_FILE_SIZE_BYTES) {
-            throw new BusinessException("ARCHIVO_TAMANIO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-        }
-
-        String originalName = archivo.getOriginalFilename();
-        if (originalName == null || !originalName.toLowerCase().endsWith(".pdf")) {
-            throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-        }
-
-        // Validación estricta del encabezado mágico %PDF
-        try (InputStream is = archivo.getInputStream()) {
-            byte[] header = new byte[4];
-            int read = is.read(header);
-            if (read < 4 || header[0] != PDF_MAGIC_BYTES[0]
-                         || header[1] != PDF_MAGIC_BYTES[1]
-                         || header[2] != PDF_MAGIC_BYTES[2]
-                         || header[3] != PDF_MAGIC_BYTES[3]) {
-                throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-            }
-        } catch (IOException e) {
-            log.error("Error al leer archivo de constancia", e);
-            throw new BusinessException("ARCHIVO_FORMATO", "El archivo debe ser un PDF de hasta 8 MB", HttpStatus.BAD_REQUEST);
-        }
+        // Tipo real (%PDF) y tamaño: validación común de T-05, la misma que usan los documentos de US-28
+        fileStorageService.validarPdf(archivo);
     }
 
     private String normalizarCuitCuil(String valor) {

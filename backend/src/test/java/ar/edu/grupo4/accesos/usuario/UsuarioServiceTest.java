@@ -16,11 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
@@ -38,6 +41,51 @@ class UsuarioServiceTest {
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
         usuarioService = new UsuarioService(usuarioRepository, rolRepository, passwordEncoder);
+    }
+
+    private Usuario cuentaConPassword(String password, int versionSesion) {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setPasswordHash(passwordEncoder.encode(password));
+        usuario.setVersionSesion(versionSesion);
+        when(usuarioRepository.findWithRolesById(1L)).thenReturn(Optional.of(usuario));
+        return usuario;
+    }
+
+    @Test
+    void cambiarPasswordGuardaLaNuevaConHashYCierraLasDemasSesiones() {
+        Usuario usuario = cuentaConPassword("Prueba123", 3);
+
+        Usuario actualizado = usuarioService.cambiarPassword(1L, "Prueba123", "Nueva1234");
+
+        assertThat(actualizado).isSameAs(usuario);
+        assertThat(passwordEncoder.matches("Nueva1234", usuario.getPasswordHash())).isTrue();
+        assertThat(passwordEncoder.matches("Prueba123", usuario.getPasswordHash())).isFalse();
+        assertThat(usuario.getVersionSesion()).isEqualTo(4);
+    }
+
+    @Test
+    void cambiarPasswordConLaActualIncorrectaNoCambiaNada() {
+        Usuario usuario = cuentaConPassword("Prueba123", 3);
+
+        assertThatThrownBy(() -> usuarioService.cambiarPassword(1L, "Incorrecta1", "Nueva1234"))
+            .isInstanceOfSatisfying(BusinessException.class, e -> {
+                assertThat(e.getCode()).isEqualTo("PASSWORD_ACTUAL_INCORRECTA");
+                assertThat(e.getMessage()).isEqualTo("La contraseña actual no es correcta");
+                // No es 401: el frontend cerraría la sesión en lugar de mostrar el error
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+            });
+
+        assertThat(passwordEncoder.matches("Prueba123", usuario.getPasswordHash())).isTrue();
+        assertThat(usuario.getVersionSesion()).isEqualTo(3);
+    }
+
+    @Test
+    void cambiarPasswordDeUnaCuentaQueYaNoExisteCierraLaSesion() {
+        when(usuarioRepository.findWithRolesById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> usuarioService.cambiarPassword(1L, "Prueba123", "Nueva1234"))
+            .isInstanceOf(InsufficientAuthenticationException.class);
     }
 
     @Test

@@ -8,6 +8,7 @@ import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegistroPage } from '../features/auth/pages/RegistroPage';
 import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
+import { CambiarPasswordPage } from '../features/auth/pages/CambiarPasswordPage';
 import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
 import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
 import { PingPage } from '../features/health/pages/PingPage';
@@ -49,6 +50,8 @@ export const router = createBrowserRouter([
         children: [
           { path: PATHS.solicitarPerfil, element: <SolicitarPerfilPage /> },
           { path: PATHS.estadoSolicitud, element: <EstadoSolicitudPage /> },
+          // US-07: acá y no en AppLayout porque la usan todos, también el Guardia y las cuentas sin rol, que no tienen menú
+          { path: PATHS.cambiarPassword, element: <CambiarPasswordPage /> },
         ],
       },
     ],

@@ -33,4 +33,18 @@ public interface FileStorageService {
      * @param rutaRelativa ruta relativa almacenada
      */
     void eliminar(String rutaRelativa);
+
+    /**
+     * Valida que un archivo sea un PDF no vacío de hasta 8 MB, verificando encabezado mágico %PDF (T-05, RNF-10).
+     *
+     * @param archivo archivo a validar
+     */
+    void validarPdf(MultipartFile archivo);
+
+    /**
+     * Valida que un archivo sea una foto JPG o PNG no vacía de hasta 2 MB, verificando encabezado mágico (T-05, RNF-10).
+     *
+     * @param archivo archivo a validar
+     */
+    void validarFoto(MultipartFile archivo);
 }

@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.auth;
 
+import ar.edu.grupo4.accesos.auth.dto.CambiarPasswordRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginRequest;
 import ar.edu.grupo4.accesos.auth.dto.LoginResponse;
 import ar.edu.grupo4.accesos.auth.dto.RegistroRequest;
@@ -67,6 +68,15 @@ public class AuthService {
     /** US-05: cierra todas las sesiones del usuario; el token que usó deja de valer aunque no haya vencido. */
     public void cerrarSesion(Long usuarioId) {
         usuarioService.cerrarSesiones(usuarioId);
+    }
+
+    /**
+     * US-07: cambia la contraseña y cierra las demás sesiones. Devuelve un token nuevo para que esta sesión siga
+     * abierta: el que se usó para la petición ya no vale.
+     */
+    public LoginResponse cambiarPassword(Long usuarioId, CambiarPasswordRequest request) {
+        Usuario usuario = usuarioService.cambiarPassword(usuarioId, request.passwordActual(), request.passwordNueva());
+        return LoginResponse.from(tokenService.emitir(usuario), usuario, nombreVisible(usuario));
     }
 
     /** El usuario del token (sub = id). Si la cuenta ya no existe, la sesión deja de valer (401). */

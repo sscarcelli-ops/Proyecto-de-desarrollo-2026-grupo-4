@@ -1,5 +1,6 @@
-import { Avatar, Flex, Typography } from 'antd';
+import { Flex, Typography } from 'antd';
 import { Outlet } from 'react-router';
+import { Logo } from '../../shared/components/Logo';
 import { palette } from '../theme';
 
 /**
@@ -10,9 +11,8 @@ export function PublicLayout() {
   return (
     <Flex vertical style={{ minHeight: '100vh', background: palette.background, padding: '24px 16px' }}>
       <Flex align="center" gap={12} style={{ marginBottom: 24 }}>
-        {/* Reemplazar por el logo definitivo */}
-        <Avatar size={44} />
-        <Typography.Text strong style={{ fontSize: 18 }}>Logo</Typography.Text>
+        <Logo size={40} />
+        <Typography.Text strong style={{ fontSize: 18 }}>Control de Accesos</Typography.Text>
       </Flex>
       {/* Centrada en la pantalla: el padding de abajo compensa el alto de la fila del logo */}
       <Flex justify="center" align="center" style={{ flex: 1, paddingBottom: 116 }}>
