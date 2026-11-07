@@ -11,7 +11,11 @@ server {
     # Sin barra al final de proxy_pass, el pedido llega al backend con la misma ruta (/api/...).
     location /api/ {
         proxy_pass ${BACKEND_URL};
-        proxy_set_header Host $host;
+        # Host con el puerto ($http_host, no $host): el backend ve la misma dirección que el navegador
+        # (localhost:5173, el dominio de la VPS...) y trata el pedido como del mismo sitio. Con $host el puerto se
+        # pierde y el backend lo rechaza por CORS (403) en cualquier puerto o dominio que no esté en
+        # CORS_ALLOWED_ORIGINS.
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

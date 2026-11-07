@@ -8,7 +8,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   // El frontend llama a /api en su misma dirección (shared/lib/httpClient.ts) y Vite lo reenvía al backend.
   // En Docker hace lo mismo nginx (nginx/default.conf.template).
-  const backend = { target: env.BACKEND_URL || 'http://localhost:8080', changeOrigin: true }
+  // Sin changeOrigin: el backend recibe el Host del navegador (localhost:5173) y trata el pedido como del mismo
+  // sitio. Con changeOrigin pasaría a localhost:8080 y el backend lo rechazaría por CORS si FRONTEND_PORT cambia.
+  const backend = { target: env.BACKEND_URL || 'http://localhost:8080' }
   const puerto = Number(env.FRONTEND_PORT || 5173)
 
   return {
