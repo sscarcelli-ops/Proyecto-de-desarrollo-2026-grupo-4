@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import { App as AntdApp } from 'antd';
 import { SelectorOperador } from '../../operadores/components/SelectorOperador';
-import { useAsignarOperador, type Barrio } from '../api/barrios';
+import { nombreConUbicacion, useAsignarOperador, type Barrio } from '../api/barrios';
 import type { Operador } from '../../operadores/api/operadores';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
@@ -16,7 +16,7 @@ export function AsignarOperadorSelect({ barrio }: { barrio: Barrio }) {
 
   const confirmarAsignacion = (operador: Operador) => {
     modal.confirm({
-      title: `¿Asignar a ${operador.nombre} ${operador.apellido} como Operador de ${barrio.nombre}?`,
+      title: `¿Asignar a ${operador.nombre} ${operador.apellido} como Operador de ${nombreConUbicacion(barrio)}?`,
       content: 'El barrio quedará Activo. Para cambiar el Operador después, hay que reemplazarlo.',
       okText: 'Confirmar',
       cancelText: 'Cancelar',

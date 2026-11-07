@@ -2,7 +2,7 @@ import { Alert, Button, Card, Flex, Form, Skeleton, Typography, App as AntdApp }
 import { useNavigate, useSearchParams } from 'react-router';
 import { marcarErroresDeOperador, useCrearOperador, type OperadorRequest } from '../api/operadores';
 import { OperadorForm } from '../components/OperadorForm';
-import { useAsignarOperador, useBarrio } from '../../barrios/api/barrios';
+import { nombreConUbicacion, useAsignarOperador, useBarrio } from '../../barrios/api/barrios';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 
@@ -55,16 +55,23 @@ export function OperadorNuevoPage() {
       : errorBarrio
         ? getErrorMessage(errorBarrio)
         : barrio && barrio.operadorId !== null
-          ? `${barrio.nombre} ya tiene un Operador asignado.`
+          ? `${nombreConUbicacion(barrio)} ya tiene un Operador asignado.`
           : null;
 
   return (
     <Flex vertical gap={16}>
       <Title level={3} style={{ margin: 0 }}>Nuevo Operador</Title>
 
+      {/* Mismo formato que "No se pudo cargar el barrio" en Editar barrio: título, motivo y salida */}
       {problemaConElBarrio && (
-        <Flex vertical gap={12} align="flex-start">
-          <Alert type="error" showIcon title={problemaConElBarrio} />
+        <Flex vertical gap={12} align="flex-start" style={{ maxWidth: 560 }}>
+          <Alert
+            type="error"
+            showIcon
+            title="No se puede crear el Operador para este barrio"
+            description={problemaConElBarrio}
+            style={{ width: '100%' }}
+          />
           <Button onClick={volver}>Volver a Barrios</Button>
         </Flex>
       )}
@@ -76,13 +83,14 @@ export function OperadorNuevoPage() {
           <Flex vertical gap={16}>
             {barrio && (
               <Text type="secondary">
-                Se asignará al barrio <strong>{barrio.nombre}</strong>, que quedará Activo.
+                Se asignará a <strong>{nombreConUbicacion(barrio)}</strong>, que quedará Activo.
               </Text>
             )}
             <OperadorForm
               form={form}
               loading={crear.isPending || crearYAsignar.isPending}
               onFinish={(values) => void onFinish(values)}
+              onCancel={volver}
             />
           </Flex>
         </Card>

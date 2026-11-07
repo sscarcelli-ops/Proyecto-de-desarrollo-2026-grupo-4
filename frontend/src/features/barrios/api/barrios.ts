@@ -4,11 +4,21 @@ import { httpClient } from '../../../shared/lib/httpClient';
 import { getApiProblem, getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { operadoresKeys } from '../../operadores/api/operadores';
 import type { ApiSchema } from '../../../shared/api/types';
+import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 
 // Tipos generados desde los DTO del backend (npm run api:types)
 export type Barrio = ApiSchema<'BarrioResponse'>;
 export type BarrioRequest = ApiSchema<'BarrioRequest'>;
 export type AsignarOperadorRequest = ApiSchema<'AsignarOperadorRequest'>;
+
+/**
+ * El barrio con su ubicación, para los mensajes: puede haber dos barrios con el mismo nombre en distintas
+ * localidades. Ej. "Barrio Los Álamos (Buenos Aires, Pilar)".
+ */
+export function nombreConUbicacion(barrio: Barrio): string {
+  const ubicacion = textoUbicacion(barrio.provincia, barrio.localidad);
+  return ubicacion ? `${barrio.nombre} (${ubicacion})` : barrio.nombre;
+}
 
 export const barriosKeys = {
   all: ['barrios'] as const,

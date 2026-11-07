@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button, Divider, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useOperadoresDisponibles, type Operador } from '../api/operadores';
@@ -12,8 +13,13 @@ interface SelectorOperadorProps {
   onCrearNuevo: () => void;
 }
 
+// Búsqueda sin distinguir mayúsculas ni tildes, por nombre, apellido o email: "jose" encuentra "José Pérez"
+const normalizar = (texto: string) => texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
 // Desplegable de Operadores disponibles con "Crear un nuevo Operador" al final.
 // Se usa para asignar un Operador a un barrio sin Operador (US-45) y para reemplazarlo (US-14).
+// Con muchos Operadores no se rompe: la lista tiene su propio desplazamiento y solo dibuja lo visible; además se
+// puede escribir para filtrarla.
 export function SelectorOperador({
   placeholder = 'Asignar un Operador',
   disabled = false,
@@ -22,6 +28,7 @@ export function SelectorOperador({
   onCrearNuevo,
 }: SelectorOperadorProps) {
   const { data: disponibles = [], isLoading } = useOperadoresDisponibles();
+  const [busqueda, setBusqueda] = useState('');
 
   return (
     <Select<number | null>
@@ -32,12 +39,17 @@ export function SelectorOperador({
       loading={loading || isLoading}
       disabled={disabled}
       popupMatchSelectWidth={false}
-      notFoundContent="No hay Operadores disponibles"
+      showSearch={{
+        onSearch: setBusqueda,
+        filterOption: (input, option) => normalizar(String(option?.label ?? '')).includes(normalizar(input)),
+      }}
+      notFoundContent={busqueda ? 'Ningún Operador disponible coincide' : 'No hay Operadores disponibles'}
       options={disponibles.map((o) => ({ value: o.id, label: `${o.nombre} ${o.apellido} (${o.email})` }))}
       onChange={(id) => {
         const elegido = disponibles.find((o) => o.id === id);
         if (elegido) onSeleccionar(elegido);
       }}
+      onOpenChange={(abierto) => !abierto && setBusqueda('')}
       popupRender={(lista) => (
         <>
           {lista}

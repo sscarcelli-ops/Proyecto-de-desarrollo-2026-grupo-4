@@ -8,14 +8,17 @@ interface OperadorFormProps {
   form: FormInstance;
   loading: boolean;
   onFinish: (values: OperadorRequest) => void;
+  // Vuelve a la pantalla anterior sin guardar
+  onCancel: () => void;
   textoBoton?: string;
 }
 
 // Formulario de alta de Operador (US-13). Se reutiliza en US-45 (con el barrio indicado) y en US-14 (reemplazar Operador).
 // Mismos mensajes que el backend: si el navegador deja pasar algo, el servidor lo rechaza igual.
-export function OperadorForm({ form, loading, onFinish, textoBoton = 'Crear Operador' }: OperadorFormProps) {
+export function OperadorForm({ form, loading, onFinish, onCancel, textoBoton = 'Crear Operador' }: OperadorFormProps) {
   return (
-    <Form form={form} layout="vertical" onFinish={onFinish}>
+    // Tamaño grande, como los demás formularios (Barrios, Trabajadores, registro)
+    <Form form={form} layout="vertical" size="large" onFinish={onFinish}>
       <Row gutter={16}>
         <Col xs={24} sm={12}>
           <Form.Item
@@ -56,7 +59,8 @@ export function OperadorForm({ form, loading, onFinish, textoBoton = 'Crear Oper
       </Form.Item>
       <CampoPasswordNueva label="Contraseña inicial" />
 
-      <Flex justify="flex-end">
+      <Flex justify="flex-end" gap={8} wrap>
+        <Button onClick={onCancel}>Cancelar</Button>
         <Button type="primary" htmlType="submit" loading={loading}>{textoBoton}</Button>
       </Flex>
     </Form>
