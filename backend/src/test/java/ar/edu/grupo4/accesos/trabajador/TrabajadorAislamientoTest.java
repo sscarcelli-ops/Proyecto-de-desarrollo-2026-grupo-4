@@ -2,6 +2,8 @@ package ar.edu.grupo4.accesos.trabajador;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.common.storage.FileStorageService;
+import ar.edu.grupo4.accesos.trabajador.dto.DocumentoRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.usuario.UsuarioActual;
@@ -14,7 +16,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,12 +34,14 @@ class TrabajadorAislamientoTest {
     private static final Long TRABAJADOR_AJENO_ID = 7L;
 
     private final TrabajadorRepository trabajadorRepository = mock(TrabajadorRepository.class);
+    private final DocumentoRepository documentoRepository = mock(DocumentoRepository.class);
+    private final FileStorageService fileStorageService = mock(FileStorageService.class);
     private final UsuarioActual usuarioActual = mock(UsuarioActual.class);
     private TrabajadorService service;
 
     @BeforeEach
     void setUp() {
-        service = new TrabajadorService(trabajadorRepository, usuarioActual);
+        service = new TrabajadorService(trabajadorRepository, documentoRepository, fileStorageService, usuarioActual);
         when(usuarioActual.perfilIdAprobado()).thenReturn(PERFIL_ID);
         when(trabajadorRepository.findByIdAndPerfilId(TRABAJADOR_AJENO_ID, PERFIL_ID)).thenReturn(Optional.empty());
     }
@@ -70,6 +76,26 @@ class TrabajadorAislamientoTest {
     }
 
     @Test
+    @DisplayName("US-41 CA-1 y CA-2: los documentos y la foto de un trabajador de otro perfil no se leen ni se tocan")
+    void documentosYFotoDeUnTrabajadorAjenoRespondenNoEncontrado() {
+        MockMultipartFile pdf = new MockMultipartFile("archivo", "art.pdf", "application/pdf", "%PDF-1.4".getBytes());
+        MockMultipartFile foto = new MockMultipartFile("foto", "f.png", "image/png", new byte[] {(byte) 0x89, 'P', 'N', 'G'});
+        DocumentoRequest documento = new DocumentoRequest(TipoDocumento.ART, pdf, LocalDate.now().plusDays(30));
+
+        assertThatThrownBy(() -> service.descargarDocumento(TRABAJADOR_AJENO_ID, TipoDocumento.ART))
+            .isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.descargarFoto(TRABAJADOR_AJENO_ID)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.cargarDocumento(TRABAJADOR_AJENO_ID, documento)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.eliminarDocumento(TRABAJADOR_AJENO_ID, TipoDocumento.ART))
+            .isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.cargarFoto(TRABAJADOR_AJENO_ID, foto)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.eliminarFoto(TRABAJADOR_AJENO_ID)).isInstanceOf(NotFoundException.class);
+
+        // Ni la base de documentos ni el disco se usan: el perfil se controla antes
+        verifyNoInteractions(documentoRepository, fileStorageService);
+    }
+
+    @Test
     @DisplayName("US-41 CA-3: el mismo DNI en otro perfil no impide cargarlo, y el registro queda en el perfil de la sesión")
     void elMismoDniEnOtroPerfilSeCargaEnElPerfilDeLaSesion() {
         when(trabajadorRepository.existsByPerfilIdAndDniIgnoreCase(PERFIL_ID, "30111222")).thenReturn(false);
@@ -95,7 +121,9 @@ class TrabajadorAislamientoTest {
             .isInstanceOf(BusinessException.class);
         assertThatThrownBy(() -> service.crear(new TrabajadorRequest("A", "B", "30111222")))
             .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> service.descargarDocumento(1L, TipoDocumento.ART)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> service.descargarFoto(1L)).isInstanceOf(BusinessException.class);
 
-        verifyNoInteractions(trabajadorRepository);
+        verifyNoInteractions(trabajadorRepository, documentoRepository, fileStorageService);
     }
 }
