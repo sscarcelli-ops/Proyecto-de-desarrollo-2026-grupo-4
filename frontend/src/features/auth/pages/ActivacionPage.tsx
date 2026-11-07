@@ -50,17 +50,27 @@ export function ActivacionPage() {
   );
 }
 
-/** Error del backend, con el botón "Iniciar sesión" si el código ya se usó (CA-3, CA-6). */
+// Mismo texto que TOKEN_UTILIZADO del backend (ActivacionService)
+const MENSAJE_UTILIZADO =
+  'Este código de activación ya fue utilizado. Si ya configuró su cuenta, por favor inicie sesión con sus credenciales';
+
+/**
+ * Error del backend, con el botón "Iniciar sesión" si el código ya se usó (CA-6).
+ * Un 404 también es "ya utilizado": la activación deja de existir apenas se crea el Administrador, así que si otra
+ * persona la completó mientras esta llenaba "Registrate", el backend responde como si no existiera.
+ */
 function ErrorDeActivacion({ error }: { error: unknown }) {
   const navigate = useNavigate();
-  const utilizado = getApiProblem(error)?.code === 'TOKEN_UTILIZADO';
+  const problema = getApiProblem(error);
+  const cerrada = problema?.status === 404;
+  const utilizado = problema?.code === 'TOKEN_UTILIZADO' || cerrada;
 
   // El botón va debajo del texto (no al costado): en el celular el mensaje queda legible
   return (
     <Alert
       type="error"
       showIcon
-      title={getErrorMessage(error)}
+      title={cerrada ? MENSAJE_UTILIZADO : getErrorMessage(error)}
       description={
         utilizado && (
           <Button size="small" onClick={() => navigate(PATHS.login)} style={{ marginTop: 8 }}>
