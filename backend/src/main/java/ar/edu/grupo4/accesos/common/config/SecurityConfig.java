@@ -46,6 +46,7 @@ public class SecurityConfig {
         RUTA.matcher("/swagger-ui.html"),
         RUTA.matcher(HttpMethod.POST, "/api/auth/login"),
         RUTA.matcher(HttpMethod.POST, "/api/auth/registro"),
+        RUTA.matcher(HttpMethod.GET, "/api/auth/activacion"),
         RUTA.matcher(HttpMethod.POST, "/api/auth/activacion"),
         RUTA.matcher(HttpMethod.POST, "/api/auth/activacion/validar")
     );

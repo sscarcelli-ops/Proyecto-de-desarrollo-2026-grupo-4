@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, Form, Input, Typography } from 'antd';
+import { Alert, Button, Flex, Form, Input, Skeleton, Typography } from 'antd';
 import { useNavigate } from 'react-router';
-import { useActivar, useValidarActivacion, type ActivacionRequest } from '../api/activacion';
+import { useActivacionDisponible, useActivar, useValidarActivacion, type ActivacionRequest } from '../api/activacion';
+import { NotFoundPage } from '../../../routes/NotFoundPage';
 import { getApiProblem, getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { CampoConfirmarPassword, CampoPasswordNueva } from '../../../shared/components/CamposPassword';
 import { PATHS } from '../../../routes/paths';
@@ -17,9 +18,30 @@ export interface CuentaCreadaState {
  * US-01: activación del Administrador inicial (wireframes "Activación de cuenta" y "Registrate").
  * Paso 1: el código del manual de instalación se valida sin consumirse. Paso 2: email y contraseña; al confirmar
  * se crea el Administrador, se consume el código y va al login. El código queda solo en memoria (no en la URL).
+ * Con el Administrador ya creado la pantalla no existe: muestra "página no encontrada", sin el campo del código.
  */
 export function ActivacionPage() {
   const [codigo, setCodigo] = useState<string | null>(null);
+  const disponible = useActivacionDisponible();
+
+  if (disponible.isPending) {
+    return <Skeleton active style={{ maxWidth: 360, margin: '0 auto' }} />;
+  }
+  if (disponible.isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        title="No se pudo cargar la activación"
+        description={getErrorMessage(disponible.error)}
+        style={{ maxWidth: 360, margin: '0 auto' }}
+      />
+    );
+  }
+  // Mientras se completa "Registrate" no se vuelve a preguntar: al crear la cuenta pasa al login
+  if (!disponible.data && codigo === null) {
+    return <NotFoundPage />;
+  }
 
   return codigo === null ? (
     <PasoCodigo onValido={setCodigo} />
@@ -77,7 +99,7 @@ function PasoCodigo({ onValido }: { onValido: (codigo: string) => void }) {
           name="token"
           rules={[{ required: true, whitespace: true, message: 'El código de activación es obligatorio' }]}
         >
-          <Input placeholder="Token" autoComplete="off" spellCheck={false} />
+          <Input placeholder="Token" autoComplete="off" spellCheck={false} maxLength={100} />
         </Form.Item>
 
         <Button type="primary" htmlType="submit" block loading={validar.isPending} style={{ marginTop: 8 }}>
@@ -137,7 +159,7 @@ function PasoRegistrate({ codigo }: { codigo: string }) {
             { type: 'email', message: 'Formato de e-mail no válido' },
           ]}
         >
-          <Input placeholder="Email" autoComplete="username" inputMode="email" />
+          <Input placeholder="Email" autoComplete="username" inputMode="email" maxLength={255} />
         </Form.Item>
 
         <CampoPasswordNueva label="Genere su contraseña" placeholder="Contraseña" />
