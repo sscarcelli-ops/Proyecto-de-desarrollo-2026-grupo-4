@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Avatar, Button, Drawer, Flex, Grid, Layout, Menu, Typography } from 'antd';
+import { Button, Drawer, Flex, Grid, Layout, Menu, Typography } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { getMenuItemsFor } from './menuItems';
 import { useCurrentUser } from '../../features/auth/api/useCurrentUser';
+import { BotonCambiarPassword } from '../../features/auth/components/BotonCambiarPassword';
 import { BotonCerrarSesion } from '../../features/auth/components/BotonCerrarSesion';
+import { Logo } from '../../shared/components/Logo';
 import { ROL_LABEL } from '../../shared/types/rol';
 import { palette } from '../theme';
 
@@ -30,10 +32,9 @@ export function AppLayout() {
 
   const menuLateral = (
     <Flex vertical style={{ height: '100%' }}>
-      <Flex align="center" gap={12} style={{ padding: '24px 20px' }}>
-        {/* Reemplazar por el logo definitivo */}
-        <Avatar size={40} style={{ background: palette.sidebarHover }} />
-        <Typography.Text strong style={{ fontSize: 18, color: palette.sidebarTextActive }}>Logo</Typography.Text>
+      <Flex align="center" gap={10} style={{ padding: '24px 16px' }}>
+        <Logo size={36} sobreOscuro />
+        <Typography.Text strong style={{ fontSize: 16, color: palette.sidebarTextActive }}>Control de Accesos</Typography.Text>
       </Flex>
       <Menu
         theme="dark"
@@ -46,7 +47,8 @@ export function AppLayout() {
         }}
         style={{ borderInlineEnd: 'none', flex: 1 }}
       />
-      <Flex justify="flex-end" style={{ padding: 16 }}>
+      <Flex justify="space-between" style={{ padding: 16 }}>
+        <BotonCambiarPassword forma="puntos" />
         <BotonCerrarSesion style={{ color: palette.sidebarText }} />
       </Flex>
     </Flex>
@@ -57,7 +59,7 @@ export function AppLayout() {
       {esEscritorio ? (
         <Sider
           theme="dark"
-          width={240}
+          width={265}
           style={{
             position: 'sticky',
             top: 0,
@@ -69,7 +71,7 @@ export function AppLayout() {
       ) : (
         <Drawer
           placement="left"
-          size={240}
+          size={265}
           open={menuAbierto}
           onClose={() => setMenuAbierto(false)}
           closable={false}

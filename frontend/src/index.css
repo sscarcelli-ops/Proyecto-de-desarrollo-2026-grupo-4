@@ -33,3 +33,20 @@ body {
 .ant-table-wrapper.tabla-redondeada .ant-table-tbody > tr:last-child > td:last-child {
   border-bottom-right-radius: 8px !important;
 }
+
+/* Upload que ocupa todo el ancho disponible para botones block simétricos */
+.ant-upload-wrapper.upload-block,
+.ant-upload-wrapper.upload-block .ant-upload,
+.ant-upload-wrapper.upload-block .ant-upload-select {
+  width: 100% !important;
+  display: block !important;
+}
+
+/* Botón de carga que ocupa el ancho pero mantiene icono y texto a la izquierda (como en los wireframes) */
+.ant-btn.btn-upload-input {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  text-align: left !important;
+  padding-left: 14px !important;
+}

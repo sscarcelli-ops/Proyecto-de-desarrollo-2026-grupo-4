@@ -9,11 +9,13 @@ export const PATHS = {
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
+  cambiarPassword: '/cambiar-contrasena', // US-07
   estadoSolicitud: '/estado-solicitud', // US-08
   garita: '/garita', // US-37 a US-40 (Guardia)
   barrios: '/barrios', // US-10
   barrioNuevo: '/barrios/nuevo', // US-10
   barrioEditar: '/barrios/:id/editar', // US-11
+  empresas: '/empresas', // US-18 (Admin: Empresas y Monotributistas)
   trabajadores: '/trabajadores', // US-26
   trabajadorNuevo: '/trabajadores/nuevo', // US-25
   trabajadorEditar: '/trabajadores/:id/editar', // US-26

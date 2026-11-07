@@ -1,26 +1,26 @@
 package ar.edu.grupo4.accesos.trabajador;
 
 import ar.edu.grupo4.accesos.common.paging.PageResponse;
+import ar.edu.grupo4.accesos.trabajador.dto.DocumentoRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
- * API REST para la gestión de trabajadores (US-25, US-26).
+ * API REST para la gestión de trabajadores (US-25, US-26, US-28).
  *
  * Seguridad:
  * - Todos los endpoints requieren un JWT válido (SecurityConfig exige token para /api/**).
@@ -103,5 +103,85 @@ public class TrabajadorController {
             @Valid @RequestBody TrabajadorEditarRequest request) {
 
         return trabajadorService.editar(id, request);
+    }
+
+    // ========================================================================================
+    // US-28: Cargar, renovar y eliminar documentación
+    // ========================================================================================
+
+    /**
+     * Carga o renueva un documento (ART o Seguro de Vida) para un trabajador.
+     */
+    @PostMapping(value = "/{id}/documentos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public TrabajadorResponse cargarDocumento(
+            @PathVariable Long id,
+            @Valid @ModelAttribute DocumentoRequest request) {
+
+        return trabajadorService.cargarDocumento(id, request);
+    }
+
+    /**
+     * Elimina un documento legal de un trabajador.
+     */
+    @DeleteMapping("/{id}/documentos/{tipo}")
+    public TrabajadorResponse eliminarDocumento(
+            @PathVariable Long id,
+            @PathVariable TipoDocumento tipo) {
+
+        return trabajadorService.eliminarDocumento(id, tipo);
+    }
+
+    /**
+     * Descarga el archivo PDF de un documento legal de un trabajador.
+     */
+    @GetMapping("/{id}/documentos/{tipo}/archivo")
+    public ResponseEntity<Resource> descargarDocumento(
+            @PathVariable Long id,
+            @PathVariable TipoDocumento tipo) {
+
+        Resource recurso = trabajadorService.descargarDocumento(id, tipo);
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + tipo.name().toLowerCase() + ".pdf\"")
+            .body(recurso);
+    }
+
+    // ========================================================================================
+    // US-25 / US-26: Carga, eliminación y descarga de Foto
+    // ========================================================================================
+
+    /**
+     * Sube o reemplaza la foto de perfil del trabajador.
+     */
+    @PostMapping(value = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public TrabajadorResponse cargarFoto(
+            @PathVariable Long id,
+            @RequestParam("foto") MultipartFile foto) {
+
+        return trabajadorService.cargarFoto(id, foto);
+    }
+
+    /**
+     * Elimina la foto de perfil del trabajador.
+     */
+    @DeleteMapping("/{id}/foto")
+    public TrabajadorResponse eliminarFoto(
+            @PathVariable Long id) {
+
+        return trabajadorService.eliminarFoto(id);
+    }
+
+    /**
+     * Descarga la foto de perfil del trabajador.
+     */
+    @GetMapping("/{id}/foto")
+    public ResponseEntity<Resource> descargarFoto(
+            @PathVariable Long id) {
+
+        Resource recurso = trabajadorService.descargarFoto(id);
+        MediaType mediaType = MediaTypeFactory.getMediaType(recurso).orElse(MediaType.IMAGE_JPEG);
+        return ResponseEntity.ok()
+            .contentType(mediaType)
+            .body(recurso);
     }
 }

@@ -1,10 +1,21 @@
-import { useState, type CSSProperties } from 'react';
+import { useState, type ComponentProps, type CSSProperties } from 'react';
 import { Button, Flex, Modal, Tooltip, Typography } from 'antd';
-import { LogoutOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
 import type { TooltipPlacement } from 'antd/es/tooltip';
 import { useNavigate } from 'react-router';
 import { useLogout } from '../api/session';
 import { PATHS } from '../../../routes/paths';
+
+/** Puerta con flecha del wireframe: el LogoutOutlined de Ant Design, en tamaño chico, parece un círculo con flecha. */
+function SalirSvg(props: ComponentProps<'svg'>) {
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
 
 /**
  * US-05 / RF-25: botón "Cerrar sesión" con la confirmación del wireframe. Lo usan el menú lateral (AppLayout),
@@ -41,7 +52,7 @@ export function BotonCerrarSesion({
         <Tooltip title="Cerrar sesión" placement={ayudaEn}>
           <Button
             type="text"
-            icon={<LogoutOutlined style={{ fontSize: 22 }} />}
+            icon={<Icon component={SalirSvg} style={{ fontSize: 22 }} />}
             onClick={() => setConfirmando(true)}
             aria-label="Cerrar sesión"
             style={{ width: 44, height: 44, ...style }}

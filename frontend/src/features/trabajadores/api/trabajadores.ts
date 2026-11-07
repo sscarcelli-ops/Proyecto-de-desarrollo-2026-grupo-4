@@ -7,9 +7,17 @@ import type { PageResponse } from '../../../shared/types/page';
 // Tipos — generados desde los DTOs del backend (npm run api:types)
 // ========================================================================================
 
-export type TrabajadorResponse = ApiSchema<'TrabajadorResponse'>;
 export type TrabajadorRequest = ApiSchema<'TrabajadorRequest'>;
 export type TrabajadorEditarRequest = ApiSchema<'TrabajadorEditarRequest'>;
+export type DocumentoResponse = ApiSchema<'DocumentoResponse'>;
+export type TrabajadorResponse = ApiSchema<'TrabajadorResponse'>;
+export type TipoDocumento = DocumentoResponse['tipo'];
+
+export interface DocumentoUploadPayload {
+  tipo: TipoDocumento;
+  archivo: File;
+  fechaVencimiento: string;
+}
 
 // ========================================================================================
 // Claves de caché de TanStack Query
@@ -50,6 +58,77 @@ async function crearTrabajador(body: TrabajadorRequest): Promise<TrabajadorRespo
 async function editarTrabajador(id: number, body: TrabajadorEditarRequest): Promise<TrabajadorResponse> {
   const { data } = await httpClient.put<TrabajadorResponse>(`/trabajadores/${id}`, body);
   return data;
+}
+
+/** POST /api/trabajadores/:id/documentos — cargar o renovar documento (US-28) */
+export async function subirDocumento(trabajadorId: number, payload: DocumentoUploadPayload): Promise<TrabajadorResponse> {
+  const formData = new FormData();
+  formData.append('tipo', payload.tipo);
+  formData.append('archivo', payload.archivo);
+  formData.append('fechaVencimiento', payload.fechaVencimiento);
+
+  // Sobrescribe el default 'application/json' de httpClient para enviar multipart (igual que en perfiles.ts)
+  const { data } = await httpClient.post<TrabajadorResponse>(
+    `/trabajadores/${trabajadorId}/documentos`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return data;
+}
+
+/** DELETE /api/trabajadores/:id/documentos/:tipo — eliminar documento (US-28) */
+export async function eliminarDocumento(trabajadorId: number, tipo: TipoDocumento): Promise<TrabajadorResponse> {
+  const { data } = await httpClient.delete<TrabajadorResponse>(
+    `/trabajadores/${trabajadorId}/documentos/${tipo}`
+  );
+  return data;
+}
+
+/** POST /api/trabajadores/:id/foto — cargar o reemplazar foto (US-25, US-26) */
+export async function subirFoto(trabajadorId: number, foto: File): Promise<TrabajadorResponse> {
+  const formData = new FormData();
+  formData.append('foto', foto);
+
+  // Sobrescribe el default 'application/json' de httpClient para enviar multipart (igual que en perfiles.ts)
+  const { data } = await httpClient.post<TrabajadorResponse>(
+    `/trabajadores/${trabajadorId}/foto`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return data;
+}
+
+/** DELETE /api/trabajadores/:id/foto — eliminar foto (US-26) */
+export async function eliminarFoto(trabajadorId: number): Promise<TrabajadorResponse> {
+  const { data } = await httpClient.delete<TrabajadorResponse>(
+    `/trabajadores/${trabajadorId}/foto`
+  );
+  return data;
+}
+
+/** GET /api/trabajadores/:id/foto — obtener foto como blob URL para visualización autenticada */
+export async function obtenerFotoBlob(trabajadorId: number): Promise<string> {
+  const response = await httpClient.get<Blob>(`/trabajadores/${trabajadorId}/foto`, {
+    responseType: 'blob',
+  });
+  return window.URL.createObjectURL(new Blob([response.data]));
+}
+
+/** GET /api/trabajadores/:id/documentos/:tipo/archivo — descargar PDF (US-26, US-28) */
+export async function descargarDocumento(trabajadorId: number, tipo: TipoDocumento, nombreArchivo?: string): Promise<void> {
+  const response = await httpClient.get<Blob>(
+    `/trabajadores/${trabajadorId}/documentos/${tipo}/archivo`,
+    { responseType: 'blob' }
+  );
+  const blob = new Blob([response.data], { type: 'application/pdf' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nombreArchivo || `${tipo.toLowerCase()}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 // ========================================================================================
@@ -107,6 +186,50 @@ export function useEditarTrabajador(id: number) {
   return useMutation({
     mutationFn: (body: TrabajadorEditarRequest) => editarTrabajador(id, body),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
+    },
+  });
+}
+
+export function useCargarDocumento(trabajadorId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: DocumentoUploadPayload) => subirDocumento(trabajadorId, payload),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...TRABAJADORES_KEY, trabajadorId], data);
+      queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
+    },
+  });
+}
+
+export function useEliminarDocumento(trabajadorId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tipo: TipoDocumento) => eliminarDocumento(trabajadorId, tipo),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...TRABAJADORES_KEY, trabajadorId], data);
+      queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
+    },
+  });
+}
+
+export function useCargarFoto(trabajadorId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (foto: File) => subirFoto(trabajadorId, foto),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...TRABAJADORES_KEY, trabajadorId], data);
+      queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
+    },
+  });
+}
+
+export function useEliminarFoto(trabajadorId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => eliminarFoto(trabajadorId),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...TRABAJADORES_KEY, trabajadorId], data);
       queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
     },
   });

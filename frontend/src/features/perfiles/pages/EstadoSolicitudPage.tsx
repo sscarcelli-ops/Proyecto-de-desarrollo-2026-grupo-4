@@ -1,5 +1,6 @@
 import { Alert, Flex, Typography } from 'antd';
 import { ClockCircleOutlined } from '@ant-design/icons';
+import { BotonCambiarPassword } from '../../auth/components/BotonCambiarPassword';
 import { BotonCerrarSesion } from '../../auth/components/BotonCerrarSesion';
 import { useMiSolicitud } from '../api/perfiles';
 import { palette } from '../../../app/theme';
@@ -30,7 +31,10 @@ export function EstadoSolicitudPage() {
         </>
       )}
 
-      <BotonCerrarSesion conTexto />
+      <Flex gap={8} wrap justify="center">
+        <BotonCambiarPassword forma="link" />
+        <BotonCerrarSesion conTexto />
+      </Flex>
     </Flex>
   );
 }

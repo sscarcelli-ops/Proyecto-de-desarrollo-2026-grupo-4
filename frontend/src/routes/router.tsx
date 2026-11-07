@@ -15,6 +15,7 @@ import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegistroPage } from '../features/auth/pages/RegistroPage';
 import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
+import { CambiarPasswordPage } from '../features/auth/pages/CambiarPasswordPage';
 import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
 import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
 import { PingPage } from '../features/health/pages/PingPage';
@@ -22,6 +23,7 @@ import { GaritaPage } from '../features/garita/pages/GaritaPage';
 import { BarriosPage } from '../features/barrios/pages/BarriosPage';
 import { BarrioNuevoPage } from '../features/barrios/pages/BarrioNuevoPage';
 import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
+import { EmpresasPage } from '../features/perfiles/pages/EmpresasPage';
 import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
@@ -62,6 +64,8 @@ export const router = createBrowserRouter([
               },
             ],
           },
+          // US-07: acá y no en AppLayout porque la usan todos, también el Guardia y las cuentas sin rol, que no tienen menú
+          { path: PATHS.cambiarPassword, element: <CambiarPasswordPage /> },
         ],
       },
     ],
@@ -78,13 +82,14 @@ export const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { path: PATHS.inicio, element: <InicioPage /> },
-              // Barrios: exclusivo del Administrador (US-10, US-11)
+              // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
               {
                 element: <RequireRole roles={['ADMIN']} />,
                 children: [
                   { path: PATHS.barrios, element: <BarriosPage /> },
                   { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
                   { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
+                  { path: PATHS.empresas, element: <EmpresasPage /> },
                 ],
               },
               // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)

@@ -3,6 +3,7 @@ import { Alert, Button, Divider, Flex, Form, Input, Typography, Upload } from 'a
 import { UploadOutlined } from '@ant-design/icons';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogout } from '../../auth/api/session';
+import { BotonCambiarPassword } from '../../auth/components/BotonCambiarPassword';
 import { BotonCerrarSesion } from '../../auth/components/BotonCerrarSesion';
 import { useMiSolicitud, useSolicitarPerfil } from '../api/perfiles';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
@@ -155,7 +156,10 @@ export function SolicitarPerfilPage() {
 
         <Divider style={{ margin: '0 0 16px' }} />
 
-        <BotonCerrarSesion conTexto />
+        <Flex gap={8} wrap justify="center">
+          <BotonCambiarPassword forma="link" />
+          <BotonCerrarSesion conTexto />
+        </Flex>
       </Flex>
     );
   }
