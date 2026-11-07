@@ -10,23 +10,31 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class BarrioService {
 
     static final String OPERADOR_OCUPADO = "El Operador ya está asignado a otro barrio";
+    static final String BARRIO_DUPLICADO = "Ya existe un barrio con ese nombre en esa localidad/provincia";
 
     private final BarrioRepository barrioRepository;
     private final OperadorService operadorService;
 
-    /** US-10: el barrio nace Inactivo y sin Operador (RN-10). */
+    /** US-10: el barrio nace Inactivo y sin Operador (RN-10). No puede repetirse el nombre en la misma localidad/provincia. */
     @Transactional
     public Barrio crear(BarrioRequest request) {
-        Barrio barrio = new Barrio(request.nombre().trim(), request.localidadProvincia().trim(),
-            request.direccion().trim());
-        return barrioRepository.save(barrio);
+        String nombre = request.nombre().trim();
+        String localidad = request.localidadProvincia().trim();
+        if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadProvinciaIgnoreCase(nombre, localidad)) {
+            throw barrioDuplicado();
+        }
+        return guardar(new Barrio(nombre, localidad, request.direccion().trim()));
     }
 
     /** US-10: el listado de barrios no se pagina; orden alfabético. */
@@ -42,6 +50,13 @@ public class BarrioService {
             .orElseThrow(() -> new NotFoundException("El barrio no existe."));
     }
 
+    /** Operadores a cargo de los barrios dados, por id de Operador (una sola consulta; los barrios sin Operador no aportan). */
+    @Transactional(readOnly = true)
+    public Map<Long, Operador> operadoresDe(Collection<Barrio> barrios) {
+        List<Long> ids = barrios.stream().map(Barrio::getOperadorId).filter(Objects::nonNull).distinct().toList();
+        return ids.isEmpty() ? new HashMap<>() : operadorService.buscarPorIds(ids);
+    }
+
     /**
      * US-11: modifica nombre, localidad/provincia y dirección. No toca el estado ni el Operador
      * (el Operador se asigna por US-45 y se reemplaza por US-14; el estado, por US-12).
@@ -49,10 +64,28 @@ public class BarrioService {
     @Transactional
     public Barrio modificar(Long id, BarrioRequest request) {
         Barrio barrio = obtener(id);
-        barrio.setNombre(request.nombre().trim());
-        barrio.setLocalidadProvincia(request.localidadProvincia().trim());
+        String nombre = request.nombre().trim();
+        String localidad = request.localidadProvincia().trim();
+        if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadProvinciaIgnoreCaseAndIdNot(nombre, localidad, id)) {
+            throw barrioDuplicado();
+        }
+        barrio.setNombre(nombre);
+        barrio.setLocalidadProvincia(localidad);
         barrio.setDireccion(request.direccion().trim());
-        return barrioRepository.save(barrio);
+        return guardar(barrio);
+    }
+
+    /** Guarda y fuerza el INSERT/UPDATE: si dos pedidos iguales llegan a la vez, el índice único de la base frena al segundo. */
+    private Barrio guardar(Barrio barrio) {
+        try {
+            return barrioRepository.saveAndFlush(barrio);
+        } catch (DataIntegrityViolationException e) {
+            throw barrioDuplicado();
+        }
+    }
+
+    private static BusinessException barrioDuplicado() {
+        return new BusinessException("BARRIO_DUPLICADO", BARRIO_DUPLICADO);
     }
 
     /**
@@ -75,7 +108,7 @@ public class BarrioService {
             .orElseThrow(() -> new NotFoundException("El barrio no existe."));
         if (barrio.getOperadorId() != null) {
             throw new BusinessException("BARRIO_CON_OPERADOR",
-                "El barrio ya tiene un Operador asignado. Para cambiarlo, reemplácelo.");
+                "El barrio ya tiene un Operador asignado. Para cambiarlo, reemplazalo.");
         }
 
         Long operadorId;

@@ -9,7 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,5 +48,12 @@ public class OperadorService {
     @Transactional(readOnly = true)
     public boolean existe(Long operadorId) {
         return operadorRepository.existsById(operadorId);
+    }
+
+    /** Operadores por id de usuario, en una sola consulta (para mostrar el nombre del Operador de cada barrio). */
+    @Transactional(readOnly = true)
+    public Map<Long, Operador> buscarPorIds(Collection<Long> ids) {
+        return operadorRepository.findAllById(ids).stream()
+            .collect(Collectors.toMap(Operador::getUsuarioId, Function.identity()));
     }
 }

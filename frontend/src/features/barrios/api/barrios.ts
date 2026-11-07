@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { FormInstance } from 'antd';
 import { httpClient } from '../../../shared/lib/httpClient';
+import { getApiProblem, getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { operadoresKeys } from '../../operadores/api/operadores';
 import type { ApiSchema } from '../../../shared/api/types';
 
@@ -87,4 +89,22 @@ export function useAsignarOperador(barrioId: number) {
       queryClient.invalidateQueries({ queryKey: operadoresKeys.all }),
     ]),
   });
+}
+
+/**
+ * Marca en el formulario los errores que devuelve el backend: el barrio repetido (mismo nombre en la misma
+ * localidad/provincia) va debajo del campo nombre y el resto de las validaciones en su propio campo.
+ * Devuelve true si pudo marcar algo en el formulario; si no, el que llama muestra el mensaje general.
+ */
+export function marcarErroresDeBarrio(form: FormInstance, error: unknown): boolean {
+  if (getApiProblem(error)?.code === 'BARRIO_DUPLICADO') {
+    form.setFields([{ name: 'nombre', errors: [getErrorMessage(error)] }]);
+    return true;
+  }
+  const fieldErrors = toFormFieldErrors(error);
+  if (fieldErrors.length > 0) {
+    form.setFields(fieldErrors);
+    return true;
+  }
+  return false;
 }

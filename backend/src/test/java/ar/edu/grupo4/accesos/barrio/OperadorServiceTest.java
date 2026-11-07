@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,5 +80,14 @@ class OperadorServiceTest {
             });
         verify(usuarioService, never()).crearConRol(anyString(), anyString(), anyString());
         verify(operadorRepository, never()).save(any(Operador.class));
+    }
+
+    @Test
+    void buscarPorIdsDevuelveLosOperadoresIndexadosPorId() {
+        when(operadorRepository.findAllById(List.of(3L, 4L))).thenReturn(List.of(
+            new Operador(3L, "Olga", "Operadora", "1145550001"),
+            new Operador(4L, "Oscar", "Libre", "1145550002")));
+
+        assertThat(service.buscarPorIds(List.of(3L, 4L))).containsOnlyKeys(3L, 4L);
     }
 }

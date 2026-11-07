@@ -1,4 +1,4 @@
-import { Button, Flex, Form, Input } from 'antd';
+import { Button, Col, Flex, Form, Input, Row } from 'antd';
 import type { FormInstance } from 'antd';
 import { CampoPasswordNueva } from '../../../shared/components/CamposPassword';
 import type { OperadorRequest } from '../api/operadores';
@@ -6,32 +6,36 @@ import type { OperadorRequest } from '../api/operadores';
 interface OperadorFormProps {
   // La crea la página (Form.useForm(), sin tipo) para poder marcar los errores que devuelve el backend
   form: FormInstance;
+  loading: boolean;
   onFinish: (values: OperadorRequest) => void;
-  // Embebido en otra pantalla (US-45, US-14): los botones los pone quien lo contiene
-  ocultarBotones?: boolean;
-  loading?: boolean;
-  onCancel?: () => void;
+  textoBoton?: string;
 }
 
-// Formulario de alta de Operador (US-13). Se reutiliza embebido en US-45 y en US-14 (reemplazar Operador).
+// Formulario de alta de Operador (US-13). Se reutiliza en US-45 (con el barrio indicado) y en US-14 (reemplazar Operador).
 // Mismos mensajes que el backend: si el navegador deja pasar algo, el servidor lo rechaza igual.
-export function OperadorForm({ form, onFinish, ocultarBotones = false, loading = false, onCancel }: OperadorFormProps) {
+export function OperadorForm({ form, loading, onFinish, textoBoton = 'Crear Operador' }: OperadorFormProps) {
   return (
     <Form form={form} layout="vertical" onFinish={onFinish}>
-      <Form.Item
-        name="nombre"
-        label="Nombre"
-        rules={[{ required: true, whitespace: true, message: 'El nombre es obligatorio' }, { max: 100 }]}
-      >
-        <Input maxLength={100} />
-      </Form.Item>
-      <Form.Item
-        name="apellido"
-        label="Apellido"
-        rules={[{ required: true, whitespace: true, message: 'El apellido es obligatorio' }, { max: 100 }]}
-      >
-        <Input maxLength={100} />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="nombre"
+            label="Nombre"
+            rules={[{ required: true, whitespace: true, message: 'El nombre es obligatorio' }, { max: 100 }]}
+          >
+            <Input maxLength={100} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="apellido"
+            label="Apellido"
+            rules={[{ required: true, whitespace: true, message: 'El apellido es obligatorio' }, { max: 100 }]}
+          >
+            <Input maxLength={100} />
+          </Form.Item>
+        </Col>
+      </Row>
       <Form.Item
         name="email"
         label="Email"
@@ -52,12 +56,9 @@ export function OperadorForm({ form, onFinish, ocultarBotones = false, loading =
       </Form.Item>
       <CampoPasswordNueva label="Contraseña inicial" />
 
-      {!ocultarBotones && (
-        <Flex justify="flex-end" gap={8} wrap>
-          <Button onClick={onCancel}>Cancelar</Button>
-          <Button type="primary" htmlType="submit" loading={loading}>Guardar</Button>
-        </Flex>
-      )}
+      <Flex justify="flex-end">
+        <Button type="primary" htmlType="submit" loading={loading}>{textoBoton}</Button>
+      </Flex>
     </Form>
   );
 }

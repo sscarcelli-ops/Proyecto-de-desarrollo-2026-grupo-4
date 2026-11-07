@@ -1,8 +1,8 @@
 import { Card, Flex, Form, Typography, App as AntdApp } from 'antd';
 import { useNavigate } from 'react-router';
-import { useCrearBarrio, type BarrioRequest } from '../api/barrios';
+import { marcarErroresDeBarrio, useCrearBarrio, type BarrioRequest } from '../api/barrios';
 import { BarrioForm } from '../components/BarrioForm';
-import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
+import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 
 const { Title } = Typography;
@@ -15,16 +15,15 @@ export function BarrioNuevoPage() {
   const crear = useCrearBarrio();
 
   const onFinish = (values: BarrioRequest) => {
+    // Enter dos veces seguidas dispara el envío dos veces: mientras se guarda, no se acepta otro
+    if (crear.isPending) return;
     crear.mutate(values, {
       onSuccess: () => {
         message.success('Barrio creado. Queda Inactivo hasta que tenga Operador.');
         navigate(PATHS.barrios);
       },
       onError: (error) => {
-        const fieldErrors = toFormFieldErrors(error);
-        if (fieldErrors.length > 0) {
-          form.setFields(fieldErrors);
-        } else {
+        if (!marcarErroresDeBarrio(form, error)) {
           message.error(getErrorMessage(error));
         }
       },

@@ -19,23 +19,23 @@ export function BarrioForm({ form, initialValues, loading, onFinish, onCancel }:
       <Form.Item
         name="nombre"
         label="Nombre"
-        rules={[{ required: true, whitespace: true, message: 'El nombre es obligatorio' }, { max: 150 }]}
+        rules={[{ required: true, whitespace: true, message: 'El nombre es obligatorio' }, { max: 60, message: 'El nombre no puede superar los 60 caracteres' }]}
       >
-        <Input maxLength={150} />
+        <Input maxLength={60} />
       </Form.Item>
       <Form.Item
         name="localidadProvincia"
         label="Localidad / Provincia"
-        rules={[{ required: true, whitespace: true, message: 'La localidad/provincia es obligatoria' }, { max: 150 }]}
+        rules={[{ required: true, whitespace: true, message: 'La localidad/provincia es obligatoria' }, { max: 80, message: 'La localidad/provincia no puede superar los 80 caracteres' }]}
       >
-        <Input maxLength={150} />
+        <Input maxLength={80} />
       </Form.Item>
       <Form.Item
         name="direccion"
         label="Dirección"
-        rules={[{ required: true, whitespace: true, message: 'La dirección es obligatoria' }, { max: 255 }]}
+        rules={[{ required: true, whitespace: true, message: 'La dirección es obligatoria' }, { max: 120, message: 'La dirección no puede superar los 120 caracteres' }]}
       >
-        <Input maxLength={255} />
+        <Input maxLength={120} />
       </Form.Item>
 
       <Flex justify="flex-end" gap={8} wrap>

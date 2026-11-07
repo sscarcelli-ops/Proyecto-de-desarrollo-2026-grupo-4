@@ -20,6 +20,14 @@ export interface paths {
     get: operations["listar"];
     post: operations["crear"];
   };
+  "/api/trabajadores/{id}/foto": {
+    get: operations["descargarFoto"];
+    post: operations["cargarFoto"];
+    delete: operations["eliminarFoto"];
+  };
+  "/api/trabajadores/{id}/documentos": {
+    post: operations["cargarDocumento"];
+  };
   "/api/perfiles/{id}/rechazar": {
     post: operations["rechazar"];
   };
@@ -54,11 +62,17 @@ export interface paths {
   "/api/auth/login": {
     post: operations["login"];
   };
+  "/api/auth/cambiar-contrasena": {
+    post: operations["cambiarPassword"];
+  };
   "/api/auth/activacion": {
     post: operations["activar"];
   };
   "/api/auth/activacion/validar": {
     post: operations["validar"];
+  };
+  "/api/trabajadores/{id}/documentos/{tipo}/archivo": {
+    get: operations["descargarDocumento"];
   };
   "/api/ping": {
     get: operations["ping"];
@@ -84,6 +98,9 @@ export interface paths {
   "/api/auth/me": {
     get: operations["me"];
   };
+  "/api/trabajadores/{id}/documentos/{tipo}": {
+    delete: operations["eliminarDocumento"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -94,6 +111,16 @@ export interface components {
       nombre: string;
       apellido: string;
     };
+    DocumentoResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      tipo: "ART" | "SEGURO_VIDA";
+      archivoNombre: string;
+      /** Format: date */
+      fechaVencimiento: string;
+      vencido: boolean;
+    };
     TrabajadorResponse: {
       /** Format: int64 */
       id: number;
@@ -103,6 +130,8 @@ export interface components {
       estadoDocumental: string;
       tieneFoto: boolean;
       dadoDeBaja: boolean;
+      documentos: components["schemas"]["DocumentoResponse"][];
+      fotoUrl: string | null;
     };
     BarrioRequest: {
       nombre: string;
@@ -118,6 +147,8 @@ export interface components {
       estado: string;
       /** Format: int64 */
       operadorId: number | null;
+      operadorNombre: string | null;
+      operadorApellido: string | null;
     };
     AsignarOperadorRequest: {
       /** Format: int64 */
@@ -136,6 +167,14 @@ export interface components {
       nombre: string;
       apellido: string;
       dni: string;
+    };
+    DocumentoRequest: {
+      /** @enum {string} */
+      tipo: "ART" | "SEGURO_VIDA";
+      /** Format: binary */
+      archivo?: string;
+      /** Format: date */
+      fechaVencimiento: string;
     };
     RechazarPerfilRequest: {
       motivo: string;
@@ -222,6 +261,10 @@ export interface components {
     LoginRequest: {
       email: string;
       password: string;
+    };
+    CambiarPasswordRequest: {
+      passwordActual: string;
+      passwordNueva?: string;
     };
     ActivacionRequest: {
       token: string;
@@ -430,6 +473,79 @@ export interface operations {
       };
     };
   };
+  descargarFoto: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": string;
+        };
+      };
+    };
+  };
+  cargarFoto: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody?: {
+      content: {
+        "multipart/form-data": {
+          /** Format: binary */
+          foto: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
+        };
+      };
+    };
+  };
+  eliminarFoto: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
+        };
+      };
+    };
+  };
+  cargarDocumento: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    requestBody?: {
+      content: {
+        "multipart/form-data": components["schemas"]["DocumentoRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
+        };
+      };
+    };
+  };
   rechazar: {
     parameters: {
       path: {
@@ -603,6 +719,21 @@ export interface operations {
       };
     };
   };
+  cambiarPassword: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CambiarPasswordRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["LoginResponse"];
+        };
+      };
+    };
+  };
   activar: {
     requestBody: {
       content: {
@@ -626,6 +757,22 @@ export interface operations {
       /** @description No Content */
       204: {
         content: never;
+      };
+    };
+  };
+  descargarDocumento: {
+    parameters: {
+      path: {
+        id: number;
+        tipo: "ART" | "SEGURO_VIDA";
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": string;
+        };
       };
     };
   };
@@ -727,6 +874,22 @@ export interface operations {
       200: {
         content: {
           "*/*": components["schemas"]["UsuarioActualResponse"];
+        };
+      };
+    };
+  };
+  eliminarDocumento: {
+    parameters: {
+      path: {
+        id: number;
+        tipo: "ART" | "SEGURO_VIDA";
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "*/*": components["schemas"]["TrabajadorResponse"];
         };
       };
     };

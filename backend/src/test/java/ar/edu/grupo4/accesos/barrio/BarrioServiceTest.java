@@ -12,6 +12,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +58,7 @@ class BarrioServiceTest {
 
         assertThat(creado.getEstado()).isEqualTo(EstadoBarrio.INACTIVO);
         assertThat(creado.getOperadorId()).isNull();
-        verify(repository).save(creado);
+        verify(repository).saveAndFlush(creado);
     }
 
     @Test
@@ -95,7 +96,7 @@ class BarrioServiceTest {
         assertThat(modificado.getNombre()).isEqualTo("Álamos II");
         assertThat(modificado.getLocalidadProvincia()).isEqualTo("Escobar, Buenos Aires");
         assertThat(modificado.getDireccion()).isEqualTo("Calle Nueva 123");
-        verify(repository).save(modificado);
+        verify(repository).saveAndFlush(modificado);
     }
 
     @Test
@@ -114,7 +115,55 @@ class BarrioServiceTest {
 
         assertThatThrownBy(() -> service.modificar(99L, new BarrioRequest("A", "B", "C")))
             .isInstanceOf(NotFoundException.class);
-        verify(repository, never()).save(any(Barrio.class));
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+    }
+
+    @Test
+    void operadoresDeBuscaSoloLosOperadoresDeLosBarriosQueTienen() {
+        Operador operador = new Operador(3L, "Olga", "Operadora", "1145550001");
+        when(operadorService.buscarPorIds(List.of(3L))).thenReturn(Map.of(3L, operador));
+
+        Map<Long, Operador> operadores = service.operadoresDe(List.of(barrioExistente(), barrioSinOperador()));
+
+        assertThat(operadores).containsOnlyKeys(3L);
+    }
+
+    @Test
+    void operadoresDeSinNingunOperadorNoConsultaNada() {
+        assertThat(service.operadoresDe(List.of(barrioSinOperador()))).isEmpty();
+        verify(operadorService, never()).buscarPorIds(any());
+    }
+
+    @Test
+    void crearUnBarrioConElMismoNombreEnLaMismaLocalidadFallaYNoGuarda() {
+        when(repository.existsByNombreIgnoreCaseAndLocalidadProvinciaIgnoreCase("Barrio Test", "Baradero"))
+            .thenReturn(true);
+
+        assertThatThrownBy(() -> service.crear(new BarrioRequest(" Barrio Test ", "Baradero ", "Calle 1")))
+            .isInstanceOfSatisfying(BusinessException.class, e -> {
+                assertThat(e.getCode()).isEqualTo("BARRIO_DUPLICADO");
+                assertThat(e.getMessage()).isEqualTo("Ya existe un barrio con ese nombre en esa localidad/provincia");
+            });
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+    }
+
+    @Test
+    void siLaBaseRechazaElBarrioPorqueOtroPedidoIgualLlegoPrimeroSeInformaQueEstaDuplicado() {
+        when(repository.saveAndFlush(any(Barrio.class))).thenThrow(new DataIntegrityViolationException("uq"));
+
+        assertThatThrownBy(() -> service.crear(new BarrioRequest("Barrio Test", "Baradero", "Calle 1")))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("BARRIO_DUPLICADO"));
+    }
+
+    @Test
+    void modificarUnBarrioConElNombreYLaLocalidadDeOtroFalla() {
+        when(repository.findById(7L)).thenReturn(Optional.of(barrioExistente()));
+        when(repository.existsByNombreIgnoreCaseAndLocalidadProvinciaIgnoreCaseAndIdNot("San Jorge", "Escobar", 7L))
+            .thenReturn(true);
+
+        assertThatThrownBy(() -> service.modificar(7L, new BarrioRequest("San Jorge", "Escobar", "Calle 1")))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("BARRIO_DUPLICADO"));
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
     }
 
     // ---- US-45

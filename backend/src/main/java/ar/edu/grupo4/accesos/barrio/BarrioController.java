@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/barrios")
@@ -22,29 +23,39 @@ public class BarrioController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BarrioResponse crear(@Valid @RequestBody BarrioRequest request) {
-        return BarrioResponse.from(barrioService.crear(request));
+        return responder(barrioService.crear(request));
     }
 
     @GetMapping
     public List<BarrioResponse> listar() {
-        return barrioService.listar().stream().map(BarrioResponse::from).toList();
+        List<Barrio> barrios = barrioService.listar();
+        Map<Long, Operador> operadores = barrioService.operadoresDe(barrios);
+        return barrios.stream().map(b -> BarrioResponse.from(b, operadorDe(b, operadores))).toList();
     }
 
     // US-11
     @GetMapping("/{id}")
     public BarrioResponse obtener(@PathVariable Long id) {
-        return BarrioResponse.from(barrioService.obtener(id));
+        return responder(barrioService.obtener(id));
     }
 
     // US-11
     @PutMapping("/{id}")
     public BarrioResponse modificar(@PathVariable Long id, @Valid @RequestBody BarrioRequest request) {
-        return BarrioResponse.from(barrioService.modificar(id, request));
+        return responder(barrioService.modificar(id, request));
     }
 
     // US-45: asigna un Operador (disponible o nuevo) al barrio y lo activa
     @PutMapping("/{id}/operador")
     public BarrioResponse asignarOperador(@PathVariable Long id, @Valid @RequestBody AsignarOperadorRequest request) {
-        return BarrioResponse.from(barrioService.asignarOperador(id, request));
+        return responder(barrioService.asignarOperador(id, request));
+    }
+
+    private BarrioResponse responder(Barrio barrio) {
+        return BarrioResponse.from(barrio, operadorDe(barrio, barrioService.operadoresDe(List.of(barrio))));
+    }
+
+    private static Operador operadorDe(Barrio barrio, Map<Long, Operador> operadores) {
+        return barrio.getOperadorId() == null ? null : operadores.get(barrio.getOperadorId());
     }
 }
