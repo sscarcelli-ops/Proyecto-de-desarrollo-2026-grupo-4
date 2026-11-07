@@ -4,6 +4,8 @@ import ar.edu.grupo4.accesos.barrio.dto.AsignarOperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioRequest;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.ubicacion.Localidad;
+import ar.edu.grupo4.accesos.ubicacion.UbicacionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
@@ -21,17 +23,18 @@ import java.util.Objects;
 public class BarrioService {
 
     static final String OPERADOR_OCUPADO = "El Operador ya está asignado a otro barrio";
-    static final String BARRIO_DUPLICADO = "Ya existe un barrio con ese nombre en esa localidad/provincia";
+    static final String BARRIO_DUPLICADO = "Ya existe un barrio con ese nombre en esa localidad";
 
     private final BarrioRepository barrioRepository;
     private final OperadorService operadorService;
+    private final UbicacionService ubicacionService;
 
-    /** US-10: el barrio nace Inactivo y sin Operador (RN-10). No puede repetirse el nombre en la misma localidad/provincia. */
+    /** US-10: el barrio nace Inactivo y sin Operador (RN-10). No puede repetirse el nombre en la misma localidad. */
     @Transactional
     public Barrio crear(BarrioRequest request) {
         String nombre = request.nombre().trim();
-        String localidad = request.localidadProvincia().trim();
-        if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadProvinciaIgnoreCase(nombre, localidad)) {
+        Localidad localidad = ubicacionService.obtenerLocalidad(request.localidadId());
+        if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadId(nombre, localidad.getId())) {
             throw barrioDuplicado();
         }
         return guardar(new Barrio(nombre, localidad, request.direccion().trim()));
@@ -58,19 +61,19 @@ public class BarrioService {
     }
 
     /**
-     * US-11: modifica nombre, localidad/provincia y dirección. No toca el estado ni el Operador
+     * US-11: modifica nombre, localidad (T-11) y dirección. No toca el estado ni el Operador
      * (el Operador se asigna por US-45 y se reemplaza por US-14; el estado, por US-12).
      */
     @Transactional
     public Barrio modificar(Long id, BarrioRequest request) {
         Barrio barrio = obtener(id);
         String nombre = request.nombre().trim();
-        String localidad = request.localidadProvincia().trim();
-        if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadProvinciaIgnoreCaseAndIdNot(nombre, localidad, id)) {
+        Localidad localidad = ubicacionService.obtenerLocalidad(request.localidadId());
+        if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadIdAndIdNot(nombre, localidad.getId(), id)) {
             throw barrioDuplicado();
         }
         barrio.setNombre(nombre);
-        barrio.setLocalidadProvincia(localidad);
+        barrio.setLocalidad(localidad);
         barrio.setDireccion(request.direccion().trim());
         return guardar(barrio);
     }

@@ -7,12 +7,13 @@ import { useBarrios, type Barrio } from '../api/barrios';
 import { AsignarOperadorSelect } from '../components/AsignarOperadorSelect';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 import { PATHS } from '../../../routes/paths';
 
 const { Title, Text } = Typography;
 
-// Suma de los anchos de las columnas de la tabla (Barrio 220 + Localidad 200 + Dirección 240 + Op. Asignado 230 + Estado 190 + Acción 90)
-const ANCHO_TABLA = 1170;
+// Suma de los anchos de las columnas de la tabla (Barrio 220 + Provincia/Localidad 200 + Dirección 240 + Op. Asignado 230 + Estado 230 + Acción 90)
+const ANCHO_TABLA = 1210;
 
 // Selector de estado del listado (RF-34)
 type FiltroBarrios = 'TODOS' | 'ACTIVO' | 'INACTIVO' | 'SIN_OPERADOR';
@@ -57,7 +58,15 @@ export function BarriosPage() {
   // Los textos largos se cortan con "…" y se ven completos al pasar el mouse
   const columns: TableColumnsType<Barrio> = [
     { title: 'Barrio', dataIndex: 'nombre', key: 'nombre', width: 220, ellipsis: true },
-    { title: 'Localidad', dataIndex: 'localidadProvincia', key: 'localidadProvincia', width: 200, ellipsis: true },
+    {
+      // T-11: "Provincia, Localidad". Un barrio anterior que no coincidió con el catálogo se completa en Editar.
+      title: 'Provincia / Localidad',
+      key: 'ubicacion',
+      width: 200,
+      ellipsis: true,
+      render: (_, barrio) =>
+        textoUbicacion(barrio.provincia, barrio.localidad) ?? <Text type="secondary">Sin cargar</Text>,
+    },
     { title: 'Dirección', dataIndex: 'direccion', key: 'direccion', width: 240, ellipsis: true },
     {
       // Con Operador: su nombre. Sin Operador: el desplegable para asignarlo (US-45)
@@ -74,12 +83,13 @@ export function BarriosPage() {
       // US-10, criterio 3: un barrio recién creado figura "Inactivo – sin Operador"
       title: 'Estado',
       key: 'estado',
-      width: 190,
+      width: 230,
+      // En una sola línea: la etiqueta y "– sin Operador" no se separan
       render: (_, barrio) => (
-        <>
+        <Flex align="center" gap={4} style={{ whiteSpace: 'nowrap' }}>
           <EstadoTag estado={barrio.estado as Estado} />
-          {barrio.operadorId === null && <Text type="secondary"> – sin Operador</Text>}
-        </>
+          {barrio.operadorId === null && <Text type="secondary">– sin Operador</Text>}
+        </Flex>
       ),
     },
     {

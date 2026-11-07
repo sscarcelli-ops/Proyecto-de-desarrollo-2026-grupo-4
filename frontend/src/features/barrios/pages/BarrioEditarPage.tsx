@@ -7,7 +7,7 @@ import { PATHS } from '../../../routes/paths';
 
 const { Title } = Typography;
 
-// US-11: modificar un barrio (Administrador). Edita nombre, localidad/provincia y dirección.
+// US-11: modificar un barrio (Administrador). Edita nombre, provincia y localidad (T-11) y dirección.
 // El Operador se asigna por US-45 y se cambia por US-14; el estado, por US-12.
 export function BarrioEditarPage() {
   const { id } = useParams();
@@ -36,7 +36,7 @@ export function BarrioEditarPage() {
 
   return (
     <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Editar barrio</Title>
+      <Title level={3} style={{ margin: 0 }}>Editar Barrio</Title>
 
       {error && (
         <Flex vertical gap={12} align="flex-start">
@@ -53,10 +53,13 @@ export function BarrioEditarPage() {
             form={form}
             initialValues={{
               nombre: barrio.nombre,
-              localidadProvincia: barrio.localidadProvincia,
+              // T-11: un barrio anterior sin localidad llega sin estos dos y se completan acá
+              provinciaId: barrio.provinciaId ?? undefined,
+              localidadId: barrio.localidadId ?? undefined,
               direccion: barrio.direccion,
             }}
             loading={modificar.isPending}
+            textoGuardar="Confirmar"
             onFinish={onFinish}
             onCancel={volver}
           />
