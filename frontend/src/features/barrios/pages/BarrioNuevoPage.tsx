@@ -7,7 +7,7 @@ import { PATHS } from '../../../routes/paths';
 
 const { Title } = Typography;
 
-// US-10: alta de barrio (Administrador). Obligatorios: nombre, localidad/provincia y dirección.
+// US-10: alta de barrio (Administrador). Obligatorios: nombre, provincia y localidad (T-11) y dirección.
 export function BarrioNuevoPage() {
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
@@ -33,9 +33,15 @@ export function BarrioNuevoPage() {
 
   return (
     <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Nuevo barrio</Title>
+      <Title level={3} style={{ margin: 0 }}>Nuevo Barrio</Title>
       <Card style={{ maxWidth: 560 }}>
-        <BarrioForm form={form} loading={crear.isPending} onFinish={onFinish} onCancel={() => navigate(PATHS.barrios)} />
+        <BarrioForm
+          form={form}
+          loading={crear.isPending}
+          textoGuardar="Crear Barrio"
+          onFinish={onFinish}
+          onCancel={() => navigate(PATHS.barrios)}
+        />
       </Card>
     </Flex>
   );

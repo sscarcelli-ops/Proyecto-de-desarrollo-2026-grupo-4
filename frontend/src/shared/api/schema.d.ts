@@ -292,6 +292,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ubicaciones/provincias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["provincias"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ubicaciones/provincias/{provinciaId}/localidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["localidades"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/trabajadores/{id}/documentos/{tipo}/archivo": {
         parameters: {
             query?: never;
@@ -468,14 +500,17 @@ export interface components {
         };
         BarrioRequest: {
             nombre: string;
-            localidadProvincia: string;
+            localidadId: string;
             direccion: string;
         };
         BarrioResponse: {
             /** Format: int64 */
             id: number;
             nombre: string;
-            localidadProvincia: string;
+            provinciaId: string | null;
+            provincia: string | null;
+            localidadId: string | null;
+            localidad: string | null;
             direccion: string;
             estado: string;
             /** Format: int64 */
@@ -584,6 +619,15 @@ export interface components {
         };
         ValidarActivacionRequest: {
             token: string;
+        };
+        ProvinciaResponse: {
+            id: string;
+            nombre: string;
+        };
+        LocalidadResponse: {
+            id: string;
+            nombre: string;
+            departamento: string;
         };
         Pageable: {
             /** Format: int32 */
@@ -1218,6 +1262,48 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    provincias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProvinciaResponse"][];
+                };
+            };
+        };
+    };
+    localidades: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provinciaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocalidadResponse"][];
+                };
             };
         };
     };

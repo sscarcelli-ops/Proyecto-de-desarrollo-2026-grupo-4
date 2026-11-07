@@ -3,15 +3,18 @@ package ar.edu.grupo4.accesos.barrio.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-/** Datos para dar de alta (US-10) o modificar (US-11) un barrio. */
+/**
+ * Datos para dar de alta (US-10) o modificar (US-11) un barrio. La ubicación es una localidad del catálogo
+ * (T-11), que ya trae su provincia: la provincia se elige en la pantalla solo para filtrar las localidades.
+ */
 public record BarrioRequest(
     @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 150, message = "El nombre no puede superar los 150 caracteres")
     String nombre,
 
-    @NotBlank(message = "La localidad/provincia es obligatoria")
-    @Size(max = 150, message = "La localidad/provincia no puede superar los 150 caracteres")
-    String localidadProvincia,
+    @NotBlank(message = "La localidad es obligatoria")
+    @Size(max = 10, message = "La localidad no existe")
+    String localidadId,
 
     @NotBlank(message = "La dirección es obligatoria")
     @Size(max = 255, message = "La dirección no puede superar los 255 caracteres")
