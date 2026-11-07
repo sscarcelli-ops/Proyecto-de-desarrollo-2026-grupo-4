@@ -54,7 +54,7 @@ export function useCrearBarrio() {
   });
 }
 
-// US-11: modifica nombre, localidad/provincia y dirección (no el estado ni el Operador)
+// US-11: modifica nombre, localidad (T-11) y dirección (no el estado ni el Operador)
 async function modificarBarrio(id: string, request: BarrioRequest): Promise<Barrio> {
   const { data } = await httpClient.put<Barrio>(`/barrios/${id}`, request);
   return data;

@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { useBarrios, type Barrio } from '../api/barrios';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 import { PATHS } from '../../../routes/paths';
 
 const { Title, Text } = Typography;
@@ -16,7 +17,13 @@ export function BarriosPage() {
 
   const columns: TableColumnsType<Barrio> = [
     { title: 'Nombre', dataIndex: 'nombre', key: 'nombre' },
-    { title: 'Localidad / Provincia', dataIndex: 'localidadProvincia', key: 'localidadProvincia' },
+    {
+      // T-11: "Provincia, Localidad". Un barrio anterior que no coincidió con el catálogo se completa en Editar.
+      title: 'Provincia / Localidad',
+      key: 'ubicacion',
+      render: (_, barrio) =>
+        textoUbicacion(barrio.provincia, barrio.localidad) ?? <Text type="secondary">Sin cargar</Text>,
+    },
     { title: 'Dirección', dataIndex: 'direccion', key: 'direccion' },
     {
       // US-10, criterio 3: un barrio recién creado figura "Inactivo – sin Operador"
