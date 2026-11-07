@@ -1,6 +1,11 @@
 package ar.edu.grupo4.accesos.usuario;
 
+import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.logging.RegistroPeticionesFilter;
 import jakarta.servlet.FilterChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +26,8 @@ import java.io.IOException;
  */
 public class SesionVigenteFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(SesionVigenteFilter.class);
+
     private final UsuarioActual usuarioActual;
     private final HandlerExceptionResolver exceptionResolver;
 
@@ -33,10 +40,17 @@ public class SesionVigenteFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         // Sin token (rutas públicas) no hay nada que validar
-        if (SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken) {
+        if (SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken token) {
+            // T-10: el id del usuario en cada línea de log de este pedido (lo quita RegistroPeticionesFilter al final)
+            MDC.put(RegistroPeticionesFilter.MDC_USUARIO, token.getName());
             try {
                 usuarioActual.validarSesion();
             } catch (RuntimeException e) {
+                // T-10: el motivo (SESION_CERRADA, CUENTA_SUSPENDIDA, BARRIO_INACTIVO...). Si la cuenta ya no existe
+                // lo registra GlobalExceptionHandler, junto con los tokens vencidos o alterados.
+                if (e instanceof BusinessException rechazo) {
+                    log.warn("Sesión rechazada: {}", rechazo.getCode());
+                }
                 // Mismo formato de error que el resto de la API (GlobalExceptionHandler)
                 SecurityContextHolder.clearContext();
                 exceptionResolver.resolveException(request, response, null, e);

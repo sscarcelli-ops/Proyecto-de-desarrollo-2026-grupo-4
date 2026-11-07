@@ -9,7 +9,9 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -53,11 +55,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Object> handleAuthentication(AuthenticationException ex) {
+        // T-10: el motivo, sin el token. La ruta y la hora las agrega la línea del pedido (RegistroPeticionesFilter)
+        log.warn("Sesión rechazada: {}", motivoDeSesionRechazada(ex));
         return problem(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Tenés que iniciar sesión para continuar.", null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex) {
+        // T-10: el rol del usuario no tiene permiso para ese endpoint. La línea del pedido agrega la ruta y el usuario
+        log.warn("Acceso denegado por permisos");
         return problem(HttpStatus.FORBIDDEN, "FORBIDDEN", "No tenés permiso para realizar esta acción.", null);
     }
 
@@ -120,6 +126,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             addStandardProperties(pd, defaultCode(statusCode));
         }
         return super.createResponseEntity(body, headers, statusCode, request);
+    }
+
+    /**
+     * Motivo legible de un 401. Los mensajes de Spring Security no incluyen el token, pero igual no se copian: se
+     * resumen en un motivo fijo, así nunca llega al log nada que venga del pedido.
+     */
+    private static String motivoDeSesionRechazada(AuthenticationException ex) {
+        if (ex instanceof InvalidBearerTokenException) {
+            String mensaje = String.valueOf(ex.getMessage());
+            return mensaje.contains("expired") ? "token vencido" : "token inválido (firma o formato alterados)";
+        }
+        if (ex instanceof InsufficientAuthenticationException && "La cuenta del token no existe".equals(ex.getMessage())) {
+            return "la cuenta del token ya no existe";
+        }
+        return "pedido sin token";
     }
 
     private ResponseEntity<Object> problem(HttpStatus status, String code, String detail, List<FieldErrorItem> errors) {
