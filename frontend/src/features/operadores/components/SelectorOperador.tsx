@@ -15,7 +15,7 @@ interface SelectorOperadorProps {
 // Desplegable de Operadores disponibles con "Crear un nuevo Operador" al final.
 // Se usa para asignar un Operador a un barrio sin Operador (US-45) y para reemplazarlo (US-14).
 export function SelectorOperador({
-  placeholder = 'Asignar Operador',
+  placeholder = 'Asignar un Operador',
   disabled = false,
   loading = false,
   onSeleccionar,
