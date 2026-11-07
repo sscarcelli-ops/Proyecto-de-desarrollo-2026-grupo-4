@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { authToken } from './authToken';
 
-// URL base del backend: siempre desde la configuración, sin valor por defecto en el código
-const API_URL = import.meta.env.VITE_API_URL;
-if (!API_URL) {
-  throw new Error('Falta VITE_API_URL: copiar frontend/.env.example a frontend/.env');
-}
+// El frontend no sabe dónde está el backend: llama a /api en su misma dirección y el servidor que lo sirve reenvía
+// esos pedidos al backend. En desarrollo lo hace Vite (vite.config.ts) y en Docker, nginx
+// (nginx/default.conf.template). La dirección del backend es configuración de ese servidor (BACKEND_URL) y no queda
+// escrita en el código compilado: la misma compilación sirve para cualquier instalación.
+const API_URL = '/api';
 
 // 403 que significan "esta cuenta ya no puede operar" (mismos códigos que el login): se cierra la sesión
 const CUENTA_SIN_ACCESO = new Set(['CUENTA_SUSPENDIDA', 'USUARIO_DESHABILITADO', 'BARRIO_INACTIVO', 'OPERADOR_SIN_BARRIO']);
