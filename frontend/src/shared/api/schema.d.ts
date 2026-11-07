@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/barrios/{id}/operador": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["asignarOperador"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/trabajadores": {
         parameters: {
             query?: never;
@@ -132,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/operadores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["crear_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garita/verificar": {
         parameters: {
             query?: never;
@@ -189,7 +221,7 @@ export interface paths {
         };
         get: operations["listar_1"];
         put?: never;
-        post: operations["crear_1"];
+        post: operations["crear_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -420,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/operadores/disponibles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["disponibles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garita/buscar": {
         parameters: {
             query?: never;
@@ -515,6 +563,21 @@ export interface components {
             estado: string;
             /** Format: int64 */
             operadorId: number | null;
+            operadorNombre: string | null;
+            operadorApellido: string | null;
+        };
+        AsignarOperadorRequest: {
+            /** Format: int64 */
+            operadorId?: number;
+            nuevoOperador?: components["schemas"]["OperadorRequest"];
+        };
+        OperadorRequest: {
+            nombre: string;
+            apellido: string;
+            /** Format: email */
+            email: string;
+            telefono: string;
+            password?: string;
         };
         TrabajadorRequest: {
             nombre: string;
@@ -564,6 +627,14 @@ export interface components {
             telefono?: string;
             /** Format: binary */
             constancia?: string;
+        };
+        OperadorResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            apellido: string;
+            email: string;
+            telefono: string;
         };
         VerificacionRequest: {
             /** Format: int64 */
@@ -798,6 +869,32 @@ export interface operations {
             };
         };
     };
+    asignarOperador: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AsignarOperadorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
     listar: {
         parameters: {
             query: {
@@ -1015,6 +1112,30 @@ export interface operations {
             };
         };
     };
+    crear_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OperadorRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OperadorResponse"];
+                };
+            };
+        };
+    };
     verificar: {
         parameters: {
             query?: never;
@@ -1107,7 +1228,7 @@ export interface operations {
             };
         };
     };
-    crear_1: {
+    crear_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1434,6 +1555,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PerfilResponse"];
+                };
+            };
+        };
+    };
+    disponibles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OperadorResponse"][];
                 };
             };
         };

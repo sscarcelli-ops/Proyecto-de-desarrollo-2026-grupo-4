@@ -18,7 +18,7 @@ public class Barrio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false, length = 60)
     private String nombre;
 
     // T-11: localidad del catálogo; con ella viene la provincia. Puede faltar solo en barrios anteriores a T-11 cuyo
@@ -27,7 +27,7 @@ public class Barrio {
     @JoinColumn(name = "localidad_id")
     private Localidad localidad;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 120)
     private String direccion;
 
     @Enumerated(EnumType.STRING)
