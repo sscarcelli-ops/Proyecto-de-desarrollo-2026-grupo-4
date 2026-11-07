@@ -1,10 +1,12 @@
 package ar.edu.grupo4.accesos.perfil;
 
+import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
 import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.perfil.dto.PerfilResponse;
 import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -64,10 +68,11 @@ public class PerfilController {
     @PreAuthorize("hasRole('ADMIN')")
     public PageResponse<PerfilResponse> listar(
         @RequestParam(required = false) EstadoPerfil estado,
-        @RequestParam(required = false) String q,
+        @RequestParam(required = false) @Size(max = 100, message = "La búsqueda no puede superar los 100 caracteres") String q,
         @PageableDefault(size = 10) Pageable pageable
     ) {
-        return perfilService.listar(estado, q, pageable);
+        // El orden lo fija la consulta (alfabético, RNF-08): no se acepta ?sort=
+        return perfilService.listar(estado, q, OrdenPermitido.validar(pageable, Set.of()));
     }
 
     /**

@@ -4,13 +4,18 @@ import { useBarrio, useModificarBarrio, type BarrioRequest } from '../api/barrio
 import { BarrioForm } from '../components/BarrioForm';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
+import { NotFoundPage } from '../../../routes/NotFoundPage';
+import { idDeRuta } from '../../../shared/lib/idDeRuta';
 
 const { Title } = Typography;
 
 // US-11: modificar un barrio (Administrador). Edita nombre, provincia y localidad (T-11) y dirección.
 // El Operador se asigna por US-45 y se cambia por US-14; el estado, por US-12.
 export function BarrioEditarPage() {
-  const { id } = useParams();
+  const { id: parametro } = useParams();
+  // Un id que no es un número (/barrios/abc/editar) no llega al backend: "página no encontrada"
+  const idValido = idDeRuta(parametro);
+  const id = idValido === null ? undefined : String(idValido);
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
   const [form] = Form.useForm();
@@ -35,6 +40,10 @@ export function BarrioEditarPage() {
       },
     });
   };
+
+  if (idValido === null) {
+    return <NotFoundPage />;
+  }
 
   return (
     <Flex vertical gap={16}>
