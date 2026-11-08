@@ -1,6 +1,5 @@
 spring:
   jpa:
-    show-sql: true
     properties:
       hibernate:
         format_sql: true
@@ -12,3 +11,9 @@ spring:
     # Si tu base tiene el seed aplicado y arrancás sin el perfil seed, los scripts de db/seed figuran
     # como "faltantes": se ignoran en lugar de impedir el arranque.
     ignore-migration-patterns: "*:missing,*:future"
+
+# Las consultas SQL que ejecuta Hibernate, por el log (con el número de petición y el usuario) en lugar de
+# show-sql, que las escribe sueltas por consola. Para no verlas: LOG_LEVEL_SQL=INFO en backend/.env
+logging:
+  level:
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:DEBUG}

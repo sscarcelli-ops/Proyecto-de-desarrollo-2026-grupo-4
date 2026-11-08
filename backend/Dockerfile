@@ -1,5 +1,6 @@
-# Backend en contenedor (T-09). Lo usa `docker compose --profile app up`; para desarrollar se sigue usando el IDE.
-# La configuración (base, JWT, código de activación...) llega por variables de entorno desde backend/.env:
+# Backend en contenedor (T-09). Lo usan los ambientes todo en Docker (README, "Ambientes"); para desarrollar se
+# sigue usando el IDE.
+# La configuración (base, JWT, código de activación...) llega por variables de entorno desde docker/<ambiente>.env:
 # la imagen no lleva ningún dato sensible.
 
 # Etapa 1: compilar el .jar con Maven (sin tests: se corren antes, en el desarrollo y en cada PR)

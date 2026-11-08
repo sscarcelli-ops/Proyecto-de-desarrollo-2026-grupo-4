@@ -12,7 +12,7 @@ Plataforma de control de accesos para barrios privados.
 - JDK 17 o superior
 - Node.js 20 o superior
 - Docker (para PostgreSQL). Alternativa: PostgreSQL 15+ instalado, con una base vacía `accesos_db`
-- Solo para usar la app sin desarrollar: alcanza con Docker (ver "Todo en Docker")
+- Solo para usar la app sin desarrollar: alcanza con Docker (ver "Ambientes")
 
 ## Ramas (gitflow)
 
@@ -20,55 +20,70 @@ Plataforma de control de accesos para barrios privados.
 - `dev`: integración. Cada US sale de acá y vuelve acá por pull request revisado por otro integrante.
 - `feature/US-xx-descripcion`: una rama por 1 o 2 US, menos de una semana de vida. Traer `dev` a diario.
 
-## Base de datos (Docker)
+## Ambientes (Docker)
+
+Un archivo de variables por ambiente, todos con la misma imagen (T-12). Para todo en Docker la máquina **solo
+necesita Docker**: el backend y el frontend se compilan adentro de Docker, no hace falta Java ni Node.
+
+| Ambiente | Para qué | Comando |
+|---|---|---|
+| **Prueba, con datos** | Ejecutar los casos de prueba | `docker compose --env-file docker/prueba.env up -d --build` |
+| **Prueba, vacía** | Camino feliz desde cero: activar el primer Administrador (US-01) | `docker compose --env-file docker/prueba-vacia.env up -d --build` |
+| **Producción** | Instalación real | `docker compose --env-file docker/produccion.env up -d --build` |
+| **Desarrollo** | Programar: solo la base; backend y frontend desde el IDE | `docker compose --env-file backend/.env up -d postgres` |
+
+Qué tiene cada uno:
+
+| | Desarrollo | Prueba, con datos | Prueba, vacía | Producción |
+|---|---|---|---|---|
+| Archivo | `backend/.env` | `docker/prueba.env` | `docker/prueba-vacia.env` | `docker/produccion.env` |
+| Dónde corre | Base en Docker; backend y front en el IDE | Todo en Docker | Todo en Docker | Todo en Docker |
+| Base | `accesos_db` o `accesos_vacia`, a elección | `accesos_db` | `accesos_vacia` | `accesos_db` |
+| Datos de prueba (seed) | Opcional (`dev,seed`) | ✅ | — | — |
+| Primer Administrador | El del seed, o se activa | El del seed | Se activa con `GRUPO4-ACTIVAR-2026` | Se activa con un código propio |
+| Credenciales (base, JWT) | Las de ejemplo | Las de ejemplo | Las de ejemplo | Propias: **no arranca con las de ejemplo** |
+| Swagger | ✅ | ✅ | ✅ | — |
+| SQL en el log | ✅ | — | — | — |
+| Log en archivo | Opcional (`LOG_FILE`) | Volumen `logs` | Volumen `logs` | Volumen `logs` |
+
+- **Sin `--env-file`**, `docker compose up -d --build` levanta Prueba con datos.
+- La app queda en http://localhost:5173, la API en http://localhost:8080 y Swagger en
+  http://localhost:8080/swagger-ui.html. La activación está en http://localhost:5173/activar.
+- **Pasar de una prueba a la otra:** ejecutar el otro comando. Usan bases distintas en el mismo contenedor y cada
+  una conserva sus datos.
+- **Repetir el camino feliz desde cero:** `docker compose down -v` y volver a levantar. Borra las dos bases; la del
+  seed se vuelve a cargar sola.
+- **Producción:** copiar `docker/produccion.env.example` como `docker/produccion.env` (no se versiona) y reemplazar
+  los valores `CAMBIAR-...`. Va en su propia máquina; si ahí se usó un ambiente de prueba, antes `docker compose
+  down -v` (la base conserva la contraseña con la que se creó).
+- **Este compose es para instalaciones de prueba o locales: no exponerlo a internet.** No tiene HTTPS y publica los
+  puertos de la base y del backend.
+- Otros comandos: `docker compose ps` (estado), `docker compose logs -f backend` (logs en vivo), `docker compose
+  down` (apagar), `docker compose rm -sf backend frontend` (apagar la app y dejar la base para el IDE).
+- Los archivos subidos quedan en el volumen `archivos` y los logs en el volumen `logs` (`/data/logs/accesos.log`).
+- **Cómo llega el frontend al backend:** el frontend no tiene la dirección del backend. Llama a `/api` en su misma
+  dirección y nginx reenvía esos pedidos al contenedor del backend (`BACKEND_URL` en `docker-compose.yml`). En
+  desarrollo hace lo mismo Vite (`frontend/vite.config.ts`). Así la misma compilación sirve en cualquier máquina.
+- La primera vez tarda varios minutos (descarga las imágenes y las dependencias); después, `--build` solo
+  recompila lo que cambió.
+
+### Desarrollo
 
 ```bash
-cp backend/.env.example backend/.env           # una sola vez; DB_PASSWORD puede quedar como está
-docker compose --env-file backend/.env up -d   # PostgreSQL 17 en el puerto DB_PORT (5432 por defecto)
+cp backend/.env.example backend/.env                   # una sola vez; DB_PASSWORD puede quedar como está
+docker compose --env-file backend/.env up -d postgres  # PostgreSQL 17 en el puerto DB_PORT (5432 por defecto)
 ```
 
 - Si ya tenés PostgreSQL instalado usando el 5432, poné `DB_PORT=5433` en `backend/.env`.
-- El contenedor crea dos bases: `accesos_db` (la de trabajo) y `accesos_vacia` (siempre sin datos de
-  prueba, para probar la activación del Administrador, US-01: `DB_NAME=accesos_vacia`).
-- Activación del Administrador (US-01): con una base sin Administrador, el backend carga al arrancar el código
-  de `ACTIVACION_TOKEN` (`GRUPO4-ACTIVAR-2026` en `.env.example`), que vence a los `ACTIVACION_VIGENCIA_DIAS` y
-  sirve una sola vez. Para probarlo de nuevo, usar otro valor y reiniciar (o borrar los datos de `accesos_vacia`).
-- `docker compose down -v` borra los datos; al volver a levantar, las bases se crean vacías.
-
-## Todo en Docker (sin instalar Java ni Node)
-
-Para levantar la app completa (base + backend + frontend) en una máquina que solo tiene Docker: instalación limpia,
-revisar un PR. No hace falta copiar ni editar ningún archivo.
-
-```bash
-# Con datos de prueba (usuarios de la tabla de abajo): para ejecutar los casos de prueba
-docker compose --profile app up -d --build
-
-# Base vacía, sin datos de prueba: activación del Administrador (US-01) y camino feliz desde cero
-docker compose --env-file docker/base-vacia.env --profile app up -d --build
-```
-
-- La app queda en http://localhost:5173, la API en http://localhost:8080 y Swagger en
-  http://localhost:8080/swagger-ui.html. La activación está en http://localhost:5173/activar, con el código
-  `GRUPO4-ACTIVAR-2026`.
-- Para pasar de una base a la otra se ejecuta el otro comando: se recrea solo el backend y cada base conserva sus
-  datos. Para empezar de cero de verdad: `docker compose --profile app down -v` (borra los datos).
-- La configuración sale de `backend/.env.example`, que funciona tal cual para una instalación de prueba. Si existe
-  `backend/.env`, sus valores tienen prioridad, y conviene agregar `--env-file backend/.env` antes de los demás
-  (así la base usa tu `DB_PORT` y tu contraseña).
-- **Instalación con credenciales propias:** copiar `backend/.env.example` a `backend/.env`, cambiar `DB_PASSWORD`,
-  `JWT_SECRET`, `ACTIVACION_TOKEN` y `CORS_ALLOWED_ORIGINS`, y definir `DOCKER_PERFILES=prod` y, si hace falta,
-  `VITE_API_URL` (las dos líneas están comentadas al final del archivo). Levantar con
-  `docker compose --env-file backend/.env --profile app up -d --build`. Con `prod` no se cargan datos de prueba y
-  Swagger queda apagado. En Docker, `SPRING_PROFILES_ACTIVE` del `.env` no aplica: el perfil lo define
-  `DOCKER_PERFILES`.
-- **Este compose es para instalaciones de prueba o locales: no exponerlo a internet.** Todavía no tiene HTTPS y
-  publica los puertos de la base y del backend.
-- Los archivos subidos quedan en el volumen `archivos`.
-- Usa los mismos puertos que el desarrollo: apagar antes el backend y el frontend del IDE.
-- Apagar solo la app y seguir desarrollando con la base: `docker compose --profile app rm -sf backend frontend`.
-- La primera vez tarda varios minutos (descarga las dependencias); después, `--build` solo recompila lo que cambió.
-- Para desarrollar no hace falta: sin `--profile app`, el compose levanta solo PostgreSQL, como siempre.
+- **Ojo:** `docker compose up -d` sin `postgres` levanta todo (Prueba, con datos) y ocupa los puertos 8080 y 5173
+  del backend y el frontend del IDE.
+- Para levantar un ambiente de prueba en tu máquina con tu puerto y tu contraseña, agregar tu `.env` antes:
+  `docker compose --env-file backend/.env --env-file docker/prueba.env up -d --build`. Apagar antes el backend y el
+  frontend del IDE.
+- Base vacía en desarrollo: `DB_NAME=accesos_vacia` en `backend/.env`. La activación del Administrador (US-01)
+  carga al arrancar el código de `ACTIVACION_TOKEN` (`GRUPO4-ACTIVAR-2026`), que vence a los
+  `ACTIVACION_VIGENCIA_DIAS` y sirve una sola vez. Para probarlo de nuevo, usar otro valor y reiniciar (o borrar los
+  datos de `accesos_vacia`).
 
 ## Backend
 
@@ -197,6 +212,29 @@ Reglas del equipo:
 - **Frontend:** usar `shared/lib/apiError.ts`: `getErrorMessage(error)` para mostrar el mensaje y
   `form.setFields(toFormFieldErrors(error))` para marcar los campos de un formulario de Ant Design.
 
+## Logs (T-10)
+
+Sirven para saber qué pasó en una instalación sin tener que reproducir el problema. Quedan activos también en `prod`;
+lo que cambia es el nivel de detalle, con variables de `backend/.env` (`LOG_LEVEL`, `LOG_LEVEL_APP`, `LOG_LEVEL_SQL`,
+`LOG_FILE`; ver `.env.example`).
+
+```
+WARN [6ecc564d u:5] ... GlobalExceptionHandler : Acceso denegado por permisos
+WARN [6ecc564d u:5] ... RegistroPeticionesFilter : GET /api/barrios -> 403 (15 ms)
+```
+
+- Cada línea lleva `[número de pedido u:id de usuario]`: así se siguen todas las líneas de un mismo pedido y se sabe
+  quién lo hizo. Cada pedido a la API termina con una línea de método, ruta (sin parámetros), estado y duración; los
+  401 y 403 van como WARN.
+- Ya se registran: login rechazado con el motivo, sesión rechazada con el motivo (token vencido o alterado, sesión
+  cerrada, cuenta sin acceso), acceso denegado por permisos, login, logout, cambio de contraseña, aprobación y rechazo
+  de perfiles, y los errores inesperados (500) con la causa completa.
+- **Nunca se registran** contraseñas, tokens, códigos de activación ni datos personales (email, DNI, nombre): para
+  identificar a alguien, su id. Tampoco el contenido de los pedidos.
+- Niveles: `ERROR` solo para errores inesperados, `WARN` para rechazos de seguridad, `INFO` para acciones que cambian
+  datos importantes (aprobar, dar de baja, activar...). Usar `private static final Logger log` (o `@Slf4j`) y
+  parámetros con `{}`, nunca concatenando texto.
+
 ## Tipos de la API (generados desde Swagger)
 
 Los tipos de TypeScript de los DTO del backend **no se escriben a mano**: se generan desde Swagger.
@@ -219,9 +257,16 @@ npm run api:types      # regenera src/shared/api/schema.d.ts
 
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev            # http://localhost:5173
+```
+
+No hace falta `frontend/.env`: el frontend llama a `/api` y Vite lo reenvía a `http://localhost:8080`. Si el backend
+corre en otra dirección o puerto, copiar `.env.example` a `.env` y cambiar `BACKEND_URL` (ver el archivo).
+
+```bash
+# o, sin crear el archivo, solo para esta vez:
+BACKEND_URL=http://localhost:8081 npm run dev
 ```
 
 Estructura de `src/`:
