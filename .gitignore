@@ -38,3 +38,6 @@ Thumbs.db
 # --- Logs y archivos subidos ---
 *.log
 uploads/
+
+# Ambiente de producción: credenciales propias, nunca se versiona (se copia de docker/produccion.env.example)
+docker/produccion.env

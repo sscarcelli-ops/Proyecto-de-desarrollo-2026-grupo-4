@@ -184,7 +184,8 @@ public class PerfilService {
         perfil.setResueltoEn(OffsetDateTime.now());
 
         Perfil guardado = perfilRepository.save(perfil);
-        log.info("Perfil {} ({}) rechazado: {}", id, perfil.getTipo(), request.motivo().trim());
+        // T-10: sin el motivo, que es texto libre y puede tener datos personales (queda guardado en el perfil)
+        log.info("Perfil {} ({}) rechazado", id, perfil.getTipo());
         return PerfilResponse.from(guardado);
     }
 

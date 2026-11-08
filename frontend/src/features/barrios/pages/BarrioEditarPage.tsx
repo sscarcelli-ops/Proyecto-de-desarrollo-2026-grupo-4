@@ -1,8 +1,8 @@
 import { Alert, Button, Card, Flex, Form, Skeleton, Typography, App as AntdApp } from 'antd';
 import { useNavigate, useParams } from 'react-router';
-import { useBarrio, useModificarBarrio, type BarrioRequest } from '../api/barrios';
+import { marcarErroresDeBarrio, useBarrio, useModificarBarrio, type BarrioRequest } from '../api/barrios';
 import { BarrioForm } from '../components/BarrioForm';
-import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
+import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 import { NotFoundPage } from '../../../routes/NotFoundPage';
 import { idDeRuta } from '../../../shared/lib/idDeRuta';
@@ -25,16 +25,14 @@ export function BarrioEditarPage() {
   const volver = () => navigate(PATHS.barrios);
 
   const onFinish = (values: BarrioRequest) => {
+    if (modificar.isPending) return;
     modificar.mutate(values, {
       onSuccess: () => {
         message.success('Barrio actualizado.');
         volver();
       },
       onError: (err) => {
-        const fieldErrors = toFormFieldErrors(err);
-        if (fieldErrors.length > 0) {
-          form.setFields(fieldErrors);
-        } else {
+        if (!marcarErroresDeBarrio(form, err)) {
           message.error(getErrorMessage(err));
         }
       },

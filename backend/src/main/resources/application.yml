@@ -59,8 +59,29 @@ springdoc:
   swagger-ui:
     enabled: true
 
+# Logs (T-10): por consola siempre y, si se define LOG_FILE, también a un archivo que rota solo.
+# Cada línea lleva el número de petición y el usuario del token: [a1b2c3d4 u:7]. Así se siguen todos los mensajes de
+# un mismo pedido y se ve quién lo hizo. Cada pedido a la API deja una línea con método, ruta, estado y duración
+# (common/logging/RegistroPeticionesFilter). Nunca se registran contraseñas, tokens ni el contenido de los pedidos.
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    # Mensajes propios de la app (aprobaciones, inicios de sesión, cada pedido a la API...)
+    ar.edu.grupo4.accesos: ${LOG_LEVEL_APP:INFO}
+  pattern:
+    level: "%5p [%X{peticion:--} u:%X{usuario:--}]"
+  file:
+    # Vacío: solo consola. En Docker: /data/logs/accesos.log (volumen "logs")
+    name: ${LOG_FILE:}
+  logback:
+    rollingpolicy:
+      max-file-size: ${LOG_FILE_MAX_SIZE:10MB}
+      max-history: ${LOG_FILE_MAX_DAYS:14}
+
 # Configuración personalizada de la app
 app:
+  # Zona horaria del sistema: qué es "hoy" para vencimientos y la hora que se muestra (AccesosApplication)
+  zona-horaria: ${ZONA_HORARIA:America/Argentina/Buenos_Aires}
   security:
     jwt:
       # Firma HMAC: mínimo 32 caracteres. Sin valor por defecto: cada entorno define el suyo.

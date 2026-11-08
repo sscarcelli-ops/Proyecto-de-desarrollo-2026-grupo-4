@@ -9,6 +9,8 @@ import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.security.TokenService;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,9 @@ import java.util.Optional;
 
 @Service
 public class AuthService {
+
+    // T-10: eventos de sesión. Solo el id del usuario: nunca el email, la contraseña ni el token
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     // Mismo mensaje si el email no existe o si la contraseña no coincide: no revela qué cuentas existen
     private static final String CREDENCIALES_INVALIDAS = "Usuario o contraseña incorrectos";
@@ -44,11 +49,19 @@ public class AuthService {
         String hash = usuario.map(Usuario::getPasswordHash).orElse(hashDeRelleno);
 
         if (!passwordEncoder.matches(request.password(), hash) || usuario.isEmpty()) {
+            log.warn("Inicio de sesión fallido: {}", usuario.map(u -> "contraseña incorrecta del usuario " + u.getId())
+                .orElse("email no registrado"));
             throw new BusinessException("CREDENCIALES_INVALIDAS", CREDENCIALES_INVALIDAS, HttpStatus.UNAUTHORIZED);
         }
         // Recién con la contraseña correcta: si no, cualquiera podría averiguar el estado de una cuenta ajena.
         // CA-3: 403 si el perfil está suspendido, el Guardia no puede operar o el Operador no tiene barrio activo
-        usuarioService.estadoDeAcceso(usuario.get().getId()).exigirHabilitado();
+        try {
+            usuarioService.estadoDeAcceso(usuario.get().getId()).exigirHabilitado();
+        } catch (BusinessException e) {
+            log.warn("Inicio de sesión rechazado del usuario {}: {}", usuario.get().getId(), e.getCode());
+            throw e;
+        }
+        log.info("Inicio de sesión del usuario {}", usuario.get().getId());
         return LoginResponse.from(tokenService.emitir(usuario.get()), usuario.get(), nombreVisible(usuario.get()));
     }
 
@@ -68,6 +81,7 @@ public class AuthService {
     /** US-05: cierra todas las sesiones del usuario; el token que usó deja de valer aunque no haya vencido. */
     public void cerrarSesion(Long usuarioId) {
         usuarioService.cerrarSesiones(usuarioId);
+        log.info("Cierre de sesión del usuario {}: se invalidan todas sus sesiones", usuarioId);
     }
 
     /**
@@ -76,6 +90,7 @@ public class AuthService {
      */
     public LoginResponse cambiarPassword(Long usuarioId, CambiarPasswordRequest request) {
         Usuario usuario = usuarioService.cambiarPassword(usuarioId, request.passwordActual(), request.passwordNueva());
+        log.info("Cambio de contraseña del usuario {}: se cierran sus otras sesiones", usuarioId);
         return LoginResponse.from(tokenService.emitir(usuario), usuario, nombreVisible(usuario));
     }
 
