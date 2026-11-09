@@ -132,7 +132,7 @@ export function RegistroPage() {
             { type: 'email', message: 'Formato de e-mail no válido' },
           ]}
         >
-          <Input placeholder="Email" autoComplete="username" inputMode="email" />
+          <Input placeholder="Email" autoComplete="username" inputMode="email" maxLength={255} />
         </Form.Item>
 
         {/* Componente estándar de US-44 con indicador de política */}

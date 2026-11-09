@@ -84,7 +84,7 @@ export function LoginPage() {
             { type: 'email', message: 'Ingresá un email válido' },
           ]}
         >
-          <Input placeholder="Ingresá tu email" autoComplete="username" inputMode="email" />
+          <Input placeholder="Ingresá tu email" autoComplete="username" inputMode="email" maxLength={255} />
         </Form.Item>
 
         <Form.Item
@@ -93,7 +93,7 @@ export function LoginPage() {
           rules={[{ required: true, message: 'La contraseña es obligatoria' }]}
           style={{ marginBottom: 8 }}
         >
-          <Input.Password placeholder="Ingresá tu contraseña" autoComplete="current-password" />
+          <Input.Password placeholder="Ingresá tu contraseña" autoComplete="current-password" maxLength={72} />
         </Form.Item>
 
         <Flex justify="flex-end" style={{ marginBottom: 24 }}>

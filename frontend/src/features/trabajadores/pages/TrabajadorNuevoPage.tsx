@@ -254,7 +254,7 @@ export function TrabajadorNuevoPage() {
               { max: 100, message: 'Máximo 100 caracteres' },
             ]}
           >
-            <Input placeholder="Ingresá el nombre" />
+            <Input placeholder="Ingresá el nombre" maxLength={100} />
           </Form.Item>
 
           <Form.Item
@@ -265,7 +265,7 @@ export function TrabajadorNuevoPage() {
               { max: 100, message: 'Máximo 100 caracteres' },
             ]}
           >
-            <Input placeholder="Ingresá el apellido" />
+            <Input placeholder="Ingresá el apellido" maxLength={100} />
           </Form.Item>
 
           <Form.Item

@@ -177,6 +177,7 @@ export function EmpresasPage() {
       <Flex gap={12} align="center" style={{ marginBottom: 20 }}>
         <Input
           placeholder="Buscar Empresa o Monotributista..."
+          maxLength={100}
           prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
           value={busqueda}
           onChange={(e) => {

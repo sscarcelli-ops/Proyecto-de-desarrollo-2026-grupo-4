@@ -3,6 +3,7 @@ package ar.edu.grupo4.accesos.auth.dto;
 import ar.edu.grupo4.accesos.common.security.PasswordSegura;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /**
  * US-02: datos recibidos para crear una cuenta (paso 1 del registro).
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 public record RegistroRequest(
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "Formato de e-mail no válido")
+    @Size(max = 255, message = "El email no puede superar los 255 caracteres")
     String email,
 
     @PasswordSegura

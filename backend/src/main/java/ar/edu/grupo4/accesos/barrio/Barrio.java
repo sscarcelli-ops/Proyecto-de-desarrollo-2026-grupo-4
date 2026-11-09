@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.barrio;
 
+import ar.edu.grupo4.accesos.ubicacion.Localidad;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,13 +18,16 @@ public class Barrio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false, length = 60)
     private String nombre;
 
-    @Column(name = "localidad_provincia", nullable = false, length = 150)
-    private String localidadProvincia;
+    // T-11: localidad del catálogo; con ella viene la provincia. Puede faltar solo en barrios anteriores a T-11 cuyo
+    // texto no coincidió con el catálogo: el alta y la edición siempre la piden.
+    @ManyToOne
+    @JoinColumn(name = "localidad_id")
+    private Localidad localidad;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 120)
     private String direccion;
 
     @Enumerated(EnumType.STRING)
@@ -34,9 +38,9 @@ public class Barrio {
     @Column(name = "operador_id")
     private Long operadorId;
 
-    public Barrio(String nombre, String localidadProvincia, String direccion) {
+    public Barrio(String nombre, Localidad localidad, String direccion) {
         this.nombre = nombre;
-        this.localidadProvincia = localidadProvincia;
+        this.localidad = localidad;
         this.direccion = direccion;
     }
 }

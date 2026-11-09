@@ -24,6 +24,8 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router';
+import { NotFoundPage } from '../../../routes/NotFoundPage';
+import { idDeRuta } from '../../../shared/lib/idDeRuta';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs, { type Dayjs } from 'dayjs';
 import {
@@ -56,7 +58,9 @@ export function TrabajadorEditarPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
   const { id } = useParams<{ id: string }>();
-  const trabajadorId = Number(id);
+  // Un id que no es un número (/trabajadores/abc/editar) no llega al backend: "página no encontrada"
+  const idValido = idDeRuta(id);
+  const trabajadorId = idValido ?? 0;
 
   const queryClient = useQueryClient();
   const { data: trabajador, isLoading, isError, error } = useTrabajador(trabajadorId);
@@ -134,6 +138,10 @@ export function TrabajadorEditarPage() {
   // Sin respuesta todavía (fotoBlob null) = cargando
   const cargandoFoto = tieneFoto && fotoBlob === null;
   const fotoUrl = tieneFoto ? (fotoBlob?.url ?? null) : null;
+
+  if (idValido === null) {
+    return <NotFoundPage />;
+  }
 
   if (isLoading) {
     return (
@@ -347,7 +355,7 @@ export function TrabajadorEditarPage() {
               { max: 100, message: 'Máximo 100 caracteres' },
             ]}
           >
-            <Input placeholder="Ingresá el nombre" />
+            <Input placeholder="Ingresá el nombre" maxLength={100} />
           </Form.Item>
 
           {/* Apellido */}
@@ -359,7 +367,7 @@ export function TrabajadorEditarPage() {
               { max: 100, message: 'Máximo 100 caracteres' },
             ]}
           >
-            <Input placeholder="Ingresá el apellido" />
+            <Input placeholder="Ingresá el apellido" maxLength={100} />
           </Form.Item>
 
           {/* DNI (solo lectura, RN-11) */}

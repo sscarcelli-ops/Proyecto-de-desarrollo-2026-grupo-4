@@ -61,7 +61,7 @@ export function CambiarPasswordPage() {
           label="Contraseña actual"
           rules={[{ required: true, message: 'La contraseña actual es obligatoria' }]}
         >
-          <Input.Password autoComplete="current-password" placeholder="Contraseña" />
+          <Input.Password autoComplete="current-password" placeholder="Contraseña" maxLength={72} />
         </Form.Item>
 
         <CampoPasswordNueva name="passwordNueva" label="Nueva contraseña" placeholder="Contraseña" />

@@ -23,8 +23,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 
-import java.util.Optional;
-
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 

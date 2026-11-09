@@ -392,6 +392,7 @@ export function GaritaPage() {
                   >
                     <Input
                       placeholder="Ingrese número de DNI..."
+                      maxLength={8}
                       allowClear
                       autoFocus
                       inputMode="numeric"

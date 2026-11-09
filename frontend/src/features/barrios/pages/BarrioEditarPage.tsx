@@ -1,16 +1,21 @@
 import { Alert, Button, Card, Flex, Form, Skeleton, Typography, App as AntdApp } from 'antd';
 import { useNavigate, useParams } from 'react-router';
-import { useBarrio, useModificarBarrio, type BarrioRequest } from '../api/barrios';
+import { marcarErroresDeBarrio, useBarrio, useModificarBarrio, type BarrioRequest } from '../api/barrios';
 import { BarrioForm } from '../components/BarrioForm';
-import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
+import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
+import { NotFoundPage } from '../../../routes/NotFoundPage';
+import { idDeRuta } from '../../../shared/lib/idDeRuta';
 
 const { Title } = Typography;
 
-// US-11: modificar un barrio (Administrador). Edita nombre, localidad/provincia y dirección.
+// US-11: modificar un barrio (Administrador). Edita nombre, provincia y localidad (T-11) y dirección.
 // El Operador se asigna por US-45 y se cambia por US-14; el estado, por US-12.
 export function BarrioEditarPage() {
-  const { id } = useParams();
+  const { id: parametro } = useParams();
+  // Un id que no es un número (/barrios/abc/editar) no llega al backend: "página no encontrada"
+  const idValido = idDeRuta(parametro);
+  const id = idValido === null ? undefined : String(idValido);
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
   const [form] = Form.useForm();
@@ -20,25 +25,27 @@ export function BarrioEditarPage() {
   const volver = () => navigate(PATHS.barrios);
 
   const onFinish = (values: BarrioRequest) => {
+    if (modificar.isPending) return;
     modificar.mutate(values, {
       onSuccess: () => {
         message.success('Barrio actualizado.');
         volver();
       },
       onError: (err) => {
-        const fieldErrors = toFormFieldErrors(err);
-        if (fieldErrors.length > 0) {
-          form.setFields(fieldErrors);
-        } else {
+        if (!marcarErroresDeBarrio(form, err)) {
           message.error(getErrorMessage(err));
         }
       },
     });
   };
 
+  if (idValido === null) {
+    return <NotFoundPage />;
+  }
+
   return (
     <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Editar barrio</Title>
+      <Title level={3} style={{ margin: 0 }}>Editar Barrio</Title>
 
       {error && (
         <Flex vertical gap={12} align="flex-start">
@@ -55,10 +62,13 @@ export function BarrioEditarPage() {
             form={form}
             initialValues={{
               nombre: barrio.nombre,
-              localidadProvincia: barrio.localidadProvincia,
+              // T-11: un barrio anterior sin localidad llega sin estos dos y se completan acá
+              provinciaId: barrio.provinciaId ?? undefined,
+              localidadId: barrio.localidadId ?? undefined,
               direccion: barrio.direccion,
             }}
             loading={modificar.isPending}
+            textoGuardar="Confirmar"
             onFinish={onFinish}
             onCancel={volver}
           />
