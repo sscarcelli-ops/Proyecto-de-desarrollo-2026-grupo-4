@@ -115,6 +115,13 @@ export async function obtenerFotoBlob(trabajadorId: number): Promise<string> {
 }
 
 /** GET /api/trabajadores/:id/documentos/:tipo/archivo — descargar PDF (US-26, US-28) */
+
+/** POST /api/trabajadores/:id/baja — dar de baja a un trabajador (US-27) */
+export async function darDeBajaTrabajador(id: number): Promise<TrabajadorResponse> {
+  const { data } = await httpClient.post<TrabajadorResponse>(`/trabajadores/${id}/baja`);
+  return data;
+}
+
 export async function descargarDocumento(trabajadorId: number, tipo: TipoDocumento, nombreArchivo?: string): Promise<void> {
   const response = await httpClient.get<Blob>(
     `/trabajadores/${trabajadorId}/documentos/${tipo}/archivo`,
@@ -230,6 +237,21 @@ export function useEliminarFoto(trabajadorId: number) {
     mutationFn: () => eliminarFoto(trabajadorId),
     onSuccess: (data) => {
       queryClient.setQueryData([...TRABAJADORES_KEY, trabajadorId], data);
+      queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
+    },
+  });
+}
+
+/**
+ * Dar de baja a un trabajador (US-27).
+ * onSuccess invalida la caché del listado y actualiza el trabajador.
+ */
+export function useDarDeBajaTrabajador() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => darDeBajaTrabajador(id),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...TRABAJADORES_KEY, data.id], data);
       queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
     },
   });

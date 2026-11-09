@@ -339,6 +339,16 @@ export function TrabajadorEditarPage() {
           />
         )}
 
+        {trabajador.dadoDeBaja && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Trabajador dado de baja"
+            description="Este trabajador se encuentra dado de baja en tu empresa y no está habilitado para ingresar a los barrios."
+            style={{ marginBottom: 20 }}
+          />
+        )}
+
         <Form
           form={form}
           layout="vertical"
@@ -355,7 +365,7 @@ export function TrabajadorEditarPage() {
               { max: 100, message: 'Máximo 100 caracteres' },
             ]}
           >
-            <Input placeholder="Ingresá el nombre" maxLength={100} />
+            <Input placeholder="Ingresá el nombre" maxLength={100} disabled={trabajador.dadoDeBaja} />
           </Form.Item>
 
           {/* Apellido */}
@@ -367,7 +377,7 @@ export function TrabajadorEditarPage() {
               { max: 100, message: 'Máximo 100 caracteres' },
             ]}
           >
-            <Input placeholder="Ingresá el apellido" maxLength={100} />
+            <Input placeholder="Ingresá el apellido" maxLength={100} disabled={trabajador.dadoDeBaja} />
           </Form.Item>
 
           {/* DNI (solo lectura, RN-11) */}
@@ -493,6 +503,7 @@ export function TrabajadorEditarPage() {
                           size="small"
                           style={{ flex: 1 }}
                           icon={<SyncOutlined />}
+                          disabled={trabajador.dadoDeBaja}
                           onClick={() => handleAbrirModalDoc('ART')}
                         >
                           Renovar
@@ -502,6 +513,7 @@ export function TrabajadorEditarPage() {
                           danger
                           style={{ flex: 1 }}
                           icon={<DeleteOutlined />}
+                          disabled={trabajador.dadoDeBaja}
                           onClick={() => handleAbrirBorrarDoc('ART')}
                         >
                           Borrar
@@ -574,6 +586,7 @@ export function TrabajadorEditarPage() {
                           size="small"
                           style={{ flex: 1 }}
                           icon={<SyncOutlined />}
+                          disabled={trabajador.dadoDeBaja}
                           onClick={() => handleAbrirModalDoc('SEGURO_VIDA')}
                         >
                           Renovar
@@ -583,6 +596,7 @@ export function TrabajadorEditarPage() {
                           danger
                           style={{ flex: 1 }}
                           icon={<DeleteOutlined />}
+                          disabled={trabajador.dadoDeBaja}
                           onClick={() => handleAbrirBorrarDoc('SEGURO_VIDA')}
                         >
                           Borrar
@@ -619,6 +633,7 @@ export function TrabajadorEditarPage() {
               htmlType="submit"
               block
               loading={guardando}
+              disabled={trabajador.dadoDeBaja}
             >
               Guardar cambios
             </Button>

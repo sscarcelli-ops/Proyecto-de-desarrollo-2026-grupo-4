@@ -1,30 +1,51 @@
 import { useState } from 'react';
-import { Button, Dropdown, Flex, Pagination, Table, Typography } from 'antd';
+import { App, Button, Dropdown, Flex, Modal, Pagination, Table, Tag, Typography } from 'antd';
 import {
   EllipsisOutlined,
   EditOutlined,
   PlusCircleOutlined,
+  UserDeleteOutlined,
 } from '@ant-design/icons';
 import { generatePath, useNavigate } from 'react-router';
-import { useTrabajadores, type TrabajadorResponse } from '../api/trabajadores';
+import { useTrabajadores, useDarDeBajaTrabajador, type TrabajadorResponse } from '../api/trabajadores';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { PATHS } from '../../../routes/paths';
-import { palette } from '../../../app/theme';
+import { palette, estadoTonos } from '../../../app/theme';
+import { getErrorMessage } from '../../../shared/lib/apiError';
 import type { ColumnsType } from 'antd/es/table';
 
 /**
- * US-26: listado paginado de trabajadores (alcance Semana 1).
+ * US-26: listado paginado de trabajadores.
+ * US-27: dar de baja trabajador.
  *
  * Muestra los trabajadores de la empresa logueada con su estado documental calculado al vuelo
- * (Vigente, Vencido, Pendiente de carga).
+ * (Vigente, Vencido, Pendiente de carga) y permite dar de baja a un trabajador.
  */
 export function TrabajadoresPage() {
+  const { message } = App.useApp();
   const navigate = useNavigate();
 
   // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente
   const [pagina, setPagina] = useState(1);
   const [tamano, setTamano] = useState(10);
   const { data, isLoading } = useTrabajadores(pagina, tamano);
+  const darDeBaja = useDarDeBajaTrabajador();
+
+  // Modal para confirmar dar de baja (US-27)
+  const [trabajadorParaBaja, setTrabajadorParaBaja] = useState<TrabajadorResponse | null>(null);
+
+  const handleConfirmarBaja = () => {
+    if (!trabajadorParaBaja) return;
+    darDeBaja.mutate(trabajadorParaBaja.id, {
+      onSuccess: () => {
+        message.success('Trabajador dado de baja correctamente');
+        setTrabajadorParaBaja(null);
+      },
+      onError: (err) => {
+        message.error(getErrorMessage(err));
+      },
+    });
+  };
 
   // Columnas de la tabla: Nombre | DNI | Estado documental | Detalle
   const columnas: ColumnsType<TrabajadorResponse> = [
@@ -32,20 +53,51 @@ export function TrabajadoresPage() {
       title: <span style={{ fontWeight: 600, color: palette.text }}>Nombre</span>,
       key: 'nombre',
       align: 'center' as const,
-      render: (_, t) => `${t.nombre} ${t.apellido}`,
+      render: (_, t) => (
+        <Flex align="center" justify="center" gap={8}>
+          <span style={{ color: t.dadoDeBaja ? palette.textSecondary : palette.text }}>
+            {t.nombre} {t.apellido}
+          </span>
+          {t.dadoDeBaja && (
+            <Tag
+              bordered
+              style={{
+                ...estadoTonos.neutro,
+                marginInlineEnd: 0,
+                fontSize: 11,
+                height: 22,
+                lineHeight: '20px',
+                paddingInline: 6,
+                borderRadius: 4,
+              }}
+            >
+              Dado de baja
+            </Tag>
+          )}
+        </Flex>
+      ),
     },
     {
       title: <span style={{ fontWeight: 600, color: palette.text }}>DNI</span>,
       dataIndex: 'dni',
       width: 170,
       align: 'center' as const,
+      render: (dni: string, t) => (
+        <span style={{ color: t.dadoDeBaja ? palette.textSecondary : palette.text }}>
+          {dni}
+        </span>
+      ),
     },
     {
       title: <span style={{ fontWeight: 600, color: palette.text }}>Estado documental</span>,
       dataIndex: 'estadoDocumental',
       width: 220,
       align: 'center' as const,
-      render: (estado: string) => <EstadoTag estado={estado as Estado} />,
+      render: (estado: string, t) => (
+        <div style={{ opacity: t.dadoDeBaja ? 0.6 : 1 }}>
+          <EstadoTag estado={estado as Estado} />
+        </div>
+      ),
     },
     {
       title: <span style={{ fontWeight: 600, color: palette.text }}>Detalle</span>,
@@ -62,7 +114,16 @@ export function TrabajadoresPage() {
                 key: 'editar',
                 icon: <EditOutlined />,
                 label: 'Editar',
+                disabled: t.dadoDeBaja,
                 onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
+              },
+              {
+                key: 'baja',
+                icon: <UserDeleteOutlined />,
+                label: 'Dar de baja',
+                danger: true,
+                disabled: t.dadoDeBaja,
+                onClick: () => setTrabajadorParaBaja(t),
               },
             ],
           }}
@@ -153,6 +214,53 @@ export function TrabajadoresPage() {
           }}
         />
       </Flex>
+
+      {/* Modal de confirmación para dar de baja (simétrico según wireframe US-27) */}
+      <Modal
+        open={trabajadorParaBaja !== null}
+        centered
+        onCancel={() => setTrabajadorParaBaja(null)}
+        destroyOnHidden
+        closable={false}
+        width={440}
+        footer={
+          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
+            <Button
+              block
+              style={{ flex: 1 }}
+              size="large"
+              disabled={darDeBaja.isPending}
+              onClick={() => setTrabajadorParaBaja(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              danger
+              type="primary"
+              block
+              style={{ flex: 1 }}
+              size="large"
+              loading={darDeBaja.isPending}
+              onClick={handleConfirmarBaja}
+            >
+              Dar de baja
+            </Button>
+          </Flex>
+        }
+      >
+        <Typography.Title
+          level={4}
+          style={{ textAlign: 'center', margin: '16px 0 8px 0', fontSize: 18 }}
+        >
+          ¿Seguro que quiere dar de baja al trabajador {trabajadorParaBaja?.nombre} {trabajadorParaBaja?.apellido}?
+        </Typography.Title>
+        <Typography.Paragraph
+          type="secondary"
+          style={{ textAlign: 'center', margin: '0 0 16px 0', fontSize: 13 }}
+        >
+          Esta acción inhabilitará al trabajador para ingresar a cualquier barrio bajo esta empresa.
+        </Typography.Paragraph>
+      </Modal>
     </div>
   );
 }
