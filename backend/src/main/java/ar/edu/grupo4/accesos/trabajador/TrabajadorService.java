@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -136,6 +137,32 @@ public class TrabajadorService {
 
         trabajador.setNombre(request.nombre().trim());
         trabajador.setApellido(request.apellido().trim());
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    // ========================================================================================
+    // US-27: Dar de baja trabajador
+    // ========================================================================================
+
+    /**
+     * Da de baja a un trabajador para el perfil del usuario autenticado (RF-12, RN-05).
+     * Setea fecha_baja a now(), inhabilitando el vínculo para futuros ingresos.
+     * La baja inhabilita únicamente este vínculo (RN-05).
+     */
+    @Transactional
+    public TrabajadorResponse darDeBaja(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        if (trabajador.estaDadoDeBaja()) {
+            throw new BusinessException("TRABAJADOR_YA_DADO_DE_BAJA",
+                "El trabajador ya se encuentra dado de baja.");
+        }
+
+        trabajador.setFechaBaja(Instant.now());
+        trabajador = trabajadorRepository.save(trabajador);
+        log.info("Trabajador {} dado de baja en perfil {}", trabajadorId, perfilId);
 
         return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
     }

@@ -161,6 +161,94 @@ class TrabajadorServiceTest {
         assertThat(existente.getApellido()).isEqualTo("Vencido Modificado");
     }
 
+    // ========================================================================================
+    // US-27: Dar de baja trabajador
+    // ========================================================================================
+
+    @Test
+    @DisplayName("US-27 / CA-1: darDeBaja setea fechaBaja, persiste y retorna dadoDeBaja en true")
+    void darDeBajaExitoso() {
+        Long trabajadorId = 88L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Carlos");
+        trabajador.setApellido("Vencido");
+        trabajador.setDni("30333444");
+        trabajador.setDocumentos(new ArrayList<>());
+        trabajador.setFechaBaja(null);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse response = service.darDeBaja(trabajadorId);
+
+        assertThat(response.dadoDeBaja()).isTrue();
+        assertThat(trabajador.getFechaBaja()).isNotNull();
+        verify(trabajadorRepository).save(trabajador);
+    }
+
+    @Test
+    @DisplayName("US-27: darDeBaja a un trabajador que ya está de baja lanza BusinessException")
+    void darDeBajaYaDadoDeBajaLanzaError() {
+        Long trabajadorId = 89L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Bruno");
+        trabajador.setApellido("Baja");
+        trabajador.setDni("30999000");
+        trabajador.setFechaBaja(java.time.Instant.now().minusSeconds(3600));
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        assertThatThrownBy(() -> service.darDeBaja(trabajadorId))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("El trabajador ya se encuentra dado de baja.");
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-27 / RF-23: darDeBaja a un trabajador de otra empresa devuelve 404")
+    void darDeBajaTrabajadorDeOtraEmpresaDevuelve404() {
+        Long trabajadorAjenoId = 999L;
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorAjenoId, PERFIL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.darDeBaja(trabajadorAjenoId))
+            .isInstanceOf(NotFoundException.class);
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-27 / RN-05: darDeBaja con documentación vigente mantiene documentación y estado independiente")
+    void darDeBajaConDocumentacionVigenteConservaDocumentosYEstado() {
+        Long trabajadorId = 90L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Ana");
+        trabajador.setApellido("Vigente");
+        trabajador.setDni("30777888");
+
+        Documento doc = new Documento();
+        doc.setTipo(TipoDocumento.ART);
+        doc.setFechaVencimiento(LocalDate.now().plusMonths(6));
+        ArrayList<Documento> docs = new ArrayList<>();
+        docs.add(doc);
+        trabajador.setDocumentos(docs);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse response = service.darDeBaja(trabajadorId);
+
+        assertThat(response.dadoDeBaja()).isTrue();
+        assertThat(response.estadoDocumental()).isEqualTo("VIGENTE");
+        assertThat(response.documentos()).hasSize(1);
+    }
+
     @Test
     @DisplayName("Cálculo de estado documental: sin documentos es PENDIENTE_CARGA")
     void calculoEstadoSinDocumentosEsPendiente() {
