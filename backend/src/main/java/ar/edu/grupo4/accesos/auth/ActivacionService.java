@@ -2,6 +2,7 @@ package ar.edu.grupo4.accesos.auth;
 
 import ar.edu.grupo4.accesos.auth.dto.ActivacionRequest;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,15 @@ public class ActivacionService {
     private final TokenUnSoloUsoRepository tokenRepository;
     private final UsuarioService usuarioService;
 
+    /**
+     * La activación existe solo mientras no haya Administrador. Después, sus endpoints y la pantalla /activar
+     * responden como si no existieran (ActivacionCerradaInterceptor).
+     */
+    @Transactional(readOnly = true)
+    public boolean disponible() {
+        return !usuarioService.existeAdministrador();
+    }
+
     /** CA-1, CA-3 y CA-4: el código sirve para pasar a "Registrate". No lo consume. */
     @Transactional(readOnly = true)
     public void validar(String codigo) {
@@ -42,6 +52,10 @@ public class ActivacionService {
      */
     @Transactional
     public void activar(ActivacionRequest request) {
+        // Además del interceptor: el Service tampoco crea un segundo Administrador por otro camino
+        if (!disponible()) {
+            throw new NotFoundException();
+        }
         TokenUnSoloUso token = buscarVigente(request.token());
         if (usuarioService.existePorEmail(request.email())) {
             throw new BusinessException("EMAIL_DUPLICADO", "Este email ya se encuentra registrado");

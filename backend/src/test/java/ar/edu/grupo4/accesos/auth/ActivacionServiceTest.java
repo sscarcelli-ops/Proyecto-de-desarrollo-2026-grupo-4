@@ -2,6 +2,7 @@ package ar.edu.grupo4.accesos.auth;
 
 import ar.edu.grupo4.accesos.auth.dto.ActivacionRequest;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -184,5 +185,30 @@ class ActivacionServiceTest {
         activacionService.cargarCodigoConfigurado("  ", 30);
 
         verify(tokenRepository, never()).save(any());
+    }
+
+    // ---- Activación cerrada: con el Administrador creado deja de existir ----
+
+    @Test
+    void sinAdministradorLaActivacionEstaDisponible() {
+        assertThat(activacionService.disponible()).isTrue();
+    }
+
+    @Test
+    void conAdministradorLaActivacionNoEstaDisponible() {
+        when(usuarioService.existeAdministrador()).thenReturn(true);
+
+        assertThat(activacionService.disponible()).isFalse();
+    }
+
+    @Test
+    void conAdministradorNoSeCreaOtroAunqueElCodigoSigaVigente() {
+        // Además del 404 del interceptor: el Service tampoco deja crear un segundo Administrador
+        vigente();
+        when(usuarioService.existeAdministrador()).thenReturn(true);
+
+        assertThatThrownBy(() -> activacionService.activar(REQUEST)).isInstanceOf(NotFoundException.class);
+        verify(usuarioService, never()).crearConRol(anyString(), anyString(), anyString());
+        verify(tokenRepository, never()).marcarUsado(any(), any());
     }
 }

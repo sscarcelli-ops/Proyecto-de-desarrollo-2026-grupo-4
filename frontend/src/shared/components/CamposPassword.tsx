@@ -43,7 +43,7 @@ export function CampoPasswordNueva({ name = 'password', label = 'Contraseña', p
       ]}
       extra={<RequisitosPassword password={password} />}
     >
-      <Input.Password autoComplete="new-password" placeholder={placeholder} />
+      <Input.Password autoComplete="new-password" placeholder={placeholder} maxLength={72} />
     </Form.Item>
   );
 }
@@ -75,7 +75,7 @@ export function CampoConfirmarPassword({
         }),
       ]}
     >
-      <Input.Password autoComplete="new-password" placeholder={placeholder} />
+      <Input.Password autoComplete="new-password" placeholder={placeholder} maxLength={72} />
     </Form.Item>
   );
 }

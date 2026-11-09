@@ -1,6 +1,7 @@
 package ar.edu.grupo4.accesos.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -65,6 +66,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         // T-10: el rol del usuario no tiene permiso para ese endpoint. La línea del pedido agrega la ruta y el usuario
         log.warn("Acceso denegado por permisos");
         return problem(HttpStatus.FORBIDDEN, "FORBIDDEN", "No tenés permiso para realizar esta acción.", null);
+    }
+
+    // ?sort= con un campo que no existe en un listado sin OrdenPermitido: es un error del pedido, no del servidor
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<Object> handleOrdenInvalido(PropertyReferenceException ex) {
+        return problem(HttpStatus.BAD_REQUEST, "ORDEN_INVALIDO", "No se puede ordenar el listado por ese campo.", null);
     }
 
     // Último recurso: se registra el detalle en el log y al usuario no se le muestra nada interno

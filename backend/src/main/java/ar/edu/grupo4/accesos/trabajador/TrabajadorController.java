@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.trabajador;
 
+import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
 import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.trabajador.dto.DocumentoRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
@@ -18,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Set;
 
 /**
  * API REST para la gestión de trabajadores (US-25, US-26, US-28).
@@ -39,6 +42,9 @@ import org.springframework.web.multipart.MultipartFile;
 @PreAuthorize("hasRole('EMPRESA')")
 @RequiredArgsConstructor
 public class TrabajadorController {
+
+    // Columnas por las que se puede ordenar con ?sort= (OrdenPermitido)
+    private static final Set<String> ORDEN_PERMITIDO = Set.of("nombre", "apellido", "dni", "creadoEn");
 
     private final TrabajadorService trabajadorService;
 
@@ -77,7 +83,7 @@ public class TrabajadorController {
     public PageResponse<TrabajadorResponse> listar(
             @PageableDefault(size = 10, sort = {"nombre", "apellido"}) Pageable pageable) {
 
-        return trabajadorService.listar(pageable);
+        return trabajadorService.listar(OrdenPermitido.validar(pageable, ORDEN_PERMITIDO));
     }
 
     /**
