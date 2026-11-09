@@ -80,6 +80,55 @@ class TrabajadorServiceTest {
     }
 
     @Test
+    @DisplayName("US-23 / CA-1: registrarMonotributista persiste un trabajador con perfilId, nombre, apellido y DNI")
+    void registrarMonotributistaExitoso() {
+        Trabajador guardado = new Trabajador();
+        guardado.setId(10L);
+        guardado.setPerfilId(200L);
+        guardado.setNombre("Paula");
+        guardado.setApellido("Pendiente");
+        guardado.setDni("33222111");
+
+        when(trabajadorRepository.save(any(Trabajador.class))).thenReturn(guardado);
+
+        Trabajador resultado = service.registrarMonotributista(200L, "Paula ", " Pendiente", " 33222111 ");
+
+        assertThat(resultado.getId()).isEqualTo(10L);
+        assertThat(resultado.getPerfilId()).isEqualTo(200L);
+        assertThat(resultado.getNombre()).isEqualTo("Paula");
+        assertThat(resultado.getApellido()).isEqualTo("Pendiente");
+        assertThat(resultado.getDni()).isEqualTo("33222111");
+
+        verify(trabajadorRepository).save(argThat(t ->
+            t.getPerfilId().equals(200L) &&
+            t.getNombre().equals("Paula") &&
+            t.getApellido().equals("Pendiente") &&
+            t.getDni().equals("33222111")
+        ));
+        // No debe consultar usuarioActual (la aprobación la ejecuta el Administrador)
+        verify(usuarioActual, never()).perfilIdAprobado();
+    }
+
+    @Test
+    @DisplayName("US-23 / CA-2: registrarMonotributista crea registro independiente aun si el DNI existe en otro perfil (RN-08, RN-11)")
+    void registrarMonotributistaConDniExistenteEnOtraEmpresaCreaRegistroIndependiente() {
+        Trabajador guardado = new Trabajador();
+        guardado.setId(11L);
+        guardado.setPerfilId(200L);
+        guardado.setNombre("Juan");
+        guardado.setApellido("Pérez");
+        guardado.setDni("30111222");
+
+        when(trabajadorRepository.save(any(Trabajador.class))).thenReturn(guardado);
+
+        Trabajador resultado = service.registrarMonotributista(200L, "Juan", "Pérez", "30111222");
+
+        assertThat(resultado.getPerfilId()).isEqualTo(200L);
+        assertThat(resultado.getDni()).isEqualTo("30111222");
+        verify(trabajadorRepository).save(argThat(t -> t.getPerfilId().equals(200L) && t.getDni().equals("30111222")));
+    }
+
+    @Test
     @DisplayName("US-26 / RF-23: Aislamiento entre empresas. Si se pide un trabajador ajeno, devuelve 404")
     void obtenerTrabajadorDeOtraEmpresaDevuelve404() {
         Long trabajadorAjenoId = 99L;

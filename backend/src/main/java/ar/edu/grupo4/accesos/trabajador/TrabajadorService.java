@@ -10,6 +10,7 @@ import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ import java.util.Optional;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrabajadorService {
 
     private final TrabajadorRepository trabajadorRepository;
@@ -68,6 +70,30 @@ public class TrabajadorService {
         trabajador = trabajadorRepository.save(trabajador);
 
         return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    // ========================================================================================
+    // US-23: Vincular automáticamente a Monotributista como su único trabajador
+    // ========================================================================================
+
+    /**
+     * Registra automáticamente al Monotributista como su propio y único trabajador
+     * al ser aprobado su perfil por el Administrador (RF-09, RN-07).
+     *
+     * No comparte datos con otros registros aunque el DNI coincida (RN-08, RN-11).
+     * Foto y documentación quedan pendientes para ser cargadas por el propio usuario (US-24, US-28).
+     */
+    @Transactional
+    public Trabajador registrarMonotributista(Long perfilId, String nombre, String apellido, String dni) {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setPerfilId(perfilId);
+        trabajador.setNombre(nombre.trim());
+        trabajador.setApellido(apellido.trim());
+        trabajador.setDni(dni.trim());
+
+        trabajador = trabajadorRepository.save(trabajador);
+        log.info("Trabajador automático {} registrado para perfil Monotributista {}", trabajador.getId(), perfilId);
+        return trabajador;
     }
 
     // ========================================================================================
