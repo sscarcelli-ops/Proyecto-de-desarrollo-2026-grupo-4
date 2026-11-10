@@ -1,7 +1,14 @@
 import { createBrowserRouter } from 'react-router';
 import { PATHS } from './paths';
 import { NotFoundPage } from './NotFoundPage';
-import { RedirectIfAuthenticated, RequireAuth, RequireRole } from './guards';
+import {
+  RedirectIfAuthenticated,
+  RequireAuth,
+  RequireRole,
+  RequireRolAprobado,
+  RequireSinRol,
+  RequireSolicitud,
+} from './guards';
 import { AppLayout } from '../app/layout/AppLayout';
 import { PublicLayout } from '../app/layout/PublicLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
@@ -48,8 +55,16 @@ export const router = createBrowserRouter([
       {
         element: <PublicLayout />,
         children: [
-          { path: PATHS.solicitarPerfil, element: <SolicitarPerfilPage /> },
-          { path: PATHS.estadoSolicitud, element: <EstadoSolicitudPage /> },
+          {
+            element: <RequireSinRol />,
+            children: [
+              { path: PATHS.solicitarPerfil, element: <SolicitarPerfilPage /> },
+              {
+                element: <RequireSolicitud />,
+                children: [{ path: PATHS.estadoSolicitud, element: <EstadoSolicitudPage /> }],
+              },
+            ],
+          },
           // US-07: acá y no en AppLayout porque la usan todos, también el Guardia y las cuentas sin rol, que no tienen menú
           { path: PATHS.cambiarPassword, element: <CambiarPasswordPage /> },
         ],
@@ -60,29 +75,34 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
-      // Menú lateral para roles de administración / oficina
+      // Menú lateral para roles de administración / oficina. Sin rol aprobado no se entra (US-43).
       {
-        element: <AppLayout />,
+        element: <RequireRolAprobado />,
         children: [
-          { path: PATHS.inicio, element: <InicioPage /> },
-          // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
           {
-            element: <RequireRole roles={['ADMIN']} />,
+            element: <AppLayout />,
             children: [
-              { path: PATHS.barrios, element: <BarriosPage /> },
-              { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
-              { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
-              { path: PATHS.empresas, element: <EmpresasPage /> },
-              { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
-            ],
-          },
-          // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)
-          {
-            element: <RequireRole roles={['EMPRESA']} />,
-            children: [
-              { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
-              { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
-              { path: PATHS.trabajadorEditar, element: <TrabajadorEditarPage /> },
+              { path: PATHS.inicio, element: <InicioPage /> },
+              // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
+              {
+                element: <RequireRole roles={['ADMIN']} />,
+                children: [
+                  { path: PATHS.barrios, element: <BarriosPage /> },
+                  { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
+                  { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
+                  { path: PATHS.empresas, element: <EmpresasPage /> },
+                  { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
+                ],
+              },
+              // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)
+              {
+                element: <RequireRole roles={['EMPRESA']} />,
+                children: [
+                  { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
+                  { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
+                  { path: PATHS.trabajadorEditar, element: <TrabajadorEditarPage /> },
+                ],
+              },
             ],
           },
         ],

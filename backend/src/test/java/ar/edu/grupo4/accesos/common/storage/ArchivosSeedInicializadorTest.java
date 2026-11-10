@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 class ArchivosSeedInicializadorTest {
 
     private static final byte[] PDF = "%PDF-1.4 prueba".getBytes();
+    private static final byte[] JPG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00};
 
     @TempDir
     Path raiz;
@@ -25,7 +26,7 @@ class ArchivosSeedInicializadorTest {
     private ArchivosSeedInicializador inicializador(List<String> rutas) {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         when(jdbc.queryForList(anyString(), eq(String.class))).thenReturn(rutas);
-        return new ArchivosSeedInicializador(jdbc, raiz.toString(), new ByteArrayResource(PDF));
+        return new ArchivosSeedInicializador(jdbc, raiz.toString(), new ByteArrayResource(PDF), new ByteArrayResource(JPG));
     }
 
     @Test
@@ -34,6 +35,13 @@ class ArchivosSeedInicializadorTest {
 
         assertThat(raiz.resolve("perfiles/seed/empresa/constancia.pdf")).hasBinaryContent(PDF);
         assertThat(raiz.resolve("trabajadores/seed/30111222/art.pdf")).hasBinaryContent(PDF);
+    }
+
+    @Test
+    void copiaLaFotoDePruebaEnCadaFotoDelSeed() throws Exception {
+        inicializador(List.of("trabajadores/seed/30444555/foto.jpg")).run(null);
+
+        assertThat(raiz.resolve("trabajadores/seed/30444555/foto.jpg")).hasBinaryContent(JPG);
     }
 
     @Test
@@ -48,10 +56,10 @@ class ArchivosSeedInicializadorTest {
     }
 
     @Test
-    void ignoraRutasQueNoSonPdfOSalenDeLaCarpeta() throws Exception {
-        inicializador(List.of("trabajadores/seed/30444555/foto.jpg", "perfiles/seed/../../afuera.pdf")).run(null);
+    void ignoraRutasDeOtroTipoOQueSalenDeLaCarpeta() throws Exception {
+        inicializador(List.of("trabajadores/seed/30444555/foto.gif", "perfiles/seed/../../afuera.pdf")).run(null);
 
-        assertThat(raiz.resolve("trabajadores/seed/30444555/foto.jpg")).doesNotExist();
+        assertThat(raiz.resolve("trabajadores/seed/30444555/foto.gif")).doesNotExist();
         assertThat(raiz.getParent().resolve("afuera.pdf")).doesNotExist();
     }
 }
