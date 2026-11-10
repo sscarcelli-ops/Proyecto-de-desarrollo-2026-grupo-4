@@ -13,6 +13,7 @@ export interface PerfilInfo {
  * - Con rol aprobado:
  *   - GUARDIA: va directamente al control de acceso de Garita (US-37 a 40).
  *   - EMPRESA: va directamente a la gestión de sus trabajadores (US-26).
+ *   - OPERADOR: va directamente a las Empresas y Monotributistas de su barrio (US-33).
  *   - Otros roles: van a su pantalla correspondiente o Inicio.
  */
 export function pantallaInicial(roles: Rol[], perfil?: PerfilInfo | null): string {
@@ -27,6 +28,9 @@ export function pantallaInicial(roles: Rol[], perfil?: PerfilInfo | null): strin
   }
   if (roles.includes('EMPRESA')) {
     return PATHS.trabajadores;
+  }
+  if (roles.includes('OPERADOR')) {
+    return PATHS.empresasBarrio;
   }
   // Monotributista irá a su pantalla de datos personales cuando se implemente en S2
   return PATHS.inicio;
