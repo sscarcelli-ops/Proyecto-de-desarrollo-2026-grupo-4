@@ -3,6 +3,7 @@ package ar.edu.grupo4.accesos.barrio;
 import ar.edu.grupo4.accesos.barrio.dto.AsignarOperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioResponse;
+import ar.edu.grupo4.accesos.barrio.dto.EstadoBarrioRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,12 @@ public class BarrioController {
     @PutMapping("/{id}/operador")
     public BarrioResponse asignarOperador(@PathVariable Long id, @Valid @RequestBody AsignarOperadorRequest request) {
         return responder(barrioService.asignarOperador(id, request));
+    }
+
+    // US-12: activa o desactiva el barrio (baja lógica). Al desactivar registra el egreso de los ingresos abiertos
+    @PutMapping("/{id}/estado")
+    public BarrioResponse cambiarEstado(@PathVariable Long id, @Valid @RequestBody EstadoBarrioRequest request) {
+        return responder(barrioService.cambiarEstado(id, request.activo()));
     }
 
     private BarrioResponse responder(Barrio barrio) {
