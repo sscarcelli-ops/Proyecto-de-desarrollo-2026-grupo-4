@@ -3,7 +3,7 @@ import { Alert, Button, Flex, Select, Switch, Table, Tooltip, Typography, App as
 import type { TableColumnsType } from 'antd';
 import { EditOutlined, PlusOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { generatePath, useNavigate } from 'react-router';
-import { useBarrios, type Barrio } from '../api/barrios';
+import { useBarrios, useCambiarEstadoBarrio, type Barrio } from '../api/barrios';
 import { AsignarOperadorSelect } from '../components/AsignarOperadorSelect';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
@@ -47,11 +47,43 @@ function cumpleFiltro(barrio: Barrio, filtro: FiltroBarrios): boolean {
 // - "Acción": el lápiz "Editar barrio" (US-11). Si se suman más acciones por barrio, se vuelve a un menú "⋯".
 export function BarriosPage() {
   const navigate = useNavigate();
-  const { message } = AntdApp.useApp();
+  const { message, modal } = AntdApp.useApp();
   const { data, error, isLoading } = useBarrios();
   const [filtro, setFiltro] = useState<FiltroBarrios>('TODOS');
+  const cambiarEstadoBarrio = useCambiarEstadoBarrio();
+  // Barrio al que se le está cambiando el estado: su interruptor muestra que está cargando
+  const [cambiandoId, setCambiandoId] = useState<number | null>(null);
 
   const barrios = data?.filter((barrio) => cumpleFiltro(barrio, filtro));
+
+  // US-12: el backend valida (activar sin Operador, por ejemplo) y devuelve el mensaje que se muestra
+  const cambiarEstado = async (barrio: Barrio, activo: boolean) => {
+    setCambiandoId(barrio.id);
+    try {
+      await cambiarEstadoBarrio.mutateAsync({ id: barrio.id, activo });
+      message.success(`${barrio.nombre} quedó ${activo ? 'Activo' : 'Inactivo'}.`);
+    } catch (error) {
+      message.error(getErrorMessage(error));
+    } finally {
+      setCambiandoId(null);
+    }
+  };
+
+  // Activar es directo; desactivar pide confirmar, porque cierra los ingresos abiertos de sus trabajadores
+  const alTocarElInterruptor = (barrio: Barrio, activar: boolean) => {
+    if (activar) {
+      void cambiarEstado(barrio, true);
+      return;
+    }
+    modal.confirm({
+      title: '¿Desea desactivar el barrio?',
+      content: 'Podrá reactivarlo más adelante.',
+      okText: 'Desactivar barrio',
+      cancelText: 'Cancelar',
+      okButtonProps: { danger: true },
+      onOk: () => cambiarEstado(barrio, false),
+    });
+  };
 
   // Los textos largos se cortan con "…" y se ven completos al pasar el mouse
   const columns: TableColumnsType<Barrio> = [
@@ -108,10 +140,6 @@ export function BarriosPage() {
         const activo = barrio.estado === 'ACTIVO';
         return (
           <>
-            {/* TODO US-12: al tocarlo, activar o desactivar. Desactivar pide confirmar ("¿Desea desactivar el barrio?
-                Esta acción también cerrará automáticamente los ingresos abiertos de sus trabajadores. Podrá
-                reactivarlo más adelante."); activar sin Operador muestra "Debe asignar un operador antes de activar
-                el barrio". Por ahora muestra el estado y avisa que no está disponible. */}
             <Switch
               checked={activo}
               checkedChildren="Activo"
@@ -120,7 +148,8 @@ export function BarriosPage() {
               // Verde activo, gris inactivo (no rojo: un barrio inactivo no tiene un error). El gris es el del texto
               // secundario para que "Inactivo" en blanco se lea bien
               style={{ backgroundColor: activo ? palette.success : palette.textSecondary }}
-              onChange={() => message.info('Activar y desactivar barrios todavía no está disponible (US-12).')}
+              loading={cambiandoId === barrio.id}
+              onChange={(checked) => alTocarElInterruptor(barrio, checked)}
             />
           </>
         );

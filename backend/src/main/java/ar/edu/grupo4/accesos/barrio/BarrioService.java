@@ -4,9 +4,11 @@ import ar.edu.grupo4.accesos.barrio.dto.AsignarOperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioRequest;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.movimiento.MovimientoService;
 import ar.edu.grupo4.accesos.ubicacion.Localidad;
 import ar.edu.grupo4.accesos.ubicacion.UbicacionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -18,16 +20,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BarrioService {
 
     static final String OPERADOR_OCUPADO = "El Operador ya está asignado a otro barrio";
+    static final String MOTIVO_EGRESO_DESACTIVACION = "Egreso automático por desactivación del barrio";
     static final String BARRIO_DUPLICADO = "Ya existe un barrio con ese nombre en esa localidad";
 
     private final BarrioRepository barrioRepository;
     private final OperadorService operadorService;
     private final UbicacionService ubicacionService;
+    private final MovimientoService movimientoService;
 
     /** US-10: el barrio nace Inactivo y sin Operador (RN-10). No puede repetirse el nombre en la misma localidad. */
     @Transactional
@@ -37,7 +42,9 @@ public class BarrioService {
         if (barrioRepository.existsByNombreIgnoreCaseAndLocalidadId(nombre, localidad.getId())) {
             throw barrioDuplicado();
         }
-        return guardar(new Barrio(nombre, localidad, request.direccion().trim()));
+        Barrio creado = guardar(new Barrio(nombre, localidad, request.direccion().trim()));
+        log.info("Barrio {} creado", creado.getId());
+        return creado;
     }
 
     /** US-10: el listado de barrios no se pagina; orden alfabético. */
@@ -75,7 +82,9 @@ public class BarrioService {
         barrio.setNombre(nombre);
         barrio.setLocalidad(localidad);
         barrio.setDireccion(request.direccion().trim());
-        return guardar(barrio);
+        Barrio modificado = guardar(barrio);
+        log.info("Barrio {} modificado", id);
+        return modificado;
     }
 
     /** Guarda y fuerza el INSERT/UPDATE: si dos pedidos iguales llegan a la vez, el índice único de la base frena al segundo. */
@@ -89,6 +98,36 @@ public class BarrioService {
 
     private static BusinessException barrioDuplicado() {
         return new BusinessException("BARRIO_DUPLICADO", BARRIO_DUPLICADO);
+    }
+
+    /**
+     * US-12: activa o desactiva el barrio (baja lógica y reversible, RN-13): no se borra nada. Solo se activa un barrio
+     * con Operador (RN-10). Al desactivar, el Operador sigue asignado y se registra un egreso automático por cada
+     * ingreso abierto, todo en una transacción. Pedir el estado que el barrio ya tiene no cambia nada.
+     * Sus Guardias dejan de poder iniciar sesión y operar, y la garita responde "barrio inactivo", sin tocar ese
+     * código: lo resuelven el login, el filtro de sesión y verificar_acceso leyendo el estado del barrio.
+     */
+    @Transactional
+    public Barrio cambiarEstado(Long id, boolean activo) {
+        // Bloqueado, así dos Administradores no lo cambian a la vez
+        Barrio barrio = barrioRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new NotFoundException("El barrio no existe."));
+        EstadoBarrio nuevo = activo ? EstadoBarrio.ACTIVO : EstadoBarrio.INACTIVO;
+        if (barrio.getEstado() == nuevo) {
+            return barrio;
+        }
+        if (activo && barrio.getOperadorId() == null) {
+            throw new BusinessException("BARRIO_SIN_OPERADOR", "Debe asignar un Operador antes de activar el barrio");
+        }
+        barrio.setEstado(nuevo);
+        Barrio guardado = barrioRepository.saveAndFlush(barrio);
+        if (activo) {
+            log.info("Barrio {} activado", id);
+        } else {
+            int egresos = movimientoService.registrarEgresosAutomaticos(id, MOTIVO_EGRESO_DESACTIVACION);
+            log.info("Barrio {} desactivado: {} egresos automáticos", id, egresos);
+        }
+        return guardado;
     }
 
     /**
@@ -130,7 +169,9 @@ public class BarrioService {
         barrio.setOperadorId(operadorId);
         barrio.setEstado(EstadoBarrio.ACTIVO);
         try {
-            return barrioRepository.saveAndFlush(barrio);
+            Barrio asignado = barrioRepository.saveAndFlush(barrio);
+            log.info("Operador {} asignado al barrio {}", operadorId, barrioId);
+            return asignado;
         } catch (DataIntegrityViolationException e) {
             // Otro Administrador asignó ese Operador entre la verificación y el guardado (la base lo impide: UNIQUE)
             throw new BusinessException("OPERADOR_OCUPADO", OPERADOR_OCUPADO);

@@ -6,6 +6,7 @@ import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OperadorService {
@@ -34,6 +36,7 @@ public class OperadorService {
         Usuario usuario = usuarioService.crearConRol(request.email(), request.password(), "OPERADOR");
         Operador operador = operadorRepository.save(new Operador(usuario.getId(), request.nombre().trim(),
             request.apellido().trim(), request.telefono().trim()));
+        log.info("Operador {} creado", operador.getUsuarioId());
         return OperadorResponse.from(operador, usuario.getEmail());
     }
 
