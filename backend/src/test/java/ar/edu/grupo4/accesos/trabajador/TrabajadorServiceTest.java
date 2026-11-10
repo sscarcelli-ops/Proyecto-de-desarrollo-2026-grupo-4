@@ -15,6 +15,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -159,6 +160,26 @@ class TrabajadorServiceTest {
         assertThat(response.apellido()).isEqualTo("Vencido Modificado");
         assertThat(existente.getNombre()).isEqualTo("Carlos Alberto");
         assertThat(existente.getApellido()).isEqualTo("Vencido Modificado");
+    }
+
+    @Test
+    @DisplayName("US-27: editar un trabajador dado de baja lanza BusinessException")
+    void editarTrabajadorDadoDeBajaLanzaError() {
+        Long trabajadorId = 5L;
+        Trabajador existente = new Trabajador();
+        existente.setId(trabajadorId);
+        existente.setPerfilId(PERFIL_ID);
+        existente.setNombre("Bruno");
+        existente.setApellido("Baja");
+        existente.setFechaBaja(Instant.now());
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(existente));
+
+        TrabajadorEditarRequest request = new TrabajadorEditarRequest("Bruno", "Modificado");
+
+        assertThatThrownBy(() -> service.editar(trabajadorId, request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("No se puede modificar un trabajador dado de baja.");
     }
 
     // ========================================================================================

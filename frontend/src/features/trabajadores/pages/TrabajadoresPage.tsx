@@ -3,6 +3,7 @@ import { App, Button, Dropdown, Flex, Modal, Pagination, Table, Tag, Typography 
 import {
   EllipsisOutlined,
   EditOutlined,
+  EyeOutlined,
   PlusCircleOutlined,
   UserDeleteOutlined,
 } from '@ant-design/icons';
@@ -112,9 +113,8 @@ export function TrabajadoresPage() {
             items: [
               {
                 key: 'editar',
-                icon: <EditOutlined />,
-                label: 'Editar',
-                disabled: t.dadoDeBaja,
+                icon: t.dadoDeBaja ? <EyeOutlined /> : <EditOutlined />,
+                label: t.dadoDeBaja ? 'Ver detalle' : 'Editar',
                 onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
               },
               {

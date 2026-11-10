@@ -134,6 +134,7 @@ public class TrabajadorService {
     public TrabajadorResponse editar(Long trabajadorId, TrabajadorEditarRequest request) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         trabajador.setNombre(request.nombre().trim());
         trabajador.setApellido(request.apellido().trim());
@@ -180,6 +181,7 @@ public class TrabajadorService {
     public TrabajadorResponse cargarDocumento(Long trabajadorId, DocumentoRequest request) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         // Sin archivo: mensaje propio de US-28 (validarPdf es común y usa uno genérico)
         if (request.archivo() == null || request.archivo().isEmpty()) {
@@ -229,6 +231,7 @@ public class TrabajadorService {
     public TrabajadorResponse eliminarDocumento(Long trabajadorId, TipoDocumento tipo) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, tipo)
             .orElseThrow(NotFoundException::new);
@@ -267,6 +270,7 @@ public class TrabajadorService {
     public TrabajadorResponse cargarFoto(Long trabajadorId, MultipartFile foto) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         // Validación de tipo y tamaño de la foto (T-05, RNF-10)
         fileStorageService.validarFoto(foto);
@@ -298,6 +302,7 @@ public class TrabajadorService {
     public TrabajadorResponse eliminarFoto(Long trabajadorId) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         String rutaVieja = trabajador.getFotoRuta();
         if (rutaVieja != null) {
@@ -335,6 +340,13 @@ public class TrabajadorService {
     private Trabajador buscarDelPerfil(Long perfilId, Long trabajadorId) {
         return trabajadorRepository.findByIdAndPerfilId(trabajadorId, perfilId)
             .orElseThrow(NotFoundException::new);
+    }
+
+    private void validarNoDadoDeBaja(Trabajador trabajador) {
+        if (trabajador.estaDadoDeBaja()) {
+            throw new BusinessException("TRABAJADOR_DADO_DE_BAJA",
+                "No se puede modificar un trabajador dado de baja.");
+        }
     }
 
     /**

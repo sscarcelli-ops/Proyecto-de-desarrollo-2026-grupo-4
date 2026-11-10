@@ -343,7 +343,7 @@ export function TrabajadorEditarPage() {
           <Alert
             type="warning"
             showIcon
-            message="Trabajador dado de baja"
+            title="Trabajador dado de baja"
             description="Este trabajador se encuentra dado de baja en tu empresa y no está habilitado para ingresar a los barrios."
             style={{ marginBottom: 20 }}
           />
