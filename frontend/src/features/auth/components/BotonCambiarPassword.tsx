@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { Button, Dropdown } from 'antd';
-import Icon, { MoreOutlined, UserOutlined } from '@ant-design/icons';
+import Icon, { MoreOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { palette } from '../../../app/theme';
 import { PATHS } from '../../../routes/paths';
@@ -22,10 +22,9 @@ const iconoLlave = <Icon component={LlaveSvg} style={{ fontSize: 18 }} />;
  * Según el wireframe de cada lugar:
  * - puntos: tres puntos que abren la opción (menú lateral).
  * - boton: botón con la llave (búsqueda de la garita).
- * - link: link con el texto (pantalla sin menú del registro).
- * - perfil: ícono de usuario que abre la opción (menú de perfil del estado de la solicitud, US-08).
+ * - link: link con el texto (pantallas sin menú: registro y estado de la solicitud).
  */
-export function BotonCambiarPassword({ forma }: { forma: 'puntos' | 'boton' | 'link' | 'perfil' }) {
+export function BotonCambiarPassword({ forma }: { forma: 'puntos' | 'boton' | 'link' }) {
   const navigate = useNavigate();
   const abrir = () => navigate(PATHS.cambiarPassword);
 
@@ -41,22 +40,6 @@ export function BotonCambiarPassword({ forma }: { forma: 'puntos' | 'boton' | 'l
       <Button block icon={iconoLlave} onClick={abrir} style={{ height: 48, borderRadius: 6 }}>
         Cambiar Contraseña
       </Button>
-    );
-  }
-  if (forma === 'perfil') {
-    return (
-      <Dropdown
-        trigger={['click']}
-        placement="bottomRight"
-        menu={{ items: [{ key: 'cambiar', icon: iconoLlave, label: 'Cambiar contraseña', onClick: abrir }] }}
-      >
-        <Button
-          type="text"
-          icon={<UserOutlined style={{ fontSize: 22 }} />}
-          aria-label="Menú de perfil"
-          style={{ width: 44, height: 44, color: palette.textSecondary }}
-        />
-      </Dropdown>
     );
   }
   return (

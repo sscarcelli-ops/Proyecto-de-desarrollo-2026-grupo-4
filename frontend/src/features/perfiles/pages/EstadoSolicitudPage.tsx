@@ -37,8 +37,6 @@ export function EstadoSolicitudPage() {
             Estado de cuenta y solicitud
           </Typography.Text>
         </Flex>
-        {/* Menú de perfil: cambiar la contraseña también sin rol aprobado (RF-22, US-07) */}
-        <BotonCambiarPassword forma="perfil" />
       </Flex>
 
       <Flex
@@ -78,13 +76,16 @@ export function EstadoSolicitudPage() {
         )}
       </Flex>
 
+      {/* "Cambiar contraseña" y "Cerrar sesión" juntos, como en el registro (acuerdo del grupo del 6/11).
+          Cambiar la contraseña también sin rol aprobado (RF-22, US-07) */}
       <Flex
-        align="center"
-        justify="space-between"
-        style={{ padding: '8px 16px 8px 24px', borderTop: `1px solid ${palette.borderSoft}` }}
+        gap={8}
+        wrap
+        justify="center"
+        style={{ padding: '8px 16px', borderTop: `1px solid ${palette.borderSoft}` }}
       >
-        <Typography.Text>Sesión iniciada</Typography.Text>
-        <BotonCerrarSesion ayudaEn="left" />
+        <BotonCambiarPassword forma="link" />
+        <BotonCerrarSesion conTexto />
       </Flex>
     </Flex>
   );
