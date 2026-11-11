@@ -327,7 +327,7 @@ export function TrabajadorEditarPage() {
     <Flex vertical align="center" style={{ width: '100%', padding: '24px 0' }}>
       <Card style={{ width: '100%', maxWidth: 540, borderRadius: 8 }}>
         <Typography.Title level={2} style={{ textAlign: 'center', marginTop: 0, marginBottom: 24 }}>
-          {nombreCompleto}
+          {trabajador.dadoDeBaja ? 'Detalle del trabajador' : nombreCompleto}
         </Typography.Title>
 
         {(editar.isError || errorArchivos) && (
@@ -412,6 +412,7 @@ export function TrabajadorEditarPage() {
                     accept=".jpg,.jpeg,.png"
                     showUploadList={false}
                     beforeUpload={handleFotoUpload}
+                    disabled={trabajador.dadoDeBaja}
                     className="upload-block"
                     style={{ flex: 1 }}
                   >
@@ -419,6 +420,7 @@ export function TrabajadorEditarPage() {
                       block
                       className="btn-upload-input"
                       icon={<UploadOutlined />}
+                      disabled={trabajador.dadoDeBaja}
                     >
                       {(!fotoEliminada && (Boolean(fotoNuevaPreview) || Boolean(trabajador.tieneFoto)))
                         ? 'Reemplazar foto'
@@ -430,6 +432,7 @@ export function TrabajadorEditarPage() {
                     <Button
                       danger
                       icon={<DeleteOutlined />}
+                      disabled={trabajador.dadoDeBaja}
                       onClick={handleAbrirBorrarFoto}
                     >
                       Borrar
@@ -619,25 +622,37 @@ export function TrabajadorEditarPage() {
           </Card>
 
           {/* Botones principales */}
-          <Flex gap={12} style={{ marginTop: 16 }}>
-            <Button
-              type="default"
-              block
-              onClick={() => navigate(PATHS.trabajadores)}
-              disabled={guardando}
-            >
-              Descartar cambios
-            </Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              block
-              loading={guardando}
-              disabled={trabajador.dadoDeBaja}
-            >
-              Guardar cambios
-            </Button>
-          </Flex>
+          {trabajador.dadoDeBaja ? (
+            <Flex justify="center" style={{ marginTop: 24 }}>
+              <Button
+                type="primary"
+                block
+                size="large"
+                onClick={() => navigate(PATHS.trabajadores)}
+              >
+                Volver
+              </Button>
+            </Flex>
+          ) : (
+            <Flex gap={12} style={{ marginTop: 16 }}>
+              <Button
+                type="default"
+                block
+                onClick={() => navigate(PATHS.trabajadores)}
+                disabled={guardando}
+              >
+                Descartar cambios
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                loading={guardando}
+              >
+                Guardar cambios
+              </Button>
+            </Flex>
+          )}
         </Form>
       </Card>
 

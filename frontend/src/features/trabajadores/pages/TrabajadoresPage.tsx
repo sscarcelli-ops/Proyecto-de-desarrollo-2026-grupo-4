@@ -78,27 +78,9 @@ export function TrabajadoresPage() {
       key: 'nombre',
       align: 'center' as const,
       render: (_, t) => (
-        <Flex align="center" justify="center" gap={8}>
-          <span style={{ color: t.dadoDeBaja ? palette.textSecondary : palette.text }}>
-            {t.nombre} {t.apellido}
-          </span>
-          {t.dadoDeBaja && (
-            <Tag
-              bordered
-              style={{
-                ...estadoTonos.neutro,
-                marginInlineEnd: 0,
-                fontSize: 11,
-                height: 22,
-                lineHeight: '20px',
-                paddingInline: 6,
-                borderRadius: 4,
-              }}
-            >
-              Dado de baja
-            </Tag>
-          )}
-        </Flex>
+        <span style={{ color: t.dadoDeBaja ? palette.textSecondary : palette.text }}>
+          {t.nombre} {t.apellido}
+        </span>
       ),
     },
     {
@@ -117,11 +99,30 @@ export function TrabajadoresPage() {
       dataIndex: 'estadoDocumental',
       width: 220,
       align: 'center' as const,
-      render: (estado: string, t) => (
-        <div style={{ opacity: t.dadoDeBaja ? 0.6 : 1 }}>
+      render: (estado: string, t) =>
+        t.dadoDeBaja ? (
+          <Tag
+            bordered
+            style={{
+              ...estadoTonos.neutro,
+              marginInlineEnd: 0,
+              minWidth: 135,
+              paddingInline: 8,
+              height: 28,
+              lineHeight: '26px',
+              textAlign: 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 13,
+              borderRadius: 4,
+            }}
+          >
+            Dado de baja
+          </Tag>
+        ) : (
           <EstadoTag estado={estado as Estado} />
-        </div>
-      ),
+        ),
     },
     {
       title: <span style={{ fontWeight: 600, color: palette.text }}>Detalle</span>,
@@ -143,8 +144,8 @@ export function TrabajadoresPage() {
               t.dadoDeBaja
                 ? {
                     key: 'reincorporar',
-                    icon: <UserAddOutlined />,
-                    label: 'Reincorporar',
+                    icon: <UserAddOutlined style={{ color: '#389e0d' }} />,
+                    label: <span style={{ color: '#389e0d', fontWeight: 500 }}>Reincorporar</span>,
                     onClick: () => setTrabajadorParaReincorporar(t),
                   }
                 : {
