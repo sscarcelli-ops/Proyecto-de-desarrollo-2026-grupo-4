@@ -271,6 +271,70 @@ class TrabajadorServiceTest {
     }
 
     @Test
+    @DisplayName("US-27 / CA-5: reincorporar setea fechaBaja en null y retorna dadoDeBaja en false")
+    void reincorporarExitoso() {
+        Long trabajadorId = 91L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Bruno");
+        trabajador.setApellido("Baja");
+        trabajador.setDni("30999000");
+        trabajador.setFechaBaja(Instant.now().minusSeconds(7200));
+
+        Documento doc = new Documento();
+        doc.setTipo(TipoDocumento.ART);
+        doc.setFechaVencimiento(LocalDate.now().plusMonths(3));
+        ArrayList<Documento> docs = new ArrayList<>();
+        docs.add(doc);
+        trabajador.setDocumentos(docs);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse response = service.reincorporar(trabajadorId);
+
+        assertThat(response.dadoDeBaja()).isFalse();
+        assertThat(trabajador.getFechaBaja()).isNull();
+        assertThat(response.estadoDocumental()).isEqualTo("VIGENTE");
+        verify(trabajadorRepository).save(trabajador);
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-7: reincorporar a un trabajador activo lanza BusinessException")
+    void reincorporarTrabajadorActivoLanzaError() {
+        Long trabajadorId = 92L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Carlos");
+        trabajador.setApellido("Activo");
+        trabajador.setDni("30444555");
+        trabajador.setFechaBaja(null);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        assertThatThrownBy(() -> service.reincorporar(trabajadorId))
+            .isInstanceOf(BusinessException.class)
+            .hasFieldOrPropertyWithValue("code", "TRABAJADOR_NO_DADO_DE_BAJA")
+            .hasMessage("El trabajador no se encuentra dado de baja.");
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-6: reincorporar a un trabajador de otra empresa devuelve 404")
+    void reincorporarTrabajadorDeOtraEmpresaDevuelve404() {
+        Long trabajadorAjenoId = 998L;
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorAjenoId, PERFIL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.reincorporar(trabajadorAjenoId))
+            .isInstanceOf(NotFoundException.class);
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Cálculo de estado documental: sin documentos es PENDIENTE_CARGA")
     void calculoEstadoSinDocumentosEsPendiente() {
         Trabajador t = new Trabajador();

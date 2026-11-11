@@ -5,10 +5,16 @@ import {
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
+  UserAddOutlined,
   UserDeleteOutlined,
 } from '@ant-design/icons';
 import { generatePath, useNavigate } from 'react-router';
-import { useTrabajadores, useDarDeBajaTrabajador, type TrabajadorResponse } from '../api/trabajadores';
+import {
+  useTrabajadores,
+  useDarDeBajaTrabajador,
+  useReincorporarTrabajador,
+  type TrabajadorResponse,
+} from '../api/trabajadores';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { PATHS } from '../../../routes/paths';
 import { palette, estadoTonos } from '../../../app/theme';
@@ -31,9 +37,13 @@ export function TrabajadoresPage() {
   const [tamano, setTamano] = useState(10);
   const { data, isLoading } = useTrabajadores(pagina, tamano);
   const darDeBaja = useDarDeBajaTrabajador();
+  const reincorporar = useReincorporarTrabajador();
 
   // Modal para confirmar dar de baja (US-27)
   const [trabajadorParaBaja, setTrabajadorParaBaja] = useState<TrabajadorResponse | null>(null);
+
+  // Modal para confirmar reincorporar (US-27 CA-5)
+  const [trabajadorParaReincorporar, setTrabajadorParaReincorporar] = useState<TrabajadorResponse | null>(null);
 
   const handleConfirmarBaja = () => {
     if (!trabajadorParaBaja) return;
@@ -41,6 +51,19 @@ export function TrabajadoresPage() {
       onSuccess: () => {
         message.success('Trabajador dado de baja correctamente');
         setTrabajadorParaBaja(null);
+      },
+      onError: (err) => {
+        message.error(getErrorMessage(err));
+      },
+    });
+  };
+
+  const handleConfirmarReincorporar = () => {
+    if (!trabajadorParaReincorporar) return;
+    reincorporar.mutate(trabajadorParaReincorporar.id, {
+      onSuccess: () => {
+        message.success('Trabajador reincorporado correctamente');
+        setTrabajadorParaReincorporar(null);
       },
       onError: (err) => {
         message.error(getErrorMessage(err));
@@ -117,14 +140,20 @@ export function TrabajadoresPage() {
                 label: t.dadoDeBaja ? 'Ver detalle' : 'Editar',
                 onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
               },
-              {
-                key: 'baja',
-                icon: <UserDeleteOutlined />,
-                label: 'Dar de baja',
-                danger: true,
-                disabled: t.dadoDeBaja,
-                onClick: () => setTrabajadorParaBaja(t),
-              },
+              t.dadoDeBaja
+                ? {
+                    key: 'reincorporar',
+                    icon: <UserAddOutlined />,
+                    label: 'Reincorporar',
+                    onClick: () => setTrabajadorParaReincorporar(t),
+                  }
+                : {
+                    key: 'baja',
+                    icon: <UserDeleteOutlined />,
+                    label: 'Dar de baja',
+                    danger: true,
+                    onClick: () => setTrabajadorParaBaja(t),
+                  },
             ],
           }}
         >
@@ -259,6 +288,52 @@ export function TrabajadoresPage() {
           style={{ textAlign: 'center', margin: '0 0 16px 0', fontSize: 13 }}
         >
           Esta acción inhabilitará al trabajador para ingresar a cualquier barrio bajo esta empresa.
+        </Typography.Paragraph>
+      </Modal>
+
+      {/* Modal de confirmación para reincorporar (US-27 CA-5) */}
+      <Modal
+        open={trabajadorParaReincorporar !== null}
+        centered
+        onCancel={() => setTrabajadorParaReincorporar(null)}
+        destroyOnHidden
+        closable={false}
+        width={440}
+        footer={
+          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
+            <Button
+              block
+              style={{ flex: 1 }}
+              size="large"
+              disabled={reincorporar.isPending}
+              onClick={() => setTrabajadorParaReincorporar(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="primary"
+              block
+              style={{ flex: 1 }}
+              size="large"
+              loading={reincorporar.isPending}
+              onClick={handleConfirmarReincorporar}
+            >
+              Reincorporar
+            </Button>
+          </Flex>
+        }
+      >
+        <Typography.Title
+          level={4}
+          style={{ textAlign: 'center', margin: '16px 0 8px 0', fontSize: 18 }}
+        >
+          ¿Seguro que quiere reincorporar al trabajador {trabajadorParaReincorporar?.nombre} {trabajadorParaReincorporar?.apellido}?
+        </Typography.Title>
+        <Typography.Paragraph
+          type="secondary"
+          style={{ textAlign: 'center', margin: '0 0 16px 0', fontSize: 13 }}
+        >
+          Esta acción habilitará nuevamente al trabajador para ingresar a los barrios según su documentación legal.
         </Typography.Paragraph>
       </Modal>
     </div>

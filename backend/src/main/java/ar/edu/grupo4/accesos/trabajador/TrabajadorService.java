@@ -168,6 +168,28 @@ public class TrabajadorService {
         return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
     }
 
+    /**
+     * Reincorpora a un trabajador dado de baja en la empresa (RF-12, RN-05).
+     * Setea fecha_baja a null, restaurando el vínculo laboral y su habilitación
+     * para ingresar según el estado de su documentación legal.
+     */
+    @Transactional
+    public TrabajadorResponse reincorporar(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        if (!trabajador.estaDadoDeBaja()) {
+            throw new BusinessException("TRABAJADOR_NO_DADO_DE_BAJA",
+                "El trabajador no se encuentra dado de baja.");
+        }
+
+        trabajador.setFechaBaja(null);
+        trabajador = trabajadorRepository.save(trabajador);
+        log.info("Trabajador {} reincorporado en perfil {}", trabajadorId, perfilId);
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
     // ========================================================================================
     // US-28: Cargar, actualizar, renovar y eliminar documentación
     // ========================================================================================

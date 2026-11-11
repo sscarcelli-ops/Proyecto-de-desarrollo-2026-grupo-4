@@ -126,6 +126,19 @@ public class TrabajadorController {
         return trabajadorService.darDeBaja(id);
     }
 
+    /**
+     * Reincorpora a un trabajador dado de baja en la empresa (RF-12, RN-05).
+     * Restablece el vínculo laboral (fecha_baja = null) y su habilitación
+     * para ingresar según el estado de su documentación legal.
+     * Soporta tanto PATCH como POST para máxima interoperabilidad.
+     */
+    @RequestMapping(value = "/{id}/reincorporar", method = {RequestMethod.PATCH, RequestMethod.POST})
+    public TrabajadorResponse reincorporar(
+            @PathVariable Long id) {
+
+        return trabajadorService.reincorporar(id);
+    }
+
     // ========================================================================================
     // US-28: Cargar, renovar y eliminar documentación
     // ========================================================================================

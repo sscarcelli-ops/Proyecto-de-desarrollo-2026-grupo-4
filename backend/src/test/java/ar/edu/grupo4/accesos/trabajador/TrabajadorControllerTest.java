@@ -19,6 +19,7 @@ import java.util.Collections;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -85,5 +86,50 @@ class TrabajadorControllerTest {
             .andExpect(status().isNotFound());
 
         verify(trabajadorService).darDeBaja(999L);
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-5: PATCH /api/trabajadores/{id}/reincorporar reincorpora al trabajador y devuelve 200 con dadoDeBaja=false")
+    void reincorporarDevuelveOk() throws Exception {
+        TrabajadorResponse response = new TrabajadorResponse(
+            42L, "Bruno", "Baja", "30999000",
+            "VIGENTE", false, false, Collections.emptyList(), null
+        );
+
+        when(trabajadorService.reincorporar(42L)).thenReturn(response);
+
+        mockMvc.perform(patch("/api/trabajadores/42/reincorporar"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(42))
+            .andExpect(jsonPath("$.nombre").value("Bruno"))
+            .andExpect(jsonPath("$.dadoDeBaja").value(false));
+
+        verify(trabajadorService).reincorporar(42L);
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-7: PATCH /api/trabajadores/{id}/reincorporar si ya está activo devuelve 422")
+    void reincorporarTrabajadorActivoDevuelve422() throws Exception {
+        when(trabajadorService.reincorporar(42L))
+            .thenThrow(new BusinessException("TRABAJADOR_NO_DADO_DE_BAJA", "El trabajador no se encuentra dado de baja."));
+
+        mockMvc.perform(patch("/api/trabajadores/42/reincorporar"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.code").value("TRABAJADOR_NO_DADO_DE_BAJA"))
+            .andExpect(jsonPath("$.detail").value("El trabajador no se encuentra dado de baja."));
+
+        verify(trabajadorService).reincorporar(42L);
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-6: PATCH /api/trabajadores/{id}/reincorporar de trabajador ajeno o inexistente devuelve 404")
+    void reincorporarInexistenteDevuelve404() throws Exception {
+        when(trabajadorService.reincorporar(999L))
+            .thenThrow(new NotFoundException());
+
+        mockMvc.perform(patch("/api/trabajadores/999/reincorporar"))
+            .andExpect(status().isNotFound());
+
+        verify(trabajadorService).reincorporar(999L);
     }
 }

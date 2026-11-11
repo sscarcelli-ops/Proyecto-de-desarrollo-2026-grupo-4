@@ -122,6 +122,12 @@ export async function darDeBajaTrabajador(id: number): Promise<TrabajadorRespons
   return data;
 }
 
+/** PATCH /api/trabajadores/:id/reincorporar — reincorporar a un trabajador dado de baja (US-27) */
+export async function reincorporarTrabajador(id: number): Promise<TrabajadorResponse> {
+  const { data } = await httpClient.patch<TrabajadorResponse>(`/trabajadores/${id}/reincorporar`);
+  return data;
+}
+
 export async function descargarDocumento(trabajadorId: number, tipo: TipoDocumento, nombreArchivo?: string): Promise<void> {
   const response = await httpClient.get<Blob>(
     `/trabajadores/${trabajadorId}/documentos/${tipo}/archivo`,
@@ -250,6 +256,21 @@ export function useDarDeBajaTrabajador() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => darDeBajaTrabajador(id),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...TRABAJADORES_KEY, data.id], data);
+      queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
+    },
+  });
+}
+
+/**
+ * Reincorporar a un trabajador dado de baja (US-27).
+ * onSuccess invalida la caché del listado y actualiza el trabajador.
+ */
+export function useReincorporarTrabajador() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => reincorporarTrabajador(id),
     onSuccess: (data) => {
       queryClient.setQueryData([...TRABAJADORES_KEY, data.id], data);
       queryClient.invalidateQueries({ queryKey: TRABAJADORES_KEY });
