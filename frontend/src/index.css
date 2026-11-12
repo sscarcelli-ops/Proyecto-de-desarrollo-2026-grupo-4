@@ -50,24 +50,3 @@ body {
   text-align: left !important;
   padding-left: 14px !important;
 }
-
-/* Ítem de menú dropdown para reincorporar (hover verde simétrico a danger rojo) */
-.ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar,
-.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar {
-  color: #1e7b4a !important;
-}
-.ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar .anticon,
-.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar .anticon {
-  color: #1e7b4a !important;
-}
-.ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar:hover,
-.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar:hover {
-  background-color: #1e7b4a !important;
-  color: #ffffff !important;
-}
-.ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar:hover .anticon,
-.ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar:hover .ant-dropdown-menu-title-content,
-.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar:hover .anticon,
-.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.menu-item-reincorporar:hover .ant-dropdown-menu-title-content {
-  color: #ffffff !important;
-}
