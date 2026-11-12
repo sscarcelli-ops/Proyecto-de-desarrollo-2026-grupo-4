@@ -244,6 +244,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/barrio/perfiles/{id}/habilitar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["habilitar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/barrio/perfiles/{id}/deshabilitar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["deshabilitar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/registro": {
         parameters: {
             query?: never;
@@ -500,6 +532,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/barrio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/barrio/perfiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -680,6 +744,15 @@ export interface components {
             /** Format: int64 */
             trabajadorId: number;
         };
+        PerfilBarrioResponse: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            tipo: "EMPRESA" | "MONOTRIBUTISTA";
+            nombre: string;
+            cuitCuil: string;
+            habilitado: boolean;
+        };
         RegistroRequest: {
             /** Format: email */
             email: string;
@@ -777,6 +850,22 @@ export interface components {
             perfilId?: number;
             nombreVinculo?: string;
             tipo?: string;
+        };
+        MiBarrioResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+        };
+        PageResponsePerfilBarrioResponse: {
+            content: components["schemas"]["PerfilBarrioResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
         };
         UsuarioActualResponse: {
             email: string;
@@ -1297,6 +1386,50 @@ export interface operations {
             };
         };
     };
+    habilitar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PerfilBarrioResponse"];
+                };
+            };
+        };
+    };
+    deshabilitar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PerfilBarrioResponse"];
+                };
+            };
+        };
+    };
     registrar: {
         parameters: {
             query?: never;
@@ -1660,6 +1793,48 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BusquedaDniResponse"];
+                };
+            };
+        };
+    };
+    obtener_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MiBarrioResponse"];
+                };
+            };
+        };
+    };
+    listar_3: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePerfilBarrioResponse"];
                 };
             };
         };

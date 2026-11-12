@@ -44,6 +44,22 @@ async function getBarrio(id: string): Promise<Barrio> {
   return data;
 }
 
+// Barrio de la sesión (Operador o Guardia), para el encabezado "Nombre del Barrio" de sus pantallas
+export type MiBarrio = ApiSchema<'MiBarrioResponse'>;
+
+async function getMiBarrio(): Promise<MiBarrio> {
+  const { data } = await httpClient.get<MiBarrio>('/barrio');
+  return data;
+}
+
+export function useMiBarrio() {
+  return useQuery({
+    queryKey: ['barrio', 'actual'],
+    queryFn: getMiBarrio,
+    staleTime: Infinity, // el barrio de la sesión no cambia mientras dura
+  });
+}
+
 export function useBarrio(id: string | undefined) {
   return useQuery({
     queryKey: barriosKeys.detail(id ?? ''),

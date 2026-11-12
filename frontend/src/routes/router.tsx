@@ -24,6 +24,7 @@ import { BarriosPage } from '../features/barrios/pages/BarriosPage';
 import { BarrioNuevoPage } from '../features/barrios/pages/BarrioNuevoPage';
 import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
 import { EmpresasPage } from '../features/perfiles/pages/EmpresasPage';
+import { EmpresasBarrioPage } from '../features/perfiles/pages/EmpresasBarrioPage';
 import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
@@ -82,7 +83,11 @@ export const router = createBrowserRouter([
           {
             element: <AppLayout />,
             children: [
-              { path: PATHS.inicio, element: <InicioPage /> },
+              // Inicio: Admin y Monotributista (hasta que tenga su pantalla, US-24). El resto va a su pantalla inicial.
+              {
+                element: <RequireRole roles={['ADMIN', 'MONOTRIBUTISTA']} />,
+                children: [{ path: PATHS.inicio, element: <InicioPage /> }],
+              },
               // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
               {
                 element: <RequireRole roles={['ADMIN']} />,
@@ -102,6 +107,11 @@ export const router = createBrowserRouter([
                   { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
                   { path: PATHS.trabajadorEditar, element: <TrabajadorEditarPage /> },
                 ],
+              },
+              // Operador: Empresas y Monotributistas de su barrio (US-33, US-34)
+              {
+                element: <RequireRole roles={['OPERADOR']} />,
+                children: [{ path: PATHS.empresasBarrio, element: <EmpresasBarrioPage /> }],
               },
             ],
           },
