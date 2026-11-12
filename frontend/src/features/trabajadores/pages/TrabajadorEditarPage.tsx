@@ -623,11 +623,10 @@ export function TrabajadorEditarPage() {
 
           {/* Botones principales */}
           {trabajador.dadoDeBaja ? (
-            <Flex justify="center" style={{ marginTop: 24 }}>
+            <Flex justify="center" style={{ marginTop: 16 }}>
               <Button
-                type="primary"
+                type="default"
                 block
-                size="large"
                 onClick={() => navigate(PATHS.trabajadores)}
               >
                 Volver
