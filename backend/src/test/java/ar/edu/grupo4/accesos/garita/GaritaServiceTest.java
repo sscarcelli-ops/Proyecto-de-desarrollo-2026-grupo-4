@@ -10,6 +10,7 @@ import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -163,5 +165,37 @@ class GaritaServiceTest {
 
         verify(repository).bloquearPorDniYBarrio(10L, 1L);
         verify(repository, never()).registrarEgreso(anyLong(), anyLong(), anyLong());
+    }
+
+    // ── US-12: la garita espera a que termine una desactivación del barrio ─────────────
+
+    @Test
+    @DisplayName("US-12: El ingreso bloquea el barrio antes de verificar el acceso")
+    void registrarIngreso_bloqueaElBarrioAntesDeVerificar() {
+        when(repository.verificarAcceso(10L, 1L)).thenReturn(new VerificacionResponse(true, ""));
+        when(repository.registrarIngreso(10L, 1L, 99L))
+                .thenReturn(new MovimientoResponse(1L, "INGRESO", OffsetDateTime.now(), "Juan Pérez", "Limpiezas S.A."));
+
+        service.registrarIngreso(10L);
+
+        InOrder orden = inOrder(repository);
+        orden.verify(repository).bloquearBarrio(1L);
+        orden.verify(repository).verificarAcceso(10L, 1L);
+        orden.verify(repository).registrarIngreso(10L, 1L, 99L);
+    }
+
+    @Test
+    @DisplayName("US-12: El egreso bloquea el barrio antes de buscar el ingreso activo")
+    void registrarEgreso_bloqueaElBarrioAntesDeBuscarElIngresoActivo() {
+        when(repository.buscarIngresoActivoPorTrabajador(10L, 1L)).thenReturn(Optional.of(100L));
+        when(repository.registrarEgreso(10L, 1L, 99L))
+                .thenReturn(new MovimientoResponse(2L, "EGRESO", OffsetDateTime.now(), "Juan Pérez", "Limpiezas S.A."));
+
+        service.registrarEgreso(10L);
+
+        InOrder orden = inOrder(repository);
+        orden.verify(repository).bloquearBarrio(1L);
+        orden.verify(repository).buscarIngresoActivoPorTrabajador(10L, 1L);
+        orden.verify(repository).registrarEgreso(10L, 1L, 99L);
     }
 }

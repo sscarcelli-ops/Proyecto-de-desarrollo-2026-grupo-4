@@ -90,6 +90,8 @@ public class GaritaService {
     @Transactional
     public MovimientoResponse registrarIngreso(Long trabajadorId) {
         Long barrioId = usuarioActual.barrioId();
+        // Si el barrio se está desactivando (US-12), espera a que termine antes de verificar o registrar
+        repository.bloquearBarrio(barrioId);
         repository.bloquearPorDniYBarrio(trabajadorId, barrioId);
 
         VerificacionResponse verificacion = repository.verificarAcceso(trabajadorId, barrioId);
@@ -115,6 +117,8 @@ public class GaritaService {
     @Transactional
     public MovimientoResponse registrarEgreso(Long trabajadorId) {
         Long barrioId = usuarioActual.barrioId();
+        // Si el barrio se está desactivando (US-12), espera a que termine antes de verificar o registrar
+        repository.bloquearBarrio(barrioId);
         repository.bloquearPorDniYBarrio(trabajadorId, barrioId);
 
         repository.buscarIngresoActivoPorTrabajador(trabajadorId, barrioId)
