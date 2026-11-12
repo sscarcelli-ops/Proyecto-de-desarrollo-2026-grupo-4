@@ -7,6 +7,7 @@ import ar.edu.grupo4.accesos.barrio.dto.OperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorResponse;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.movimiento.MovimientoService;
 import ar.edu.grupo4.accesos.ubicacion.Localidad;
 import ar.edu.grupo4.accesos.ubicacion.Provincia;
 import ar.edu.grupo4.accesos.ubicacion.UbicacionService;
@@ -36,12 +37,13 @@ class BarrioServiceTest {
 
     private final BarrioRepository repository = mock(BarrioRepository.class);
     private final OperadorService operadorService = mock(OperadorService.class);
+    private final MovimientoService movimientoService = mock(MovimientoService.class);
     private final UbicacionService ubicacionService = mock(UbicacionService.class);
     private BarrioService service;
 
     @BeforeEach
     void setUp() {
-        service = new BarrioService(repository, operadorService, ubicacionService);
+        service = new BarrioService(repository, operadorService, ubicacionService, movimientoService);
         when(repository.saveAndFlush(any(Barrio.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(ubicacionService.obtenerLocalidad(BARADERO.getId())).thenReturn(BARADERO);
         when(ubicacionService.obtenerLocalidad(ESCOBAR.getId())).thenReturn(ESCOBAR);
@@ -321,5 +323,76 @@ class BarrioServiceTest {
         assertThatThrownBy(() -> service.asignarOperador(8L, new AsignarOperadorRequest(99L, null)))
             .isInstanceOf(NotFoundException.class)
             .hasMessage("El Operador no existe.");
+    }
+
+    // ---- US-12
+
+    @Test
+    void desactivarUnBarrioActivoLoPasaAInactivoMantieneAlOperadorYRegistraLosEgresosAutomaticos() {
+        Barrio barrio = barrioExistente();
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrio));
+        when(movimientoService.registrarEgresosAutomaticos(7L, "Egreso automático por desactivación del barrio"))
+            .thenReturn(2);
+
+        Barrio desactivado = service.cambiarEstado(7L, false);
+
+        assertThat(desactivado.getEstado()).isEqualTo(EstadoBarrio.INACTIVO);
+        assertThat(desactivado.getOperadorId()).isEqualTo(3L);
+        verify(movimientoService).registrarEgresosAutomaticos(7L, "Egreso automático por desactivación del barrio");
+    }
+
+    @Test
+    void activarUnBarrioInactivoConOperadorLoPasaAActivoSinRegistrarEgresos() {
+        Barrio barrio = barrioExistente();
+        barrio.setEstado(EstadoBarrio.INACTIVO);
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrio));
+
+        Barrio activado = service.cambiarEstado(7L, true);
+
+        assertThat(activado.getEstado()).isEqualTo(EstadoBarrio.ACTIVO);
+        verify(movimientoService, never()).registrarEgresosAutomaticos(any(), any());
+    }
+
+    @Test
+    void activarUnBarrioSinOperadorFallaYNoLoActiva() {
+        Barrio barrio = barrioSinOperador();
+        when(repository.findByIdForUpdate(8L)).thenReturn(Optional.of(barrio));
+
+        assertThatThrownBy(() -> service.cambiarEstado(8L, true))
+            .isInstanceOfSatisfying(BusinessException.class, e -> {
+                assertThat(e.getCode()).isEqualTo("BARRIO_SIN_OPERADOR");
+                assertThat(e.getMessage()).isEqualTo("Debe asignar un Operador antes de activar el barrio");
+            });
+        assertThat(barrio.getEstado()).isEqualTo(EstadoBarrio.INACTIVO);
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+    }
+
+    @Test
+    void desactivarUnBarrioQueYaEstaInactivoNoCambiaNadaNiRegistraEgresos() {
+        Barrio barrio = barrioSinOperador();
+        when(repository.findByIdForUpdate(8L)).thenReturn(Optional.of(barrio));
+
+        service.cambiarEstado(8L, false);
+
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+        verify(movimientoService, never()).registrarEgresosAutomaticos(any(), any());
+    }
+
+    @Test
+    void activarUnBarrioQueYaEstaActivoNoCambiaNada() {
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrioExistente()));
+
+        service.cambiarEstado(7L, true);
+
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+    }
+
+    @Test
+    void cambiarElEstadoDeUnBarrioInexistenteDevuelveNotFound() {
+        when(repository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.cambiarEstado(99L, false))
+            .isInstanceOf(NotFoundException.class)
+            .hasMessage("El barrio no existe.");
     }
 }

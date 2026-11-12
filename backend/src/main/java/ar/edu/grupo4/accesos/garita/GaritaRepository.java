@@ -181,6 +181,16 @@ public class GaritaRepository {
         jdbc.query(sql, rs -> {}, barrioId, trabajadorId);
     }
 
+    /**
+     * Toma un bloqueo compartido (FOR SHARE) sobre la fila del barrio durante la transacción (US-12, RN-13).
+     * Desactivar un barrio lo bloquea para escritura (FOR UPDATE): si hay una desactivación en curso, la garita espera
+     * a que termine y recién después verifica el acceso, que ya ve el barrio Inactivo. Si el movimiento llega primero,
+     * es la desactivación la que espera y después ve el ingreso abierto para cerrarlo. Entre Guardias no se bloquean.
+     */
+    public void bloquearBarrio(Long barrioId) {
+        jdbc.query("SELECT 1 FROM barrio WHERE id = ? FOR SHARE", rs -> {}, barrioId);
+    }
+
     // ──────────────────────────────────────────────────────────────────
     // Verificación de acceso (stored procedure)
     // ──────────────────────────────────────────────────────────────────

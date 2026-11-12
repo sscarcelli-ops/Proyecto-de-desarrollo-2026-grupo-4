@@ -134,3 +134,18 @@ export function marcarErroresDeBarrio(form: FormInstance, error: unknown): boole
   }
   return false;
 }
+
+// US-12: activa o desactiva el barrio (baja lógica). Al desactivar se registran los egresos automáticos.
+async function cambiarEstadoBarrio(id: number, activo: boolean): Promise<Barrio> {
+  const { data } = await httpClient.put<Barrio>(`/barrios/${id}/estado`, { activo });
+  return data;
+}
+
+export function useCambiarEstadoBarrio() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, activo }: { id: number; activo: boolean }) => cambiarEstadoBarrio(id, activo),
+    // También si falla (por ejemplo, otro Administrador ya lo cambió): el listado vuelve a mostrar el estado real
+    onSettled: () => queryClient.invalidateQueries({ queryKey: barriosKeys.all }),
+  });
+}
