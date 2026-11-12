@@ -122,9 +122,9 @@ export async function darDeBajaTrabajador(id: number): Promise<TrabajadorRespons
   return data;
 }
 
-/** PATCH /api/trabajadores/:id/reincorporar — reincorporar a un trabajador dado de baja (US-27) */
+/** POST /api/trabajadores/:id/reincorporar — reincorporar a un trabajador dado de baja (US-27) */
 export async function reincorporarTrabajador(id: number): Promise<TrabajadorResponse> {
-  const { data } = await httpClient.patch<TrabajadorResponse>(`/trabajadores/${id}/reincorporar`);
+  const { data } = await httpClient.post<TrabajadorResponse>(`/trabajadores/${id}/reincorporar`);
   return data;
 }
 

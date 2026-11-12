@@ -130,9 +130,8 @@ public class TrabajadorController {
      * Reincorpora a un trabajador dado de baja en la empresa (RF-12, RN-05).
      * Restablece el vínculo laboral (fecha_baja = null) y su habilitación
      * para ingresar según el estado de su documentación legal.
-     * Soporta tanto PATCH como POST para máxima interoperabilidad.
      */
-    @RequestMapping(value = "/{id}/reincorporar", method = {RequestMethod.PATCH, RequestMethod.POST})
+    @PostMapping("/{id}/reincorporar")
     public TrabajadorResponse reincorporar(
             @PathVariable Long id) {
 

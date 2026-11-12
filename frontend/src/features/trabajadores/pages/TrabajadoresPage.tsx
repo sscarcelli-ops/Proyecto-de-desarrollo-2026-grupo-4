@@ -144,8 +144,8 @@ export function TrabajadoresPage() {
               t.dadoDeBaja
                 ? {
                     key: 'reincorporar',
-                    icon: <UserAddOutlined style={{ color: palette.success }} />,
-                    label: <span style={{ color: palette.success }}>Reincorporar</span>,
+                    icon: <UserAddOutlined />,
+                    label: 'Reincorporar',
                     onClick: () => setTrabajadorParaReincorporar(t),
                   }
                 : {
