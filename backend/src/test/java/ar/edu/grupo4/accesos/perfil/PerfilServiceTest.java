@@ -9,6 +9,7 @@ import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
+import ar.edu.grupo4.accesos.trabajador.TrabajadorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +47,10 @@ class PerfilServiceTest {
 
     @Mock
     private FileStorageService fileStorageService;
+
+    @Mock
+    private TrabajadorService trabajadorService;
+
 
     @InjectMocks
     private PerfilService perfilService;
@@ -353,7 +359,34 @@ class PerfilServiceTest {
         verify(usuarioService).asignarRol(10L, "EMPRESA");
         verify(usuarioService).cerrarSesiones(10L);
         verify(perfilRepository).save(p);
+        verifyNoInteractions(trabajadorService);
     }
+
+    @Test
+    @DisplayName("US-23 / CA-1: aprobar solicitud Monotributista crea automáticamente su registro como trabajador")
+    void aprobarSolicitudMonotributistaCreaTrabajadorAutomatico() {
+        Perfil p = new Perfil();
+        p.setId(200L);
+        p.setUsuario(usuario);
+        p.setTipo(TipoPerfil.MONOTRIBUTISTA);
+        p.setEstado(EstadoPerfil.PENDIENTE);
+        p.setCuitCuil("20-33222111-1");
+        p.setNombre("Paula");
+        p.setApellido("Pendiente");
+        p.setDniTitular("33222111");
+
+        when(perfilRepository.findById(200L)).thenReturn(Optional.of(p));
+        when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PerfilResponse res = perfilService.aprobar(200L);
+
+        assertThat(res.estado()).isEqualTo(EstadoPerfil.APROBADO);
+        verify(usuarioService).asignarRol(10L, "MONOTRIBUTISTA");
+        verify(usuarioService).cerrarSesiones(10L);
+        verify(perfilRepository).save(p);
+        verify(trabajadorService).registrarMonotributista(200L, "Paula", "Pendiente", "33222111");
+    }
+
 
     @Test
     @DisplayName("US-20: aprobar solicitud que no está pendiente lanza BusinessException")

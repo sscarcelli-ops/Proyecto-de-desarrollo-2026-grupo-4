@@ -9,6 +9,7 @@ import ar.edu.grupo4.accesos.perfil.dto.RechazarPerfilRequest;
 import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
+import ar.edu.grupo4.accesos.trabajador.TrabajadorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -33,6 +34,7 @@ public class PerfilService {
     private final PerfilRepository perfilRepository;
     private final UsuarioService usuarioService;
     private final FileStorageService fileStorageService;
+    private final TrabajadorService trabajadorService;
 
     /**
      * US-03: Solicita perfil de Empresa o Monotributista para el usuario autenticado.
@@ -158,6 +160,17 @@ public class PerfilService {
 
         Perfil guardado = perfilRepository.save(perfil);
         log.info("Perfil {} ({}) aprobado para el usuario {}", id, perfil.getTipo(), usuario.getId());
+
+        // US-23: Si es Monotributista, vincularlo automáticamente como su propio y único trabajador (RF-09, RN-07)
+        if (perfil.getTipo() == TipoPerfil.MONOTRIBUTISTA) {
+            trabajadorService.registrarMonotributista(
+                guardado.getId(),
+                guardado.getNombre(),
+                guardado.getApellido(),
+                guardado.getDniTitular()
+            );
+        }
+
         return PerfilResponse.from(guardado);
     }
 

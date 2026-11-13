@@ -15,6 +15,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -80,6 +81,55 @@ class TrabajadorServiceTest {
     }
 
     @Test
+    @DisplayName("US-23 / CA-1: registrarMonotributista persiste un trabajador con perfilId, nombre, apellido y DNI")
+    void registrarMonotributistaExitoso() {
+        Trabajador guardado = new Trabajador();
+        guardado.setId(10L);
+        guardado.setPerfilId(200L);
+        guardado.setNombre("Paula");
+        guardado.setApellido("Pendiente");
+        guardado.setDni("33222111");
+
+        when(trabajadorRepository.save(any(Trabajador.class))).thenReturn(guardado);
+
+        Trabajador resultado = service.registrarMonotributista(200L, "Paula ", " Pendiente", " 33222111 ");
+
+        assertThat(resultado.getId()).isEqualTo(10L);
+        assertThat(resultado.getPerfilId()).isEqualTo(200L);
+        assertThat(resultado.getNombre()).isEqualTo("Paula");
+        assertThat(resultado.getApellido()).isEqualTo("Pendiente");
+        assertThat(resultado.getDni()).isEqualTo("33222111");
+
+        verify(trabajadorRepository).save(argThat(t ->
+            t.getPerfilId().equals(200L) &&
+            t.getNombre().equals("Paula") &&
+            t.getApellido().equals("Pendiente") &&
+            t.getDni().equals("33222111")
+        ));
+        // No debe consultar usuarioActual (la aprobación la ejecuta el Administrador)
+        verify(usuarioActual, never()).perfilIdAprobado();
+    }
+
+    @Test
+    @DisplayName("US-23 / CA-2: registrarMonotributista crea registro independiente aun si el DNI existe en otro perfil (RN-08, RN-11)")
+    void registrarMonotributistaConDniExistenteEnOtraEmpresaCreaRegistroIndependiente() {
+        Trabajador guardado = new Trabajador();
+        guardado.setId(11L);
+        guardado.setPerfilId(200L);
+        guardado.setNombre("Juan");
+        guardado.setApellido("Pérez");
+        guardado.setDni("30111222");
+
+        when(trabajadorRepository.save(any(Trabajador.class))).thenReturn(guardado);
+
+        Trabajador resultado = service.registrarMonotributista(200L, "Juan", "Pérez", "30111222");
+
+        assertThat(resultado.getPerfilId()).isEqualTo(200L);
+        assertThat(resultado.getDni()).isEqualTo("30111222");
+        verify(trabajadorRepository).save(argThat(t -> t.getPerfilId().equals(200L) && t.getDni().equals("30111222")));
+    }
+
+    @Test
     @DisplayName("US-26 / RF-23: Aislamiento entre empresas. Si se pide un trabajador ajeno, devuelve 404")
     void obtenerTrabajadorDeOtraEmpresaDevuelve404() {
         Long trabajadorAjenoId = 99L;
@@ -110,6 +160,178 @@ class TrabajadorServiceTest {
         assertThat(response.apellido()).isEqualTo("Vencido Modificado");
         assertThat(existente.getNombre()).isEqualTo("Carlos Alberto");
         assertThat(existente.getApellido()).isEqualTo("Vencido Modificado");
+    }
+
+    @Test
+    @DisplayName("US-27: editar un trabajador dado de baja lanza BusinessException")
+    void editarTrabajadorDadoDeBajaLanzaError() {
+        Long trabajadorId = 5L;
+        Trabajador existente = new Trabajador();
+        existente.setId(trabajadorId);
+        existente.setPerfilId(PERFIL_ID);
+        existente.setNombre("Bruno");
+        existente.setApellido("Baja");
+        existente.setFechaBaja(Instant.now());
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(existente));
+
+        TrabajadorEditarRequest request = new TrabajadorEditarRequest("Bruno", "Modificado");
+
+        assertThatThrownBy(() -> service.editar(trabajadorId, request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("No se puede modificar un trabajador dado de baja.");
+    }
+
+    // ========================================================================================
+    // US-27: Dar de baja trabajador
+    // ========================================================================================
+
+    @Test
+    @DisplayName("US-27 / CA-1: darDeBaja setea fechaBaja, persiste y retorna dadoDeBaja en true")
+    void darDeBajaExitoso() {
+        Long trabajadorId = 88L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Carlos");
+        trabajador.setApellido("Vencido");
+        trabajador.setDni("30333444");
+        trabajador.setDocumentos(new ArrayList<>());
+        trabajador.setFechaBaja(null);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse response = service.darDeBaja(trabajadorId);
+
+        assertThat(response.dadoDeBaja()).isTrue();
+        assertThat(trabajador.getFechaBaja()).isNotNull();
+        verify(trabajadorRepository).save(trabajador);
+    }
+
+    @Test
+    @DisplayName("US-27: darDeBaja a un trabajador que ya está de baja lanza BusinessException")
+    void darDeBajaYaDadoDeBajaLanzaError() {
+        Long trabajadorId = 89L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Bruno");
+        trabajador.setApellido("Baja");
+        trabajador.setDni("30999000");
+        trabajador.setFechaBaja(java.time.Instant.now().minusSeconds(3600));
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        assertThatThrownBy(() -> service.darDeBaja(trabajadorId))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("El trabajador ya se encuentra dado de baja.");
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-27 / RF-23: darDeBaja a un trabajador de otra empresa devuelve 404")
+    void darDeBajaTrabajadorDeOtraEmpresaDevuelve404() {
+        Long trabajadorAjenoId = 999L;
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorAjenoId, PERFIL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.darDeBaja(trabajadorAjenoId))
+            .isInstanceOf(NotFoundException.class);
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-27 / RN-05: darDeBaja con documentación vigente mantiene documentación y estado independiente")
+    void darDeBajaConDocumentacionVigenteConservaDocumentosYEstado() {
+        Long trabajadorId = 90L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Ana");
+        trabajador.setApellido("Vigente");
+        trabajador.setDni("30777888");
+
+        Documento doc = new Documento();
+        doc.setTipo(TipoDocumento.ART);
+        doc.setFechaVencimiento(LocalDate.now().plusMonths(6));
+        ArrayList<Documento> docs = new ArrayList<>();
+        docs.add(doc);
+        trabajador.setDocumentos(docs);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse response = service.darDeBaja(trabajadorId);
+
+        assertThat(response.dadoDeBaja()).isTrue();
+        assertThat(response.estadoDocumental()).isEqualTo("VIGENTE");
+        assertThat(response.documentos()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-5: reincorporar setea fechaBaja en null y retorna dadoDeBaja en false")
+    void reincorporarExitoso() {
+        Long trabajadorId = 91L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Bruno");
+        trabajador.setApellido("Baja");
+        trabajador.setDni("30999000");
+        trabajador.setFechaBaja(Instant.now().minusSeconds(7200));
+
+        Documento doc = new Documento();
+        doc.setTipo(TipoDocumento.ART);
+        doc.setFechaVencimiento(LocalDate.now().plusMonths(3));
+        ArrayList<Documento> docs = new ArrayList<>();
+        docs.add(doc);
+        trabajador.setDocumentos(docs);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse response = service.reincorporar(trabajadorId);
+
+        assertThat(response.dadoDeBaja()).isFalse();
+        assertThat(trabajador.getFechaBaja()).isNull();
+        assertThat(response.estadoDocumental()).isEqualTo("VIGENTE");
+        verify(trabajadorRepository).save(trabajador);
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-7: reincorporar a un trabajador activo lanza BusinessException")
+    void reincorporarTrabajadorActivoLanzaError() {
+        Long trabajadorId = 92L;
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(trabajadorId);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Carlos");
+        trabajador.setApellido("Activo");
+        trabajador.setDni("30444555");
+        trabajador.setFechaBaja(null);
+
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorId, PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        assertThatThrownBy(() -> service.reincorporar(trabajadorId))
+            .isInstanceOf(BusinessException.class)
+            .hasFieldOrPropertyWithValue("code", "TRABAJADOR_NO_DADO_DE_BAJA")
+            .hasMessage("El trabajador no se encuentra dado de baja.");
+
+        verify(trabajadorRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-27 / CA-6: reincorporar a un trabajador de otra empresa devuelve 404")
+    void reincorporarTrabajadorDeOtraEmpresaDevuelve404() {
+        Long trabajadorAjenoId = 998L;
+        when(trabajadorRepository.findByIdAndPerfilId(trabajadorAjenoId, PERFIL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.reincorporar(trabajadorAjenoId))
+            .isInstanceOf(NotFoundException.class);
+
+        verify(trabajadorRepository, never()).save(any());
     }
 
     @Test

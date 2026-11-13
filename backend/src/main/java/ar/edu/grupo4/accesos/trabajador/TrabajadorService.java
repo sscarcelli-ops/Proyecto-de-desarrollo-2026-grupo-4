@@ -10,6 +10,7 @@ import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +32,7 @@ import java.util.Optional;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrabajadorService {
 
     private final TrabajadorRepository trabajadorRepository;
@@ -71,6 +74,30 @@ public class TrabajadorService {
     }
 
     // ========================================================================================
+    // US-23: Vincular automáticamente a Monotributista como su único trabajador
+    // ========================================================================================
+
+    /**
+     * Registra automáticamente al Monotributista como su propio y único trabajador
+     * al ser aprobado su perfil por el Administrador (RF-09, RN-07).
+     *
+     * No comparte datos con otros registros aunque el DNI coincida (RN-08, RN-11).
+     * Foto y documentación quedan pendientes para ser cargadas por el propio usuario (US-24, US-28).
+     */
+    @Transactional
+    public Trabajador registrarMonotributista(Long perfilId, String nombre, String apellido, String dni) {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setPerfilId(perfilId);
+        trabajador.setNombre(nombre.trim());
+        trabajador.setApellido(apellido.trim());
+        trabajador.setDni(dni.trim());
+
+        trabajador = trabajadorRepository.save(trabajador);
+        log.info("Trabajador automático {} registrado para perfil Monotributista {}", trabajador.getId(), perfilId);
+        return trabajador;
+    }
+
+    // ========================================================================================
     // US-26: Listar y modificar trabajadores
     // ========================================================================================
 
@@ -107,9 +134,58 @@ public class TrabajadorService {
     public TrabajadorResponse editar(Long trabajadorId, TrabajadorEditarRequest request) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         trabajador.setNombre(request.nombre().trim());
         trabajador.setApellido(request.apellido().trim());
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    // ========================================================================================
+    // US-27: Dar de baja trabajador
+    // ========================================================================================
+
+    /**
+     * Da de baja a un trabajador para el perfil del usuario autenticado (RF-12, RN-05).
+     * Setea fecha_baja a now(), inhabilitando el vínculo para futuros ingresos.
+     * La baja inhabilita únicamente este vínculo (RN-05).
+     */
+    @Transactional
+    public TrabajadorResponse darDeBaja(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        if (trabajador.estaDadoDeBaja()) {
+            throw new BusinessException("TRABAJADOR_YA_DADO_DE_BAJA",
+                "El trabajador ya se encuentra dado de baja.");
+        }
+
+        trabajador.setFechaBaja(Instant.now());
+        trabajador = trabajadorRepository.save(trabajador);
+        log.info("Trabajador {} dado de baja en perfil {}", trabajadorId, perfilId);
+
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    /**
+     * Reincorpora a un trabajador dado de baja en la empresa (RF-12, RN-05).
+     * Setea fecha_baja a null, restaurando el vínculo laboral y su habilitación
+     * para ingresar según el estado de su documentación legal.
+     */
+    @Transactional
+    public TrabajadorResponse reincorporar(Long trabajadorId) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        if (!trabajador.estaDadoDeBaja()) {
+            throw new BusinessException("TRABAJADOR_NO_DADO_DE_BAJA",
+                "El trabajador no se encuentra dado de baja.");
+        }
+
+        trabajador.setFechaBaja(null);
+        trabajador = trabajadorRepository.save(trabajador);
+        log.info("Trabajador {} reincorporado en perfil {}", trabajadorId, perfilId);
 
         return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
     }
@@ -127,6 +203,7 @@ public class TrabajadorService {
     public TrabajadorResponse cargarDocumento(Long trabajadorId, DocumentoRequest request) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         // Sin archivo: mensaje propio de US-28 (validarPdf es común y usa uno genérico)
         if (request.archivo() == null || request.archivo().isEmpty()) {
@@ -176,6 +253,7 @@ public class TrabajadorService {
     public TrabajadorResponse eliminarDocumento(Long trabajadorId, TipoDocumento tipo) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, tipo)
             .orElseThrow(NotFoundException::new);
@@ -214,6 +292,7 @@ public class TrabajadorService {
     public TrabajadorResponse cargarFoto(Long trabajadorId, MultipartFile foto) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         // Validación de tipo y tamaño de la foto (T-05, RNF-10)
         fileStorageService.validarFoto(foto);
@@ -245,6 +324,7 @@ public class TrabajadorService {
     public TrabajadorResponse eliminarFoto(Long trabajadorId) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        validarNoDadoDeBaja(trabajador);
 
         String rutaVieja = trabajador.getFotoRuta();
         if (rutaVieja != null) {
@@ -282,6 +362,13 @@ public class TrabajadorService {
     private Trabajador buscarDelPerfil(Long perfilId, Long trabajadorId) {
         return trabajadorRepository.findByIdAndPerfilId(trabajadorId, perfilId)
             .orElseThrow(NotFoundException::new);
+    }
+
+    private void validarNoDadoDeBaja(Trabajador trabajador) {
+        if (trabajador.estaDadoDeBaja()) {
+            throw new BusinessException("TRABAJADOR_DADO_DE_BAJA",
+                "No se puede modificar un trabajador dado de baja.");
+        }
     }
 
     /**

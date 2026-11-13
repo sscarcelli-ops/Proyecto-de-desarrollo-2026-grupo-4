@@ -112,6 +112,33 @@ public class TrabajadorController {
     }
 
     // ========================================================================================
+    // US-27: Dar de baja trabajador
+    // ========================================================================================
+
+    /**
+     * Da de baja a un trabajador de la empresa (fin de contrato o renuncia, RF-12).
+     * Inhabilita únicamente este vínculo en todos los barrios (RN-05).
+     */
+    @PostMapping("/{id}/baja")
+    public TrabajadorResponse darDeBaja(
+            @PathVariable Long id) {
+
+        return trabajadorService.darDeBaja(id);
+    }
+
+    /**
+     * Reincorpora a un trabajador dado de baja en la empresa (RF-12, RN-05).
+     * Restablece el vínculo laboral (fecha_baja = null) y su habilitación
+     * para ingresar según el estado de su documentación legal.
+     */
+    @PostMapping("/{id}/reincorporar")
+    public TrabajadorResponse reincorporar(
+            @PathVariable Long id) {
+
+        return trabajadorService.reincorporar(id);
+    }
+
+    // ========================================================================================
     // US-28: Cargar, renovar y eliminar documentación
     // ========================================================================================
 

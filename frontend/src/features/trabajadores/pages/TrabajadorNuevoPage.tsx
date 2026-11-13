@@ -342,7 +342,7 @@ export function TrabajadorNuevoPage() {
             Documentación
           </Typography.Title>
           <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 16 }}>
-            Podés registrar al trabajador ahora y adjuntar o renovar los comprobantes más adelante. La documentación es obligatoria para su ingreso en garita.
+            Podés registrar al trabajador ahora y adjuntar o renovar los comprobantes más adelante. El ingreso en garita requiere ART y/o Seguro de Vida vigente y ninguna póliza vencida.
           </Typography.Text>
 
           {/* Bloque ART */}
@@ -404,7 +404,7 @@ export function TrabajadorNuevoPage() {
             )}
             {!artFile && (
               <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                * Opcional al registrar. Obligatorio para ingreso en garita
+                * Opcional al registrar
               </Typography.Text>
             )}
           </Card>
@@ -468,7 +468,7 @@ export function TrabajadorNuevoPage() {
             )}
             {!seguroFile && (
               <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                * Opcional al registrar. Obligatorio para ingreso en garita
+                * Opcional al registrar
               </Typography.Text>
             )}
           </Card>
