@@ -9,7 +9,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Acceso a las cuentas para los demás módulos (auth, guardia...): nunca usan el Repository directo. */
 @Service
@@ -141,5 +145,40 @@ public class UsuarioService {
         usuario.setPasswordHash(passwordEncoder.encode(password));
         usuario.getRoles().add(rol);
         return usuarioRepository.save(usuario);
+    }
+
+    /** Cuentas por id en una sola consulta (para mostrar el email de cada Guardia en un listado). */
+    @Transactional(readOnly = true)
+    public Map<Long, Usuario> buscarPorIds(Collection<Long> ids) {
+        return usuarioRepository.findAllById(ids).stream()
+            .collect(Collectors.toMap(Usuario::getId, Function.identity()));
+    }
+
+    /**
+     * US-32: cambia el email y, si viene, la contraseña de una cuenta de otro usuario (el Guardia, editado por su
+     * Operador). El email no puede estar en otra cuenta, aunque sea de un Guardia deshabilitado; el propio no cuenta.
+     * Si cambia el email o la contraseña sube la versión de sesión: los tokens anteriores (que llevan el email viejo)
+     * dejan de valer y el Guardia vuelve a iniciar sesión.
+     * ATENCIÓN: no revisa de quién es la cuenta. El que llama tiene que haber comprobado antes que el usuario le
+     * pertenece (ej. GuardiaService busca el Guardia por id y barrio del Operador) y validar la política de
+     * contraseñas (US-44).
+     */
+    @Transactional
+    public Usuario actualizarCuenta(Long usuarioId, String email, String passwordNueva) {
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(NotFoundException::new);
+        String emailLimpio = email.trim();
+        if (usuarioRepository.existsByEmailIgnoreCaseAndIdNot(emailLimpio, usuarioId)) {
+            throw new BusinessException("EMAIL_DUPLICADO", "Este email ya se encuentra registrado");
+        }
+        boolean cambiaEmail = !emailLimpio.equals(usuario.getEmail());
+        boolean cambiaPassword = passwordNueva != null && !passwordNueva.isBlank();
+        usuario.setEmail(emailLimpio);
+        if (cambiaPassword) {
+            usuario.setPasswordHash(passwordEncoder.encode(passwordNueva));
+        }
+        if (cambiaEmail || cambiaPassword) {
+            usuario.setVersionSesion(usuario.getVersionSesion() + 1);
+        }
+        return usuario;
     }
 }

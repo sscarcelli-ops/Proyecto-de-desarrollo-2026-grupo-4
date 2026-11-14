@@ -13,6 +13,8 @@ interface Props {
   name?: NamePath;
   label?: string;
   placeholder?: string;
+  // Al modificar un usuario la contraseña se puede dejar en blanco (no se cambia): no es obligatoria ni lleva "*"
+  opcional?: boolean;
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  *   <CampoPasswordNueva />                                    // name="password", label="Contraseña"
  *   <CampoPasswordNueva name="passwordInicial" label="Contraseña inicial" />
  */
-export function CampoPasswordNueva({ name = 'password', label = 'Contraseña', placeholder }: Props) {
+export function CampoPasswordNueva({ name = 'password', label = 'Contraseña', placeholder, opcional = false }: Props) {
   const password: string | undefined = Form.useWatch(name, Form.useFormInstance());
 
   return (
@@ -32,7 +34,7 @@ export function CampoPasswordNueva({ name = 'password', label = 'Contraseña', p
       // Al salir del campo y al enviar: mientras escribe, el indicador ya muestra lo que falta
       validateTrigger="onBlur"
       rules={[
-        { required: true, message: MENSAJE_OBLIGATORIA },
+        { required: !opcional, message: MENSAJE_OBLIGATORIA },
         {
           validator: (_, value?: string) => {
             if (!value) return Promise.resolve();
@@ -58,6 +60,7 @@ export function CampoConfirmarPassword({
   label = 'Repetí la contraseña',
   placeholder,
   campoPassword = 'password',
+  opcional = false,
 }: Props & { campoPassword?: NamePath }) {
   return (
     <Form.Item
@@ -66,7 +69,11 @@ export function CampoConfirmarPassword({
       dependencies={[campoPassword]}
       validateTrigger="onBlur"
       rules={[
-        { required: true, message: 'La confirmación de la contraseña es obligatoria' },
+        // Opcional: solo se exige confirmar si se escribió una contraseña nueva
+        ({ getFieldValue }) => ({
+          required: !opcional || Boolean(getFieldValue(campoPassword)),
+          message: 'La confirmación de la contraseña es obligatoria',
+        }),
         ({ getFieldValue }) => ({
           validator: (_, value?: string) =>
             !value || value === getFieldValue(campoPassword)

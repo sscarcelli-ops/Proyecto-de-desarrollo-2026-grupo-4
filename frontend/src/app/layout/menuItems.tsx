@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ApartmentOutlined, HomeOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons';
+import { ApartmentOutlined, HomeOutlined, SafetyOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons';
 import type { Rol } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
 
@@ -20,6 +20,8 @@ export const MENU_ITEMS: AppMenuItem[] = [
   { path: PATHS.empresas, label: 'Empresas y Monotributistas', icon: <ShopOutlined />, roles: ['ADMIN'] },
   // US-33, US-34: Empresas y Monotributistas aprobados y su habilitación en el barrio (Operador)
   { path: PATHS.empresasBarrio, label: 'Empresas y Monotributistas', icon: <ShopOutlined />, roles: ['OPERADOR'] },
+  // US-32: Guardias del barrio (Operador)
+  { path: PATHS.guardias, label: 'Guardias', icon: <SafetyOutlined />, roles: ['OPERADOR'] },
   // US-25, US-26: Trabajadores de la Empresa
   { path: PATHS.trabajadores, label: 'Trabajadores', icon: <TeamOutlined />, roles: ['EMPRESA'] },
 ];

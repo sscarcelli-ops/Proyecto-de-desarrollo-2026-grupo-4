@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/barrios/{id}": {
+    "/api/guardias/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,6 +29,38 @@ export interface paths {
         };
         get: operations["obtener_1"];
         put: operations["modificar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/guardias/{id}/estado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["cambiarEstado"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/barrios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_2"];
+        put: operations["modificar_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -60,7 +92,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["cambiarEstado"];
+        put: operations["cambiarEstado_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -78,6 +110,22 @@ export interface paths {
         get: operations["listar"];
         put?: never;
         post: operations["crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trabajadores/{id}/reincorporar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reincorporar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -110,6 +158,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["cargarDocumento"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trabajadores/{id}/baja": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["darDeBaja"];
         delete?: never;
         options?: never;
         head?: never;
@@ -180,6 +244,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/guardias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_1"];
+        put?: never;
+        post: operations["crear_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garita/verificar": {
         parameters: {
             query?: never;
@@ -235,9 +315,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_1"];
+        get: operations["listar_2"];
         put?: never;
-        post: operations["crear_2"];
+        post: operations["crear_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -491,7 +571,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_2"];
+        get: operations["listar_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -587,7 +667,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_2"];
+        get: operations["obtener_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -603,7 +683,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -673,6 +753,24 @@ export interface components {
             dadoDeBaja: boolean;
             documentos: components["schemas"]["DocumentoResponse"][];
             fotoUrl: string | null;
+        };
+        GuardiaModificarRequest: {
+            nombre: string;
+            apellido: string;
+            /** Format: email */
+            email: string;
+            password?: string;
+        };
+        GuardiaResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            apellido: string;
+            email: string;
+            habilitado: boolean;
+        };
+        EstadoGuardiaRequest: {
+            habilitado: boolean;
         };
         BarrioRequest: {
             nombre: string;
@@ -766,6 +864,13 @@ export interface components {
             apellido: string;
             email: string;
             telefono: string;
+        };
+        GuardiaRequest: {
+            nombre: string;
+            apellido: string;
+            /** Format: email */
+            email: string;
+            password?: string;
         };
         VerificacionRequest: {
             /** Format: int64 */
@@ -1005,12 +1110,86 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["BarrioResponse"];
+                    "*/*": components["schemas"]["GuardiaResponse"];
                 };
             };
         };
     };
     modificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardiaModificarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuardiaResponse"];
+                };
+            };
+        };
+    };
+    cambiarEstado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EstadoGuardiaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuardiaResponse"];
+                };
+            };
+        };
+    };
+    obtener_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
+    modificar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1062,7 +1241,7 @@ export interface operations {
             };
         };
     };
-    cambiarEstado: {
+    cambiarEstado_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1125,6 +1304,28 @@ export interface operations {
         responses: {
             /** @description Created */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    reincorporar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1233,6 +1434,28 @@ export interface operations {
             };
         };
     };
+    darDeBaja: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
     rechazar: {
         parameters: {
             query?: never;
@@ -1329,6 +1552,50 @@ export interface operations {
             };
         };
     };
+    listar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuardiaResponse"][];
+                };
+            };
+        };
+    };
+    crear_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardiaRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuardiaResponse"];
+                };
+            };
+        };
+    };
     verificar: {
         parameters: {
             query?: never;
@@ -1401,7 +1668,7 @@ export interface operations {
             };
         };
     };
-    listar_1: {
+    listar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1421,7 +1688,7 @@ export interface operations {
             };
         };
     };
-    crear_2: {
+    crear_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1792,7 +2059,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_3: {
         parameters: {
             query: {
                 estado?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "SUSPENDIDO";
@@ -1922,7 +2189,7 @@ export interface operations {
             };
         };
     };
-    obtener_2: {
+    obtener_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1942,7 +2209,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];
