@@ -1,4 +1,4 @@
-import { Flex, Typography } from 'antd';
+import { Flex, Grid, Typography } from 'antd';
 import { Outlet } from 'react-router';
 import { Logo } from '../../shared/components/Logo';
 import { palette } from '../theme';
@@ -8,6 +8,8 @@ import { palette } from '../theme';
  * recuperar contraseña): fondo gris claro, logo arriba a la izquierda y el contenido en una tarjeta blanca.
  */
 export function PublicLayout() {
+  const esCelular = !(Grid.useBreakpoint().md ?? true);
+
   return (
     <Flex vertical style={{ minHeight: '100vh', background: palette.background, padding: '24px 16px' }}>
       <Flex align="center" gap={12} style={{ marginBottom: 24 }}>
@@ -20,10 +22,13 @@ export function PublicLayout() {
           style={{
             width: '100%',
             maxWidth: 720,
+            // T-07: sin esto, un contenido ancho estira la tarjeta más allá de la pantalla del celular
+            minWidth: 0,
             background: palette.surface,
             border: `1px solid ${palette.borderSoft}`,
             borderRadius: 8,
-            padding: '48px 24px',
+            // T-07: en el celular, menos margen interno para que el formulario tenga más lugar
+            padding: esCelular ? '32px 16px' : '48px 24px',
           }}
         >
           <Outlet />
