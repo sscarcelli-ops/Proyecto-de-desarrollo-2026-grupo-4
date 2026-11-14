@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { App, Button, Divider, Flex, Pagination, Table, Typography } from 'antd';
+import { App, Button, Divider, Flex, Pagination, Typography } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { EstadoTag } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { useMiBarrio } from '../../barrios/api/barrios';
 import { useCambiarHabilitacion, usePerfilesDelBarrio, type PerfilBarrio } from '../api/habilitaciones';
 import { palette } from '../../../app/theme';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
 const TIPO_LABEL: Record<PerfilBarrio['tipo'], string> = {
   EMPRESA: 'Empresa',
@@ -78,24 +80,21 @@ export function EmpresasBarrioPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
       <Typography.Title level={4} style={{ margin: 0 }}>
         {barrio?.nombre ?? ' '}
       </Typography.Title>
       <Divider style={{ marginTop: 12, marginBottom: 20 }} />
 
-      <Typography.Title
-        level={1}
-        style={{ fontSize: 'clamp(26px, 2.2vw, 32px)', fontWeight: 700, color: palette.text, marginTop: 0, marginBottom: 4 }}
-      >
-        Empresas y Monotributistas
-      </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ marginBottom: 20 }}>
-        Empresas y monotributistas aprobados por el Administrador y su estado en tu barrio
-      </Typography.Paragraph>
+      <EncabezadoPagina
+        titulo="Empresas y Monotributistas"
+        descripcion="Empresas y monotributistas aprobados por el Administrador y su estado en tu barrio"
+      />
 
       <div style={{ backgroundColor: palette.surface, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)', borderRadius: 8 }}>
-        <Table<PerfilBarrio>
+        <TablaResponsiva<PerfilBarrio>
+          columnaTitulo="nombre"
+          columnaAcciones="acciones"
           bordered
           className="tabla-redondeada"
           rowKey="id"

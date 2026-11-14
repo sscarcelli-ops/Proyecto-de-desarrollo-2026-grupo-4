@@ -1,17 +1,5 @@
 import { useState } from 'react';
-import {
-  App,
-  Button,
-  Flex,
-  Input,
-  Modal,
-  Pagination,
-  Popconfirm,
-  Select,
-  Space,
-  Table,
-  Typography,
-} from 'antd';
+import { App, Button, Flex, Input, Modal, Pagination, Popconfirm, Select, Space, Typography } from 'antd';
 import {
   EyeOutlined,
   FilePdfOutlined,
@@ -28,6 +16,8 @@ import {
   type PerfilResponse,
 } from '../api/perfiles';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
 export function EmpresasPage() {
   const { message } = App.useApp();
@@ -149,32 +139,11 @@ export function EmpresasPage() {
     : 'No hay Empresas ni Monotributistas registradas aún.';
 
   return (
-    <div
-      style={{
-        maxWidth: 1080,
-        margin: '0 auto',
-        width: '100%',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Título de la pantalla */}
-      <Typography.Title
-        level={1}
-        style={{
-          fontSize: 'clamp(26px, 2.2vw, 32px)',
-          fontWeight: 700,
-          color: palette.text,
-          marginTop: 0,
-          marginBottom: 20,
-        }}
-      >
-        Empresas y Monotributistas
-      </Typography.Title>
-
-      {/* Barra de búsqueda y filtro por estado */}
-      <Flex gap={12} align="center" style={{ marginBottom: 20 }}>
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <EncabezadoPagina
+        titulo="Empresas y Monotributistas"
+        filtros={
+          <>
         <Input
           placeholder="Buscar Empresa o Monotributista..."
           maxLength={100}
@@ -185,7 +154,7 @@ export function EmpresasPage() {
             setPagina(1);
           }}
           allowClear
-          style={{ maxWidth: 360, height: 38, borderRadius: 6 }}
+          style={{ flex: '1 1 220px', maxWidth: 360, height: 38, borderRadius: 6 }}
         />
         <Select<string>
           placeholder="Filtrar por estado"
@@ -203,7 +172,9 @@ export function EmpresasPage() {
             { label: 'Suspendido', value: 'SUSPENDIDO' },
           ]}
         />
-      </Flex>
+          </>
+        }
+      />
 
       {/* Tabla con bordes redondeados y empty state exacto del Figma */}
       <div
@@ -213,7 +184,9 @@ export function EmpresasPage() {
           borderRadius: 8,
         }}
       >
-        <Table<PerfilResponse>
+        <TablaResponsiva<PerfilResponse>
+          columnaTitulo="nombre"
+          columnaAcciones="detalle"
           bordered
           className="tabla-redondeada"
           rowKey="id"

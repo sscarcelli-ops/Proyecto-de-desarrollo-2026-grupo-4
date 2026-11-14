@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, Select, Switch, Table, Tooltip, Typography, App as AntdApp } from 'antd';
+import { Alert, Button, Flex, Select, Switch, Tooltip, Typography, App as AntdApp } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { EditOutlined, PlusOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { generatePath, useNavigate } from 'react-router';
@@ -9,8 +9,10 @@ import { getErrorMessage } from '../../../shared/lib/apiError';
 import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 import { PATHS } from '../../../routes/paths';
 import { palette } from '../../../app/theme';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // Ancho mínimo de la tabla: por debajo se desplaza de costado en lugar de apretar las columnas. Las columnas de
 // contenido corto (Op. Asignado, Estado, Acción) tienen ancho fijo; las de texto se reparten el resto, así en una
@@ -176,21 +178,27 @@ export function BarriosPage() {
 
   return (
     <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Barrios privados</Title>
-
-      <Flex justify="space-between" align="center" wrap gap={12}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate(PATHS.barrioNuevo)}>
-          Nuevo barrio
-        </Button>
-        <Flex align="center" gap={8}>
-          <Text>Estado:</Text>
-          <Select<FiltroBarrios> value={filtro} onChange={setFiltro} options={OPCIONES_FILTRO} style={{ minWidth: 160 }} />
-        </Flex>
-      </Flex>
+      <EncabezadoPagina
+        titulo="Barrios privados"
+        style={{ marginBottom: 0 }}
+        accion={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate(PATHS.barrioNuevo)}>
+            Nuevo barrio
+          </Button>
+        }
+        filtros={
+          <Flex align="center" gap={8}>
+            <Text>Estado:</Text>
+            <Select<FiltroBarrios> value={filtro} onChange={setFiltro} options={OPCIONES_FILTRO} style={{ minWidth: 160 }} />
+          </Flex>
+        }
+      />
 
       {error && <Alert type="error" showIcon title="No se pudieron cargar los barrios" description={getErrorMessage(error)} />}
 
-      <Table<Barrio>
+      <TablaResponsiva<Barrio>
+          columnaTitulo="nombre"
+          columnaAcciones="accion"
         rowKey="id"
         columns={columns}
         dataSource={barrios}

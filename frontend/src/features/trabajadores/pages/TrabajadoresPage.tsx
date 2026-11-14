@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { App, Button, Dropdown, Flex, Modal, Pagination, Table, Tag, Typography } from 'antd';
+import { App, Button, Dropdown, Flex, Modal, Pagination, Tag, Typography } from 'antd';
 import {
   EllipsisOutlined,
   EditOutlined,
@@ -20,6 +20,8 @@ import { PATHS } from '../../../routes/paths';
 import { palette, estadoTonos } from '../../../app/theme';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import type { ColumnsType } from 'antd/es/table';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
 /**
  * US-26: listado paginado de trabajadores.
@@ -169,45 +171,20 @@ export function TrabajadoresPage() {
   ];
 
   return (
-    <div
-      style={{
-        maxWidth: 1080,
-        margin: '0 auto',
-        width: '100%',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Título adaptable */}
-      <Typography.Title
-        level={1}
-        style={{
-          fontSize: 'clamp(26px, 2.2vw, 32px)',
-          fontWeight: 700,
-          color: palette.text,
-          marginTop: 0,
-          marginBottom: 16,
-        }}
-      >
-        Trabajadores
-      </Typography.Title>
-
-      {/* Acción principal: botón de registrar trabajador */}
-      <Flex justify="flex-start" align="center" style={{ marginBottom: 24 }}>
-        <Button
-          type="primary"
-          size="large"
-          icon={<PlusCircleOutlined />}
-          onClick={() => navigate(PATHS.trabajadorNuevo)}
-          style={{
-            borderRadius: 6,
-            fontWeight: 600,
-          }}
-        >
-          Registrar trabajador
-        </Button>
-      </Flex>
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <EncabezadoPagina
+        titulo="Trabajadores"
+        accion={
+          <Button
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={() => navigate(PATHS.trabajadorNuevo)}
+            style={{ borderRadius: 6, fontWeight: 600 }}
+          >
+            Registrar trabajador
+          </Button>
+        }
+      />
 
       {/* Tabla con bordes redondeados y paginación desacoplada */}
       <div
@@ -217,7 +194,9 @@ export function TrabajadoresPage() {
           borderRadius: 8,
         }}
       >
-        <Table<TrabajadorResponse>
+        <TablaResponsiva<TrabajadorResponse>
+          columnaTitulo="nombre"
+          columnaAcciones="acciones"
           bordered
           className="tabla-redondeada"
           rowKey="id"
