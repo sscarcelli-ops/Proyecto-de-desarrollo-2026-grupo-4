@@ -77,6 +77,19 @@ public class UsuarioService {
         return usuario;
     }
 
+    /**
+     * US-06: define la contraseña nueva sin pedir la actual (la persona demostró que es dueña del email con el
+     * enlace). Sube la versión de sesión: las sesiones abiertas, propias o de quien conocía la contraseña vieja,
+     * dejan de valer.
+     */
+    @Transactional
+    public void restablecerPassword(Long usuarioId, String passwordNueva) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new IllegalStateException("La cuenta del enlace de recupero no existe"));
+        usuario.setPasswordHash(passwordEncoder.encode(passwordNueva));
+        usuario.setVersionSesion(usuario.getVersionSesion() + 1);
+    }
+
     /** Nombre para mostrar en la interfaz; vacío para el Administrador o una cuenta sin perfil. */
     @Transactional(readOnly = true)
     public Optional<String> nombreVisible(Long usuarioId) {
