@@ -45,10 +45,14 @@ Qué tiene cada uno:
 | Swagger | ✅ | ✅ | ✅ | — |
 | SQL en el log | ✅ | — | — | — |
 | Log en archivo | Opcional (`LOG_FILE`) | Volumen `logs` | Volumen `logs` | Volumen `logs` |
+| Correo (T-04) | `MAIL_HOST` o, vacío, al log | Mailpit | Mailpit | SMTP real (`MAIL_HOST`) |
 
 - **Sin `--env-file`**, `docker compose up -d --build` levanta Prueba con datos.
 - La app queda en http://localhost:5173, la API en http://localhost:8080 y Swagger en
   http://localhost:8080/swagger-ui.html. La activación está en http://localhost:5173/activar.
+- **Correos de prueba (T-04):** en los dos ambientes de prueba los correos que manda el sistema (recuperar contraseña,
+  US-06) no salen a internet: los recibe Mailpit y se leen en http://localhost:8025. Sin `--env-file` Mailpit no se
+  levanta y el contenido del correo queda en el log del backend (`docker compose logs backend`).
 - **Pasar de una prueba a la otra:** ejecutar el otro comando. Usan bases distintas en el mismo contenedor y cada
   una conserva sus datos.
 - **Repetir el camino feliz desde cero:** `docker compose down -v` y volver a levantar. Borra las dos bases; la del
@@ -211,6 +215,20 @@ Reglas del equipo:
   en el frontend, el tipo `PageResponse<T>` de `shared/types/page.ts`. `page` empieza en 0.
 - **Frontend:** usar `shared/lib/apiError.ts`: `getErrorMessage(error)` para mostrar el mensaje y
   `form.setFields(toFormFieldErrors(error))` para marcar los campos de un formulario de Ant Design.
+
+## Correo (T-04)
+
+`common/correo/CorreoService` manda los correos del sistema por SMTP, configurado con variables de entorno
+(`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH`, `MAIL_SMTP_STARTTLS`, `MAIL_FROM`).
+
+- **Pruebas en Docker:** Mailpit (`COMPOSE_PROFILES=correo` y `MAIL_HOST=mailpit` en `docker/prueba*.env`). Bandeja en
+  http://localhost:8025, sin credenciales.
+- **Desarrollo desde el IDE:** `docker compose --env-file backend/.env up -d postgres mailpit` y `MAIL_HOST=localhost`
+  en `backend/.env`. Con `MAIL_HOST` vacío no se envía nada y el contenido del correo se muestra en el log.
+- **Producción:** el SMTP real (ver `docker/produccion.env.example`; con Gmail, una contraseña de aplicación). Con el
+  perfil `prod` el contenido de un correo que no se pudo enviar no va al log, porque puede traer un enlace de un
+  solo uso.
+- Los enlaces de los correos se arman con `APP_URL` (en Docker sale de `FRONTEND_PORT`).
 
 ## Logs (T-10)
 

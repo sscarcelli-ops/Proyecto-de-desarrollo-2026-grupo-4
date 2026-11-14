@@ -16,6 +16,8 @@ import { RegistroPage } from '../features/auth/pages/RegistroPage';
 import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { CambiarPasswordPage } from '../features/auth/pages/CambiarPasswordPage';
+import { RecuperarPasswordPage } from '../features/auth/pages/RecuperarPasswordPage';
+import { RestablecerPasswordPage } from '../features/auth/pages/RestablecerPasswordPage';
 import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
 import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
 import { PingPage } from '../features/health/pages/PingPage';
@@ -42,8 +44,12 @@ export const router = createBrowserRouter([
           { path: PATHS.login, element: <LoginPage /> },
           { path: PATHS.registro, element: <RegistroPage /> },
           { path: PATHS.activar, element: <ActivacionPage /> },
+          { path: PATHS.recuperarPassword, element: <RecuperarPasswordPage /> },
         ],
       },
+      // US-06: el enlace del correo se abre aunque haya una sesión abierta en el navegador (por ejemplo, de otra
+      // cuenta): no redirige. Al guardar, el backend cierra las sesiones de la cuenta del enlace.
+      { path: PATHS.restablecerPassword, element: <RestablecerPasswordPage /> },
       { path: PATHS.ping, element: <PingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

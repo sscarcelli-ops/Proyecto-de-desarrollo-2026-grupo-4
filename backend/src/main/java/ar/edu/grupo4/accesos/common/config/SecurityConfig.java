@@ -37,7 +37,7 @@ public class SecurityConfig {
     private static final PathPatternRequestMatcher.Builder RUTA = PathPatternRequestMatcher.withDefaults();
 
     // Rutas sin sesión, en un solo lugar: se permiten sin token y en ellas el token se ignora (ver bearerTokenResolver).
-    // Cambiar contraseña (US-07) NO va acá: necesita sesión. Recupero (US-06) sí, cuando exista.
+    // Cambiar contraseña (US-07) NO va acá: necesita sesión. Recuperarla (US-06) sí: quien la olvidó no tiene sesión.
     private static final RequestMatcher RUTAS_PUBLICAS = new OrRequestMatcher(
         RUTA.matcher("/api/ping"),
         RUTA.matcher("/api/health"),
@@ -48,7 +48,10 @@ public class SecurityConfig {
         RUTA.matcher(HttpMethod.POST, "/api/auth/registro"),
         RUTA.matcher(HttpMethod.GET, "/api/auth/activacion"),
         RUTA.matcher(HttpMethod.POST, "/api/auth/activacion"),
-        RUTA.matcher(HttpMethod.POST, "/api/auth/activacion/validar")
+        RUTA.matcher(HttpMethod.POST, "/api/auth/activacion/validar"),
+        RUTA.matcher(HttpMethod.POST, "/api/auth/recupero"),
+        RUTA.matcher(HttpMethod.POST, "/api/auth/recupero/validar"),
+        RUTA.matcher(HttpMethod.POST, "/api/auth/recupero/restablecer")
     );
 
     // Spring convierte la lista separada por comas en List<String>

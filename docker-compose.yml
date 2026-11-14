@@ -7,7 +7,8 @@
 #   Desarrollo (IDE)       docker compose --env-file backend/.env up -d postgres            Solo la base
 #
 # Sin --env-file, "docker compose up -d --build" es Prueba con datos. No hace falta Java ni Node: Docker compila el
-# backend y el frontend adentro (T-09). La app queda en http://localhost:5173 y la API en http://localhost:8080.
+# backend y el frontend adentro (T-09). La app queda en http://localhost:5173 y la API en http://localhost:8080. En las
+# pruebas, los correos que manda el sistema (recuperar contraseña) se ven en http://localhost:8025 (Mailpit, T-04).
 #
 #   Ver estado:            docker compose ps
 #   Ver los logs:          docker compose logs -f backend
@@ -71,6 +72,8 @@ services:
       PORT: "8080"
       STORAGE_PATH: /data/archivos
       LOG_FILE: /data/logs/accesos.log
+      # Dirección de la app para los enlaces de los correos (US-06): la del frontend publicado
+      APP_URL: ${APP_URL:-http://localhost:${FRONTEND_PORT:-5173}}
     ports:
       # Publicado para Swagger y Postman. La app no lo necesita: el frontend llega al backend por nginx.
       - "${BACKEND_PORT:-8080}:8080"
@@ -94,6 +97,19 @@ services:
       - "${FRONTEND_PORT:-5173}:80"
     depends_on:
       - backend
+    restart: unless-stopped
+
+  # T-04: servidor de correo de prueba. No manda nada afuera: guarda los correos y los muestra en una bandeja web
+  # (http://localhost:8025), sin credenciales. Solo en los ambientes de prueba (COMPOSE_PROFILES=correo en
+  # docker/prueba.env y docker/prueba-vacia.env); en producción se usa el SMTP real (MAIL_HOST).
+  # Desde el IDE: docker compose --env-file backend/.env up -d postgres mailpit, y MAIL_HOST=localhost en backend/.env.
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    container_name: accesos-mailpit
+    profiles: [correo]
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"   # bandeja web
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"   # SMTP, para el backend desde el IDE
     restart: unless-stopped
 
 volumes:
