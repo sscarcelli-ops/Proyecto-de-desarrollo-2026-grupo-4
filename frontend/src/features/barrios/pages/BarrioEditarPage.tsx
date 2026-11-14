@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Flex, Form, Skeleton, Typography, App as AntdApp } from 'antd';
+import { Alert, Button, Flex, Form, Skeleton, App as AntdApp } from 'antd';
 import { useNavigate, useParams } from 'react-router';
 import { marcarErroresDeBarrio, useBarrio, useModificarBarrio, type BarrioRequest } from '../api/barrios';
 import { BarrioForm } from '../components/BarrioForm';
@@ -6,8 +6,7 @@ import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 import { NotFoundPage } from '../../../routes/NotFoundPage';
 import { idDeRuta } from '../../../shared/lib/idDeRuta';
-
-const { Title } = Typography;
+import { PaginaFormulario } from '../../../shared/components/PaginaFormulario';
 
 // US-11: modificar un barrio (Administrador). Edita nombre, provincia y localidad (T-11) y dirección.
 // El Operador se asigna por US-45 y se cambia por US-14; el estado, por US-12.
@@ -44,36 +43,32 @@ export function BarrioEditarPage() {
   }
 
   return (
-    <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Editar Barrio</Title>
-
+    <PaginaFormulario titulo="Editar Barrio">
       {error && (
-        <Flex vertical gap={12} align="flex-start">
-          <Alert type="error" showIcon title="No se pudo cargar el barrio" description={getErrorMessage(error)} />
+        <Flex vertical gap={16} align="center">
+          <Alert type="error" showIcon title="No se pudo cargar el barrio" description={getErrorMessage(error)} style={{ width: '100%' }} />
           <Button onClick={volver}>Volver al listado</Button>
         </Flex>
       )}
 
-      {isLoading && <Skeleton active style={{ maxWidth: 560 }} />}
+      {isLoading && <Skeleton active />}
 
       {barrio && (
-        <Card style={{ maxWidth: 560 }}>
-          <BarrioForm
-            form={form}
-            initialValues={{
-              nombre: barrio.nombre,
-              // T-11: un barrio anterior sin localidad llega sin estos dos y se completan acá
-              provinciaId: barrio.provinciaId ?? undefined,
-              localidadId: barrio.localidadId ?? undefined,
-              direccion: barrio.direccion,
-            }}
-            loading={modificar.isPending}
-            textoGuardar="Confirmar"
-            onFinish={onFinish}
-            onCancel={volver}
-          />
-        </Card>
+        <BarrioForm
+          form={form}
+          initialValues={{
+            nombre: barrio.nombre,
+            // T-11: un barrio anterior sin localidad llega sin estos dos y se completan acá
+            provinciaId: barrio.provinciaId ?? undefined,
+            localidadId: barrio.localidadId ?? undefined,
+            direccion: barrio.direccion,
+          }}
+          loading={modificar.isPending}
+          textoGuardar="Confirmar"
+          onFinish={onFinish}
+          onCancel={volver}
+        />
       )}
-    </Flex>
+    </PaginaFormulario>
   );
 }
