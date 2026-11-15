@@ -27,7 +27,8 @@ export function EmpresasPage() {
   // Página, búsqueda y estado van en la dirección: al recargar, el listado sigue donde estaba
   const url = useParametrosUrl();
   const pagina = url.numero('pagina', 1);
-  const busqueda = url.texto('q');
+  // Mismo límite que el buscador y el backend (100): un texto más largo pegado en la dirección se corta
+  const busqueda = url.texto('q').slice(0, 100);
   const estadoUrl = url.texto('estado');
   const filtroEstado = ESTADOS.includes(estadoUrl as PerfilResponse['estado'])
     ? (estadoUrl as PerfilResponse['estado'])

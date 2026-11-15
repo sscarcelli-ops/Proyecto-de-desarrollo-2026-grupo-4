@@ -42,8 +42,10 @@ export function useParametrosUrl() {
 }
 
 /**
- * Si la página pedida no existe, va a la última con datos en lugar de mostrar el listado vacío. Pasa si alguien
- * escribe ?pagina=99 a mano, o si recarga en la página 3 y mientras tanto se fueron registros.
+ * Corrige la página de la dirección:
+ * - si no es un número válido (?pagina=abc, ?pagina=-3), la saca: queda la página 1;
+ * - si no existe, va a la última con datos en lugar de mostrar el listado vacío. Pasa si alguien escribe
+ *   ?pagina=99 a mano, o si recarga en la página 3 y mientras tanto se fueron registros.
  *
  *   usePaginaValida(url, pagina, data?.totalPages);
  */
@@ -52,10 +54,13 @@ export function usePaginaValida(
   pagina: number,
   totalPaginas: number | undefined,
 ) {
+  const crudo = url.texto('pagina');
+  const invalida = crudo !== '' && crudo !== String(pagina);
   const ultima = Math.max(1, totalPaginas ?? 1);
   const fueraDeRango = totalPaginas !== undefined && pagina > ultima;
   // En un efecto: cambiar la dirección mientras se dibuja la pantalla no está permitido
   useEffect(() => {
     if (fueraDeRango) url.cambiar({ pagina: ultima });
+    else if (invalida) url.cambiar({ pagina: null });
   });
 }
