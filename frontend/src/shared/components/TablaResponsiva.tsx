@@ -125,7 +125,13 @@ function Tarjetas<T extends AnyObject>({ columnaTitulo, columnaAcciones, ...prop
   return (
     <Flex vertical gap={12} style={{ padding: 12, opacity: cargando ? 0.6 : 1 }}>
       {filas.map((registro, indice) => (
-        <Card key={claveDe(registro, indice, props.rowKey)} size="small" styles={{ body: { padding: 16 } }}>
+        <Card
+          key={claveDe(registro, indice, props.rowKey)}
+          size="small"
+          // Clase en index.css: los botones de la tarjeta miden al menos 40 px, para tocarlos con el dedo
+          className="tarjeta-responsiva"
+          styles={{ body: { padding: 16 } }}
+        >
           <Flex justify="space-between" align="flex-start" gap={8} style={{ marginBottom: resto.length ? 12 : 0 }}>
             <Text strong style={{ fontSize: 15, minWidth: 0, overflowWrap: 'anywhere' }}>
               {titulo ? contenido(registro, titulo, indice) : null}
