@@ -16,6 +16,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    /** US-32: email repetido en otra cuenta (la propia no cuenta al editar). */
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
+
     /** Si alguna cuenta tiene ese rol (ej. "ADMIN"). */
     boolean existsByRoles_Codigo(String codigoRol);
 

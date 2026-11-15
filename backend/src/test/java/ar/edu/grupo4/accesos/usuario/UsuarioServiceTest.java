@@ -161,4 +161,62 @@ class UsuarioServiceTest {
 
         verify(usuarioRepository).incrementarVersionSesion(10L);
     }
+
+    private Usuario cuentaDeGuardia() {
+        Usuario usuario = new Usuario();
+        usuario.setId(7L);
+        usuario.setEmail("gabi@barrio.test");
+        usuario.setPasswordHash("hash-viejo");
+        usuario.setVersionSesion(3);
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+        return usuario;
+    }
+
+    @Test
+    @DisplayName("actualizarCuenta con un email de otra cuenta falla y no cambia nada")
+    void actualizarCuentaEmailRepetidoFalla() {
+        Usuario usuario = cuentaDeGuardia();
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("otro@barrio.test", 7L)).thenReturn(true);
+
+        assertThatThrownBy(() -> usuarioService.actualizarCuenta(7L, " otro@barrio.test ", "Nueva1234"))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("Este email ya se encuentra registrado");
+        assertThat(usuario.getEmail()).isEqualTo("gabi@barrio.test");
+        assertThat(usuario.getPasswordHash()).isEqualTo("hash-viejo");
+        assertThat(usuario.getVersionSesion()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("actualizarCuenta con contraseña nueva la guarda con bcrypt y cierra las sesiones")
+    void actualizarCuentaConPasswordCierraSesiones() {
+        Usuario usuario = cuentaDeGuardia();
+
+        usuarioService.actualizarCuenta(7L, "gabi@barrio.test", "Nueva1234");
+
+        assertThat(passwordEncoder.matches("Nueva1234", usuario.getPasswordHash())).isTrue();
+        assertThat(usuario.getVersionSesion()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("actualizarCuenta con otro email cierra las sesiones (el token lleva el email viejo)")
+    void actualizarCuentaConEmailNuevoCierraSesiones() {
+        Usuario usuario = cuentaDeGuardia();
+
+        usuarioService.actualizarCuenta(7L, " nuevo@barrio.test ", null);
+
+        assertThat(usuario.getEmail()).isEqualTo("nuevo@barrio.test");
+        assertThat(usuario.getPasswordHash()).isEqualTo("hash-viejo");
+        assertThat(usuario.getVersionSesion()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("actualizarCuenta sin cambios no toca la sesión")
+    void actualizarCuentaSinCambiosNoCierraSesiones() {
+        Usuario usuario = cuentaDeGuardia();
+
+        usuarioService.actualizarCuenta(7L, "gabi@barrio.test", "  ");
+
+        assertThat(usuario.getVersionSesion()).isEqualTo(3);
+        assertThat(usuario.getPasswordHash()).isEqualTo("hash-viejo");
+    }
 }
