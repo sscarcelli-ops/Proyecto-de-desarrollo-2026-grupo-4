@@ -4,3 +4,9 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+# T-04: en producción el contenido de un correo que no se pudo enviar no va al log (puede traer un enlace de un solo
+# uso). Configurar MAIL_HOST con el servidor real.
+app:
+  correo:
+    mostrar-en-log: false

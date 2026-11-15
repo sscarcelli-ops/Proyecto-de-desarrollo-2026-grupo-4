@@ -27,4 +27,13 @@ public interface TokenUnSoloUsoRepository extends JpaRepository<TokenUnSoloUso, 
         where t.tipo = :tipo and t.usadoEn is null and t.expiraEn > :ahora
         """)
     int vencerVigentes(@Param("tipo") TipoTokenUnSoloUso tipo, @Param("ahora") Instant ahora);
+
+    /** US-06: vence los enlaces de recupero que la cuenta todavía tenía: solo sirve el último que pidió. */
+    @Modifying
+    @Query("""
+        update TokenUnSoloUso t set t.expiraEn = :ahora
+        where t.tipo = :tipo and t.usuarioId = :usuarioId and t.usadoEn is null and t.expiraEn > :ahora
+        """)
+    int vencerVigentesDeUsuario(@Param("tipo") TipoTokenUnSoloUso tipo, @Param("usuarioId") Long usuarioId,
+                                @Param("ahora") Instant ahora);
 }
