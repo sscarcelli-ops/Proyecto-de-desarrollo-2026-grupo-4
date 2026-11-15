@@ -25,4 +25,5 @@ export const PATHS = {
   trabajadores: '/trabajadores', // US-26
   trabajadorNuevo: '/trabajadores/nuevo', // US-25
   trabajadorEditar: '/trabajadores/:id/editar', // US-26
+  historialPropio: '/empresa/historial', // US-31 (Empresa) y US-46 (Monotributista)
 } as const;

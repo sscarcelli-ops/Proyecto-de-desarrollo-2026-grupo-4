@@ -50,3 +50,8 @@ body {
   text-align: left !important;
   padding-left: 14px !important;
 }
+
+/* Centrar placeholders y fechas seleccionadas en RangePicker */
+.range-picker-centrado input {
+  text-align: center !important;
+}

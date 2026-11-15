@@ -34,6 +34,7 @@ import { OperadorNuevoPage } from '../features/operadores/pages/OperadorNuevoPag
 import { GuardiasPage } from '../features/guardias/pages/GuardiasPage';
 import { GuardiaNuevoPage } from '../features/guardias/pages/GuardiaNuevoPage';
 import { GuardiaEditarPage } from '../features/guardias/pages/GuardiaEditarPage';
+import { HistorialPropioPage } from '../features/reportes/pages/HistorialPropioPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04), activación del Administrador (US-01), registro (US-02)
@@ -48,11 +49,9 @@ export const router = createBrowserRouter([
           { path: PATHS.registro, element: <RegistroPage /> },
           { path: PATHS.activar, element: <ActivacionPage /> },
           { path: PATHS.recuperarPassword, element: <RecuperarPasswordPage /> },
+          { path: PATHS.restablecerPassword, element: <RestablecerPasswordPage /> },
         ],
       },
-      // US-06: el enlace del correo se abre aunque haya una sesión abierta en el navegador (por ejemplo, de otra
-      // cuenta): no redirige. Al guardar, el backend cierra las sesiones de la cuenta del enlace.
-      { path: PATHS.restablecerPassword, element: <RestablecerPasswordPage /> },
       { path: PATHS.ping, element: <PingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
@@ -108,13 +107,21 @@ export const router = createBrowserRouter([
                   { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
                 ],
               },
-              // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)
+              // Trabajadores e Historial: exclusivo para rol EMPRESA (US-25, US-26, US-31)
               {
                 element: <RequireRole roles={['EMPRESA']} />,
                 children: [
                   { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
                   { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
                   { path: PATHS.trabajadorEditar, element: <TrabajadorEditarPage /> },
+                  { path: PATHS.historialPropio, element: <HistorialPropioPage /> },
+                ],
+              },
+              // Monotributista: Historial propio (US-46)
+              {
+                element: <RequireRole roles={['MONOTRIBUTISTA']} />,
+                children: [
+                  { path: PATHS.historialPropio, element: <HistorialPropioPage /> },
                 ],
               },
               // Operador: Empresas y Monotributistas de su barrio (US-33, US-34) y sus Guardias (US-32)
