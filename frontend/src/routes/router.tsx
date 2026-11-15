@@ -25,6 +25,7 @@ import { BarrioNuevoPage } from '../features/barrios/pages/BarrioNuevoPage';
 import { BarrioEditarPage } from '../features/barrios/pages/BarrioEditarPage';
 import { EmpresasPage } from '../features/perfiles/pages/EmpresasPage';
 import { EmpresasBarrioPage } from '../features/perfiles/pages/EmpresasBarrioPage';
+import { HistorialAccesosPage } from '../features/reportes/pages/HistorialAccesosPage';
 import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPage';
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
@@ -111,7 +112,10 @@ export const router = createBrowserRouter([
               // Operador: Empresas y Monotributistas de su barrio (US-33, US-34)
               {
                 element: <RequireRole roles={['OPERADOR']} />,
-                children: [{ path: PATHS.empresasBarrio, element: <EmpresasBarrioPage /> }],
+                children: [
+                  { path: PATHS.empresasBarrio, element: <EmpresasBarrioPage /> },
+                  { path: PATHS.historialAccesos, element: <HistorialAccesosPage /> },
+                ],
               },
             ],
           },
