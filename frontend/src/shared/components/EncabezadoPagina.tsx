@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Flex, Grid, Typography } from 'antd';
+import { Flex, Typography } from 'antd';
 import { palette } from '../../app/theme';
+import { usePantalla } from '../hooks/usePantalla';
 
 /**
  * T-07: encabezado igual en todas las pantallas con listado.
@@ -30,7 +31,7 @@ export function EncabezadoPagina({
   filtros?: ReactNode;
   style?: CSSProperties;
 }) {
-  const esCelular = !(Grid.useBreakpoint().md ?? true);
+  const { esCelular } = usePantalla();
 
   return (
     <Flex vertical gap={16} style={{ marginBottom: 20, ...style }}>

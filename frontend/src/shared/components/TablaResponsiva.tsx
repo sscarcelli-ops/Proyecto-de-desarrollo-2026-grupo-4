@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { Key, ReactNode } from 'react';
-import { Card, Flex, Grid, Skeleton, Table, Typography } from 'antd';
+import { Card, Flex, Skeleton, Table, Typography } from 'antd';
 import type { TableProps } from 'antd';
 import type { AnyObject } from 'antd/es/_util/type';
 import { palette } from '../../app/theme';
+import { usePantalla } from '../hooks/usePantalla';
 
 const { Text } = Typography;
 
@@ -72,14 +73,17 @@ function claveDe<T>(registro: T, indice: number, rowKey: TableProps<T>['rowKey']
 
 export function TablaResponsiva<T extends AnyObject>({ columnaTitulo, columnaAcciones, ...props }: TablaResponsivaProps<T>) {
   // md = 768 px: en el celular, siempre tarjetas
-  const esCelular = !(Grid.useBreakpoint().md ?? true);
+  const { esCelular } = usePantalla();
 
   // Ancho disponible para la tabla, medido en vivo (cambia al girar la tablet o achicar la ventana)
   const contenedor = useRef<HTMLDivElement>(null);
   const [ancho, setAncho] = useState<number | null>(null);
-  useEffect(() => {
+  // useLayoutEffect: mide antes de que se vea la pantalla, así una tabla que no entra no aparece un instante
+  // como tabla y después como tarjetas
+  useLayoutEffect(() => {
     const elemento = contenedor.current;
     if (!elemento) return;
+    setAncho(elemento.getBoundingClientRect().width);
     const observador = new ResizeObserver(([entrada]) => setAncho(entrada.contentRect.width));
     observador.observe(elemento);
     return () => observador.disconnect();

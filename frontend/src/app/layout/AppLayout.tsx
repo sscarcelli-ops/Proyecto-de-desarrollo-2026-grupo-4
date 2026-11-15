@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Drawer, Flex, Grid, Layout, Menu, Typography } from 'antd';
+import { Button, Drawer, Flex, Layout, Menu, Typography } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { getMenuItemsFor } from './menuItems';
@@ -9,6 +9,7 @@ import { BotonCerrarSesion } from '../../features/auth/components/BotonCerrarSes
 import { Logo } from '../../shared/components/Logo';
 import { ROL_LABEL } from '../../shared/types/rol';
 import { palette } from '../theme';
+import { usePantalla } from '../../shared/hooks/usePantalla';
 
 const { Header, Sider, Content } = Layout;
 
@@ -26,9 +27,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const user = useCurrentUser();
-  const pantalla = Grid.useBreakpoint();
-  const esEscritorio = pantalla.lg ?? true;
-  const esCelular = !(pantalla.md ?? true);
+  const { esCelular, esEscritorio } = usePantalla();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const rol = user?.roles.map((r) => ROL_LABEL[r]).join(' / ');
 

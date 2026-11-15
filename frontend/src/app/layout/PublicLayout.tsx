@@ -1,14 +1,15 @@
-import { Flex, Grid, Typography } from 'antd';
+import { Flex, Typography } from 'antd';
 import { Outlet } from 'react-router';
 import { Logo } from '../../shared/components/Logo';
 import { palette } from '../theme';
+import { usePantalla } from '../../shared/hooks/usePantalla';
 
 /**
  * Layout de las pantallas sin sesión (wireframes de login, activación de cuenta, registro y
  * recuperar contraseña): fondo gris claro, logo arriba a la izquierda y el contenido en una tarjeta blanca.
  */
 export function PublicLayout() {
-  const esCelular = !(Grid.useBreakpoint().md ?? true);
+  const { esCelular } = usePantalla();
 
   return (
     <Flex vertical style={{ minHeight: '100vh', background: palette.background, padding: '24px 16px' }}>
