@@ -10,6 +10,7 @@ import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 import { PATHS } from '../../../routes/paths';
 import { palette } from '../../../app/theme';
 import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { useParametrosUrl } from '../../../shared/hooks/useParametrosUrl';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
 const { Text } = Typography;
@@ -51,7 +52,10 @@ export function BarriosPage() {
   const navigate = useNavigate();
   const { message, modal } = AntdApp.useApp();
   const { data, error, isLoading } = useBarrios();
-  const [filtro, setFiltro] = useState<FiltroBarrios>('TODOS');
+  // El filtro va en la dirección (?filtro=ACTIVO): al recargar o al volver de Editar, sigue elegido
+  const url = useParametrosUrl();
+  const filtroUrl = url.texto('filtro');
+  const filtro: FiltroBarrios = OPCIONES_FILTRO.some((o) => o.value === filtroUrl) ? (filtroUrl as FiltroBarrios) : 'TODOS';
   const cambiarEstadoBarrio = useCambiarEstadoBarrio();
   // Barrio al que se le está cambiando el estado: su interruptor muestra que está cargando
   const [cambiandoId, setCambiandoId] = useState<number | null>(null);
@@ -189,7 +193,7 @@ export function BarriosPage() {
         filtros={
           <Flex align="center" gap={8}>
             <Text>Estado:</Text>
-            <Select<FiltroBarrios> value={filtro} onChange={setFiltro} options={OPCIONES_FILTRO} style={{ minWidth: 160 }} />
+            <Select<FiltroBarrios> value={filtro} onChange={(valor) => url.cambiar({ filtro: valor === 'TODOS' ? null : valor })} options={OPCIONES_FILTRO} style={{ minWidth: 160 }} />
           </Flex>
         }
       />

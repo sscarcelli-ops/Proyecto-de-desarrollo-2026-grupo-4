@@ -22,6 +22,7 @@ import { getErrorMessage } from '../../../shared/lib/apiError';
 import type { ColumnsType } from 'antd/es/table';
 import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
 
 /**
  * US-26: listado paginado de trabajadores.
@@ -34,10 +35,13 @@ export function TrabajadoresPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
 
-  // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente
-  const [pagina, setPagina] = useState(1);
-  const [tamano, setTamano] = useState(10);
+  // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente.
+  // La página va en la dirección (?pagina=2): al recargar o al volver de Editar, sigue en la misma
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  const tamano = 10;
   const { data, isLoading } = useTrabajadores(pagina, tamano);
+  usePaginaValida(url, pagina, data?.totalPages);
   const darDeBaja = useDarDeBajaTrabajador();
   const reincorporar = useReincorporarTrabajador();
 
@@ -217,10 +221,7 @@ export function TrabajadoresPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={(page, size) => {
-            setPagina(page);
-            setTamano(size);
-          }}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
 

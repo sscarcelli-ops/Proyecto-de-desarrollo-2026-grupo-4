@@ -16,15 +16,23 @@ import {
   type PerfilResponse,
 } from '../api/perfiles';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
 import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
+const ESTADOS: PerfilResponse['estado'][] = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'SUSPENDIDO'];
+
 export function EmpresasPage() {
   const { message } = App.useApp();
-  const [pagina, setPagina] = useState(1);
-  const [tamano, setTamano] = useState(10);
-  const [busqueda, setBusqueda] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState<PerfilResponse['estado'] | undefined>(undefined);
+  // Página, búsqueda y estado van en la dirección: al recargar, el listado sigue donde estaba
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  const busqueda = url.texto('q');
+  const estadoUrl = url.texto('estado');
+  const filtroEstado = ESTADOS.includes(estadoUrl as PerfilResponse['estado'])
+    ? (estadoUrl as PerfilResponse['estado'])
+    : undefined;
+  const tamano = 10;
 
   // Perfil seleccionado para el modal de detalle
   const [perfilDetalle, setPerfilDetalle] = useState<PerfilResponse | null>(null);
@@ -42,6 +50,7 @@ export function EmpresasPage() {
     estado: filtroEstado,
   });
 
+  usePaginaValida(url, pagina, data?.totalPages);
   const aprobarMutation = useAprobarPerfil();
   const rechazarMutation = useRechazarPerfil();
 
@@ -149,20 +158,14 @@ export function EmpresasPage() {
           maxLength={100}
           prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
           value={busqueda}
-          onChange={(e) => {
-            setBusqueda(e.target.value);
-            setPagina(1);
-          }}
+          onChange={(e) => url.cambiar({ q: e.target.value, pagina: null })}
           allowClear
           style={{ flex: '1 1 220px', maxWidth: 360, height: 38, borderRadius: 6 }}
         />
         <Select<string>
           placeholder="Filtrar por estado"
           value={filtroEstado ?? 'TODOS'}
-          onChange={(val) => {
-            setFiltroEstado(val === 'TODOS' ? undefined : (val as PerfilResponse['estado']));
-            setPagina(1);
-          }}
+          onChange={(val) => url.cambiar({ estado: val === 'TODOS' ? null : val, pagina: null })}
           style={{ width: 200, height: 38 }}
           options={[
             { label: 'Todos los estados', value: 'TODOS' },
@@ -211,10 +214,7 @@ export function EmpresasPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={(page, size) => {
-            setPagina(page);
-            setTamano(size);
-          }}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
 

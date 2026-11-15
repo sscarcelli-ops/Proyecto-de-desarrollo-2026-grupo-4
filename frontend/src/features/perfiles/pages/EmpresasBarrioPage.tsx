@@ -8,6 +8,7 @@ import { useCambiarHabilitacion, usePerfilesDelBarrio, type PerfilBarrio } from 
 import { palette } from '../../../app/theme';
 import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
 
 const TIPO_LABEL: Record<PerfilBarrio['tipo'], string> = {
   EMPRESA: 'Empresa',
@@ -21,17 +22,17 @@ const TIPO_LABEL: Record<PerfilBarrio['tipo'], string> = {
  */
 export function EmpresasBarrioPage() {
   const { message } = App.useApp();
-  const [pagina, setPagina] = useState(1);
+  // La página va en la dirección (?pagina=2): al recargar, sigue en la misma
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
   const tamano = 10;
   const { data: barrio } = useMiBarrio();
   const { data, isLoading, error } = usePerfilesDelBarrio(pagina, tamano);
 
   // Si la página actual quedó vacía porque se fueron perfiles (por ejemplo, uno suspendido por el Administrador),
-  // vuelve a la última página con datos en lugar de mostrar el mensaje de "no existen"
-  const ultimaPagina = Math.max(1, data?.totalPages ?? 1);
-  if (data && pagina > ultimaPagina) {
-    setPagina(ultimaPagina);
-  }
+  // (o porque se escribió a mano ?pagina=99), vuelve a la última página con datos en lugar de mostrar el mensaje
+  // de "no existen"
+  usePaginaValida(url, pagina, data?.totalPages);
   const cambiarHabilitacion = useCambiarHabilitacion();
   // Fila que se está actualizando, para mostrar la carga solo en su botón
   const [enCurso, setEnCurso] = useState<number | null>(null);
@@ -120,7 +121,7 @@ export function EmpresasBarrioPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={setPagina}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
     </div>
