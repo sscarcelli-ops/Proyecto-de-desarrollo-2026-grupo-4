@@ -29,6 +29,7 @@ import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPag
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 import { OperadorNuevoPage } from '../features/operadores/pages/OperadorNuevoPage';
+import { OperadoresPage } from '../features/operadores/pages/OperadoresPage';
 import { GuardiasPage } from '../features/guardias/pages/GuardiasPage';
 import { GuardiaNuevoPage } from '../features/guardias/pages/GuardiaNuevoPage';
 import { GuardiaEditarPage } from '../features/guardias/pages/GuardiaEditarPage';
@@ -99,6 +100,7 @@ export const router = createBrowserRouter([
                   { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
                   { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
                   { path: PATHS.empresas, element: <EmpresasPage /> },
+                  { path: PATHS.operadores, element: <OperadoresPage /> },
                   { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
                 ],
               },

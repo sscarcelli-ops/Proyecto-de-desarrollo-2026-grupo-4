@@ -9,12 +9,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import ar.edu.grupo4.accesos.barrio.dto.OperadorListadoResponse;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -89,5 +96,57 @@ class OperadorServiceTest {
             new Operador(4L, "Oscar", "Libre", "1145550002")));
 
         assertThat(service.buscarPorIds(List.of(3L, 4L))).containsOnlyKeys(3L, 4L);
+    }
+
+    private static OperadorRepository.OperadorListado fila(long id, String nombre, String apellido, String email, Long barrioId, String barrioNombre) {
+        OperadorRepository.OperadorListado fila = mock(OperadorRepository.OperadorListado.class);
+        when(fila.getId()).thenReturn(id);
+        when(fila.getNombre()).thenReturn(nombre);
+        when(fila.getApellido()).thenReturn(apellido);
+        when(fila.getEmail()).thenReturn(email);
+        when(fila.getTelefono()).thenReturn("1145550001");
+        when(fila.getBarrioId()).thenReturn(barrioId);
+        when(fila.getBarrioNombre()).thenReturn(barrioNombre);
+        return fila;
+    }
+
+    @Test
+    void listarSinBarrioFiguraDisponibleYConBarrioOcupado() {
+        Pageable pageable = PageRequest.of(0, 10);
+        // Las filas se arman antes de stubbear: crear un mock (fila) dentro de thenReturn deja el stubbing a medias
+        List<OperadorRepository.OperadorListado> filas = List.of(
+            fila(1L, "Olga", "Operadora", "olga@barrio.test", 7L, "Barrio Los Álamos"),
+            fila(2L, "Oscar", "Libre", "oscar@barrio.test", null, null));
+        when(operadorRepository.listarConFiltros(isNull(), isNull(), eq(pageable)))
+            .thenReturn(new PageImpl<>(filas, pageable, 2));
+
+        PageResponse<OperadorListadoResponse> pagina = service.listar(null, null, pageable);
+
+        assertThat(pagina.totalElements()).isEqualTo(2);
+        assertThat(pagina.content()).extracting(OperadorListadoResponse::estado).containsExactly("OCUPADO", "DISPONIBLE");
+        assertThat(pagina.content().get(0).barrioNombre()).isEqualTo("Barrio Los Álamos");
+        assertThat(pagina.content().get(1).barrioId()).isNull();
+        assertThat(pagina.content().get(1).email()).isEqualTo("oscar@barrio.test");
+    }
+
+    @Test
+    void listarPasaElEstadoYEscapaLosComodinesDelTexto() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(operadorRepository.listarConFiltros(any(), any(), any())).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        service.listar(EstadoOperador.OCUPADO, " 50%_a\\b ", pageable);
+
+        // % y _ llegan como texto (con barra), y la propia barra también; el texto va sin espacios al inicio ni al final
+        verify(operadorRepository).listarConFiltros("OCUPADO", "50\\%\\_a\\\\b", pageable);
+    }
+
+    @Test
+    void listarConTextoEnBlancoNoFiltraPorTexto() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(operadorRepository.listarConFiltros(any(), any(), any())).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        service.listar(EstadoOperador.DISPONIBLE, "   ", pageable);
+
+        verify(operadorRepository).listarConFiltros("DISPONIBLE", null, pageable);
     }
 }
