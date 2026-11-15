@@ -1,5 +1,5 @@
 import { Alert, Button, Flex, Form, Input, Typography } from 'antd';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useSolicitarRecupero } from '../api/recupero';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
@@ -13,6 +13,7 @@ interface FormValues {
  * El mensaje de confirmación es el mismo exista o no la cuenta (CA-2): no revela qué emails están registrados.
  */
 export function RecuperarPasswordPage() {
+  const navigate = useNavigate();
   const [form] = Form.useForm<FormValues>();
   const solicitar = useSolicitarRecupero();
 
@@ -31,18 +32,24 @@ export function RecuperarPasswordPage() {
       </Typography.Title>
 
       {solicitar.isSuccess ? (
-        <>
+        <Flex vertical gap={24} style={{ marginTop: 12 }}>
           <Alert
             type="success"
             showIcon
             title="Revisá tu correo"
             description="Si el email está registrado, te enviamos un enlace para elegir una nueva contraseña. Sirve una sola vez y por tiempo limitado."
-            style={{ marginBottom: 24 }}
           />
-          <Button type="link" block onClick={() => solicitar.reset()}>
-            Enviar de nuevo
+
+          <Button type="primary" size="large" block onClick={() => navigate(PATHS.login)}>
+            Volver a iniciar sesión
           </Button>
-        </>
+
+          <Flex justify="center">
+            <Button type="link" onClick={() => solicitar.reset()}>
+              Enviar de nuevo
+            </Button>
+          </Flex>
+        </Flex>
       ) : (
         <>
           <Typography.Paragraph type="secondary" style={{ marginBottom: 24 }}>
@@ -76,12 +83,12 @@ export function RecuperarPasswordPage() {
               Enviar enlace
             </Button>
           </Form>
+
+          <Flex justify="center" style={{ marginTop: 16 }}>
+            <Link to={PATHS.login}>Volver a iniciar sesión</Link>
+          </Flex>
         </>
       )}
-
-      <Flex justify="center" style={{ marginTop: 16 }}>
-        <Link to={PATHS.login}>Volver a iniciar sesión</Link>
-      </Flex>
     </Flex>
   );
 }
