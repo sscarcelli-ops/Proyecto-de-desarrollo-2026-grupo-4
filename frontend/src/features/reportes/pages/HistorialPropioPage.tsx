@@ -23,6 +23,7 @@ import {
 } from '../api/movimientosPropios';
 import { EstadoTag } from '../../../shared/components/EstadoTag';
 import { palette } from '../../../app/theme';
+import { useCurrentUser } from '../../auth/api/useCurrentUser';
 
 const { RangePicker } = DatePicker;
 
@@ -32,7 +33,17 @@ interface FiltrosEstado {
   barrioId: number | null;
 }
 
+/**
+ * US-31 (Empresa) y US-46 (Monotributista):
+ * Consultar el historial de accesos propio.
+ * 
+ * - Empresa: ve los accesos de todos sus trabajadores, con filtros por DNI, Barrio y Fecha.
+ * - Monotributista: es su propio trabajador único, por lo que no requiere filtro ni columna de DNI/Trabajador.
+ */
 export function HistorialPropioPage() {
+  const currentUser = useCurrentUser();
+  const esMonotributista = currentUser?.roles.includes('MONOTRIBUTISTA') && !currentUser?.roles.includes('EMPRESA');
+
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<MovimientoPropio[]>([]);
   const [totalElements, setTotalElements] = useState<number>(0);
@@ -66,7 +77,7 @@ export function HistorialPropioPage() {
       .catch(() => {
         notification.error({
           message: 'Error al cargar barrios habilitados',
-          description: 'No se pudieron recuperar los barrios donde la empresa está habilitada.',
+          description: 'No se pudieron recuperar los barrios donde está habilitado.',
         });
       });
   }, []);
@@ -88,7 +99,7 @@ export function HistorialPropioPage() {
       const res = await getMovimientosPropios({
         desde: desdeStr,
         hasta: hastaStr,
-        dni: filtrosActuales.dni || undefined,
+        dni: esMonotributista ? undefined : (filtrosActuales.dni || undefined),
         barrioId: filtrosActuales.barrioId ?? undefined,
         page: paginaActual - 1,
         size: tamanioPagina,
@@ -99,7 +110,7 @@ export function HistorialPropioPage() {
     } catch {
       notification.error({
         message: 'Error al cargar historial',
-        description: 'No se pudieron obtener los movimientos de la empresa.',
+        description: 'No se pudieron obtener los movimientos.',
       });
     } finally {
       setLoading(false);
@@ -128,9 +139,10 @@ export function HistorialPropioPage() {
 
   const hayFiltrosActivos =
     filtrosAplicados.rangoFechas !== null ||
-    filtrosAplicados.dni.trim() !== '' ||
+    (!esMonotributista && filtrosAplicados.dni.trim() !== '') ||
     filtrosAplicados.barrioId !== null;
 
+  // Columnas base
   const columns: ColumnsType<MovimientoPropio> = [
     {
       title: <span style={{ fontWeight: 600, color: palette.text }}>Fecha y Hora</span>,
@@ -153,19 +165,29 @@ export function HistorialPropioPage() {
         />
       ),
     },
-    {
-      title: <span style={{ fontWeight: 600, color: palette.text }}>Trabajador</span>,
-      key: 'trabajador',
-      align: 'center',
-      render: (_, record) => `${record.trabajadorNombre} ${record.trabajadorApellido}`,
-    },
-    {
-      title: <span style={{ fontWeight: 600, color: palette.text }}>DNI</span>,
-      dataIndex: 'trabajadorDni',
-      key: 'trabajadorDni',
-      width: 140,
-      align: 'center',
-    },
+  ];
+
+  // Si es Empresa, mostramos Trabajador y DNI
+  if (!esMonotributista) {
+    columns.push(
+      {
+        title: <span style={{ fontWeight: 600, color: palette.text }}>Trabajador</span>,
+        key: 'trabajador',
+        align: 'center',
+        render: (_, record) => `${record.trabajadorNombre} ${record.trabajadorApellido}`,
+      },
+      {
+        title: <span style={{ fontWeight: 600, color: palette.text }}>DNI</span>,
+        dataIndex: 'trabajadorDni',
+        key: 'trabajadorDni',
+        width: 140,
+        align: 'center',
+      }
+    );
+  }
+
+  // Columnas finales
+  columns.push(
     {
       title: <span style={{ fontWeight: 600, color: palette.text }}>Barrio Privado</span>,
       dataIndex: 'barrioNombre',
@@ -196,8 +218,12 @@ export function HistorialPropioPage() {
           />
         );
       },
-    },
-  ];
+    }
+  );
+
+  const mensajeVacioInicial = esMonotributista
+    ? 'Actualmente no posee Ingresos ni Egresos registrados'
+    : 'Actualmente no existen Ingresos ni Egresos registrados para su Empresa';
 
   return (
     <div
@@ -253,22 +279,24 @@ export function HistorialPropioPage() {
             />
           </Flex>
 
-          <Flex vertical gap={4}>
-            <Typography.Text style={{ fontSize: 13, color: palette.textSecondary, fontWeight: 500 }}>
-              DNI
-            </Typography.Text>
-            <Input
-              placeholder="Buscar por DNI..."
-              style={{ width: 160 }}
-              value={filtros.dni}
-              maxLength={10}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                setFiltros((prev) => ({ ...prev, dni: val }));
-              }}
-              onPressEnter={handleFiltrar}
-            />
-          </Flex>
+          {!esMonotributista && (
+            <Flex vertical gap={4}>
+              <Typography.Text style={{ fontSize: 13, color: palette.textSecondary, fontWeight: 500 }}>
+                DNI
+              </Typography.Text>
+              <Input
+                placeholder="Buscar por DNI..."
+                style={{ width: 160 }}
+                value={filtros.dni}
+                maxLength={10}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setFiltros((prev) => ({ ...prev, dni: val }));
+                }}
+                onPressEnter={handleFiltrar}
+              />
+            </Flex>
+          )}
 
           <Flex vertical gap={4}>
             <Typography.Text style={{ fontSize: 13, color: palette.textSecondary, fontWeight: 500 }}>
@@ -315,13 +343,13 @@ export function HistorialPropioPage() {
           columns={columns}
           dataSource={data}
           loading={loading}
-          scroll={{ x: 800 }}
+          scroll={{ x: esMonotributista ? 600 : 800 }}
           locale={{
             emptyText: (
               <div style={{ padding: '40px 16px', color: palette.textSecondary, fontSize: 15 }}>
                 {hayFiltrosActivos
                   ? 'No se encontraron accesos que coincidan con los filtros aplicados'
-                  : 'Actualmente no existen Ingresos ni Egresos registrados para su Empresa'}
+                  : mensajeVacioInicial}
               </div>
             ),
           }}

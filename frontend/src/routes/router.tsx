@@ -107,21 +107,20 @@ export const router = createBrowserRouter([
                   { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
                 ],
               },
-              // Trabajadores e Historial: exclusivo para rol EMPRESA (US-25, US-26, US-31)
+              // US-31 (Empresa) y US-46 (Monotributista): Historial propio compartido
+              {
+                element: <RequireRole roles={['EMPRESA', 'MONOTRIBUTISTA']} />,
+                children: [
+                  { path: PATHS.historialPropio, element: <HistorialPropioPage /> },
+                ],
+              },
+              // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)
               {
                 element: <RequireRole roles={['EMPRESA']} />,
                 children: [
                   { path: PATHS.trabajadores, element: <TrabajadoresPage /> },
                   { path: PATHS.trabajadorNuevo, element: <TrabajadorNuevoPage /> },
                   { path: PATHS.trabajadorEditar, element: <TrabajadorEditarPage /> },
-                  { path: PATHS.historialPropio, element: <HistorialPropioPage /> },
-                ],
-              },
-              // Monotributista: Historial propio (US-46)
-              {
-                element: <RequireRole roles={['MONOTRIBUTISTA']} />,
-                children: [
-                  { path: PATHS.historialPropio, element: <HistorialPropioPage /> },
                 ],
               },
               // Operador: Empresas y Monotributistas de su barrio (US-33, US-34) y sus Guardias (US-32)
