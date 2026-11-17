@@ -12,6 +12,7 @@ import { toCurrentUser } from '../api/useCurrentUser';
 import { useQueryClient } from '@tanstack/react-query';
 import { MI_SOLICITUD_KEY } from '../../perfiles/api/perfiles';
 import type { CuentaCreadaState } from './ActivacionPage';
+import type { PasswordRestablecidaState } from './RestablecerPasswordPage';
 
 /**
  * US-04: inicio de sesión (wireframe "Bienvenido"). Una sola pantalla para escritorio y celular: el formulario
@@ -24,7 +25,9 @@ export function LoginPage() {
   // Se lee al entrar y se olvida: si recarga el login, el aviso ya no aparece
   const [avisoSesion] = useState(authToken.avisoLogin);
   useEffect(() => authToken.olvidarAvisoLogin(), []);
-  const cuentaCreada = (useLocation().state as CuentaCreadaState | null)?.cuentaCreada;
+  const estado = useLocation().state as (CuentaCreadaState & PasswordRestablecidaState) | null;
+  const cuentaCreada = estado?.cuentaCreada;
+  const passwordRestablecida = estado?.passwordRestablecida;
 
   const onFinish = (values: ApiSchema<'LoginRequest'>) =>
     login.mutate(values, {
@@ -60,6 +63,16 @@ export function LoginPage() {
       {/* Recién activó la cuenta del Administrador (US-01): el email ya queda cargado */}
       {cuentaCreada && login.isIdle && (
         <Alert type="success" showIcon title="Cuenta creada. Iniciá sesión." style={{ marginBottom: 24 }} />
+      )}
+
+      {/* Recién eligió una contraseña nueva con el enlace del correo (US-06 CA-3) */}
+      {passwordRestablecida && login.isIdle && (
+        <Alert
+          type="success"
+          showIcon
+          title="Contraseña actualizada. Iniciá sesión con tu nueva contraseña."
+          style={{ marginBottom: 24 }}
+        />
       )}
 
       {/* Credenciales incorrectas (401) o cuenta que no puede operar (403): el mensaje viene del backend */}
