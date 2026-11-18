@@ -9,7 +9,6 @@ import {
   Flex,
   Form,
   Input,
-  Modal,
   Row,
   Spin,
   Typography,
@@ -18,12 +17,9 @@ import {
 import {
   CameraOutlined,
   DeleteOutlined,
-  DownloadOutlined,
-  FilePdfOutlined,
-  SyncOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import dayjs, { type Dayjs } from 'dayjs';
+import { type Dayjs } from 'dayjs';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   descargarDocumento,
@@ -42,18 +38,22 @@ import { palette } from '../../../app/theme';
 import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { ModalCargarDocumento } from '../../trabajadores/components/ModalCargarDocumento';
+import { TarjetaDocumento } from '../components/TarjetaDocumento';
+import type { ApiSchema } from '../../../shared/api/types';
+
+type DocumentoResponse = ApiSchema<'DocumentoResponse'>;
 
 /**
  * US-24: Completar el perfil propio del Monotributista (RF-09, RN-07).
  *
  * Permite a un Monotributista con perfil aprobado:
  * - Visualizar sus datos personales y estado documental.
- * - Modificar su Nombre, Apellido y Teléfono. DNI y CUIL son inmutables (CA-6).
+ * - Modificar su Nombre y Apellido. DNI y CUIL son inmutables (CA-6).
  * - Cargar, reemplazar y eliminar su foto de perfil (JPG/PNG <= 2 MB).
  * - Cargar, renovar, descargar y eliminar su documentación obligatoria (ART y Seguro de Vida).
  */
 export function DatosPersonalesPage() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
 
@@ -77,10 +77,7 @@ export function DatosPersonalesPage() {
   const [seguroNuevo, setSeguroNuevo] = useState<{ archivo: File; fecha: Dayjs } | null>(null);
   const [seguroEliminada, setSeguroEliminada] = useState(false);
 
-  // Modales
-  const [modalBorrarFotoVisible, setModalBorrarFotoVisible] = useState(false);
-  const [modalBorrarDocTipo, setModalBorrarDocTipo] = useState<TipoDocumento | null>(null);
-
+  // Modal para carga/renovación de documento
   const [modalDocVisible, setModalDocVisible] = useState(false);
   const [modalDocTipo, setModalDocTipo] = useState<TipoDocumento | null>(null);
 
@@ -162,14 +159,23 @@ export function DatosPersonalesPage() {
     return false;
   };
 
-  const handleEjecutarBorrarFoto = () => {
-    setFotoEliminada(true);
-    setFotoNuevaFile(null);
-    setFotoNuevaPreview(null);
-    setModalBorrarFotoVisible(false);
+  // Confirmación de borrado de foto usando modal nativo de Ant Design (GUIA-DESARROLLO.md §5.4)
+  const handleAbrirBorrarFoto = () => {
+    modal.confirm({
+      title: '¿Seguro que quiere borrar la foto?',
+      okText: 'Borrar foto',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      centered: true,
+      onOk: () => {
+        setFotoEliminada(true);
+        setFotoNuevaFile(null);
+        setFotoNuevaPreview(null);
+      },
+    });
   };
 
-  // Manejo de documentos (ART y Seguro de Vida)
+  // Manejo de modal de documentos
   const handleAbrirModalDoc = (tipo: TipoDocumento) => {
     setModalDocTipo(tipo);
     setModalDocVisible(true);
@@ -186,30 +192,50 @@ export function DatosPersonalesPage() {
     }
   };
 
+  // Confirmación de borrado de documentos usando modal nativo de Ant Design (GUIA-DESARROLLO.md §5.4)
   const handleAbrirBorrarDoc = (tipo: TipoDocumento) => {
-    setModalBorrarDocTipo(tipo);
+    modal.confirm({
+      title: '¿Seguro que desea eliminar este documento?',
+      okText: 'Eliminar documento',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      centered: true,
+      onOk: () => {
+        if (tipo === 'ART') {
+          setArtEliminada(true);
+          setArtNuevo(null);
+        } else {
+          setSeguroEliminada(true);
+          setSeguroNuevo(null);
+        }
+      },
+    });
   };
 
-  const handleEjecutarBorrarDoc = () => {
-    if (!modalBorrarDocTipo) return;
-    if (modalBorrarDocTipo === 'ART') {
-      setArtEliminada(true);
-      setArtNuevo(null);
-    } else {
-      setSeguroEliminada(true);
-      setSeguroNuevo(null);
-    }
-    setModalBorrarDocTipo(null);
-  };
-
-  const handleDescargarDocumento = async (tipo: TipoDocumento, nombreOriginal?: string) => {
-    try {
-      setDescargandoDoc(tipo);
-      await descargarDocumento(tipo, nombreOriginal);
-    } catch (err) {
-      message.error(getErrorMessage(err));
-    } finally {
-      setDescargandoDoc(null);
+  // Descarga unificada de documentos (guardados en backend o borradores locales)
+  const handleDescargarDoc = async (
+    tipo: TipoDocumento,
+    docOriginal?: DocumentoResponse,
+    docNuevo?: { archivo: File } | null
+  ) => {
+    if (docNuevo) {
+      const url = window.URL.createObjectURL(docNuevo.archivo);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = docNuevo.archivo.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } else if (docOriginal) {
+      try {
+        setDescargandoDoc(tipo);
+        await descargarDocumento(tipo, docOriginal.archivoNombre);
+      } catch (err) {
+        message.error(getErrorMessage(err));
+      } finally {
+        setDescargandoDoc(null);
+      }
     }
   };
 
@@ -348,8 +374,8 @@ export function DatosPersonalesPage() {
             padding: '8px 16px',
             backgroundColor: palette.surface,
             borderRadius: 8,
-            border: `1px solid ${palette.borderSoft}`,
             boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+            border: `1px solid ${palette.borderSoft}`,
           }}
         >
           <Typography.Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
@@ -359,24 +385,25 @@ export function DatosPersonalesPage() {
         </Flex>
       </Flex>
 
+      {/* Alerta de errores de validación o servidor */}
       {(modificarPerfil.isError || errorArchivos) && (
         <Alert
           type="error"
           showIcon
           title={errorArchivos || getErrorMessage(modificarPerfil.error)}
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 20, borderRadius: 8 }}
         />
       )}
 
       <Form
         form={form}
         layout="vertical"
-        size="large"
         onFinish={onFinish}
         requiredMark={false}
+        style={{ width: '100%' }}
       >
         <Row gutter={[24, 24]}>
-          {/* Columna Izquierda: Información personal, fiscal y documentación legal */}
+          {/* Columna Izquierda: Datos Personales, Fiscales y Documentación Legal */}
           <Col xs={24} lg={15}>
             <Card
               bordered
@@ -384,11 +411,10 @@ export function DatosPersonalesPage() {
                 borderRadius: 8,
                 backgroundColor: palette.surface,
                 boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-                marginBottom: 24,
               }}
             >
               <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 16, color: palette.text }}>
-                Información personal y de contacto
+                Información personal
               </Typography.Title>
 
               <Row gutter={16}>
@@ -447,164 +473,28 @@ export function DatosPersonalesPage() {
               </Typography.Paragraph>
 
               {/* Póliza de ART */}
-              <Card size="small" style={{ marginBottom: 16, background: palette.tableHeader }}>
-                {(() => {
-                  const docOriginal = getDoc('ART');
-                  const tieneDoc = !artEliminada && (Boolean(artNuevo) || Boolean(docOriginal));
-                  const nombreArchivo = artNuevo ? artNuevo.archivo.name : docOriginal?.archivoNombre;
-                  const fechaVenc = artNuevo ? artNuevo.fecha : (docOriginal ? dayjs(docOriginal.fechaVencimiento) : null);
-                  const vencido = fechaVenc ? fechaVenc.isBefore(dayjs().startOf('day')) : false;
-
-                  return (
-                    <Flex vertical gap={8}>
-                      <Flex justify="space-between" align="center">
-                        <Typography.Text strong>Póliza de ART</Typography.Text>
-                        <EstadoTag estado={tieneDoc ? (vencido ? 'VENCIDO' : 'VIGENTE') : 'PENDIENTE_CARGA'} />
-                      </Flex>
-
-                      {tieneDoc ? (
-                        <>
-                          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                            Archivo: {nombreArchivo}
-                          </Typography.Text>
-                          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                            Vencimiento: {fechaVenc?.format('DD/MM/YYYY')}
-                          </Typography.Text>
-                          <Flex gap={8} style={{ width: '100%', marginTop: 6 }} wrap="wrap">
-                            <Button
-                              size="small"
-                              style={{ flex: 1, minWidth: 90 }}
-                              icon={<DownloadOutlined />}
-                              loading={descargandoDoc === 'ART'}
-                              onClick={() => {
-                                if (artNuevo) {
-                                  const url = window.URL.createObjectURL(artNuevo.archivo);
-                                  const link = document.createElement('a');
-                                  link.href = url;
-                                  link.download = artNuevo.archivo.name;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  link.remove();
-                                  window.URL.revokeObjectURL(url);
-                                } else if (docOriginal) {
-                                  handleDescargarDocumento('ART', docOriginal.archivoNombre);
-                                }
-                              }}
-                            >
-                              Descargar
-                            </Button>
-                            <Button
-                              size="small"
-                              style={{ flex: 1, minWidth: 90 }}
-                              icon={<SyncOutlined />}
-                              onClick={() => handleAbrirModalDoc('ART')}
-                            >
-                              Renovar
-                            </Button>
-                            <Button
-                              size="small"
-                              danger
-                              style={{ flex: 1, minWidth: 90 }}
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleAbrirBorrarDoc('ART')}
-                            >
-                              Borrar
-                            </Button>
-                          </Flex>
-                        </>
-                      ) : (
-                        <Button
-                          block
-                          icon={<FilePdfOutlined />}
-                          onClick={() => handleAbrirModalDoc('ART')}
-                        >
-                          Subir archivo PDF
-                        </Button>
-                      )}
-                    </Flex>
-                  );
-                })()}
-              </Card>
+              <TarjetaDocumento
+                titulo="Póliza de ART"
+                docOriginal={getDoc('ART')}
+                docNuevo={artNuevo}
+                eliminado={artEliminada}
+                descargando={descargandoDoc === 'ART'}
+                onCargar={() => handleAbrirModalDoc('ART')}
+                onBorrar={() => handleAbrirBorrarDoc('ART')}
+                onDescargar={() => handleDescargarDoc('ART', getDoc('ART'), artNuevo)}
+              />
 
               {/* Seguro de Vida */}
-              <Card size="small" style={{ marginBottom: 8, background: palette.tableHeader }}>
-                {(() => {
-                  const docOriginal = getDoc('SEGURO_VIDA');
-                  const tieneDoc = !seguroEliminada && (Boolean(seguroNuevo) || Boolean(docOriginal));
-                  const nombreArchivo = seguroNuevo ? seguroNuevo.archivo.name : docOriginal?.archivoNombre;
-                  const fechaVenc = seguroNuevo ? seguroNuevo.fecha : (docOriginal ? dayjs(docOriginal.fechaVencimiento) : null);
-                  const vencido = fechaVenc ? fechaVenc.isBefore(dayjs().startOf('day')) : false;
-
-                  return (
-                    <Flex vertical gap={8}>
-                      <Flex justify="space-between" align="center">
-                        <Typography.Text strong>Seguro de Accidentes Personales / Vida</Typography.Text>
-                        <EstadoTag estado={tieneDoc ? (vencido ? 'VENCIDO' : 'VIGENTE') : 'PENDIENTE_CARGA'} />
-                      </Flex>
-
-                      {tieneDoc ? (
-                        <>
-                          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                            Archivo: {nombreArchivo}
-                          </Typography.Text>
-                          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                            Vencimiento: {fechaVenc?.format('DD/MM/YYYY')}
-                          </Typography.Text>
-                          <Flex gap={8} style={{ width: '100%', marginTop: 6 }} wrap="wrap">
-                            <Button
-                              size="small"
-                              style={{ flex: 1, minWidth: 90 }}
-                              icon={<DownloadOutlined />}
-                              loading={descargandoDoc === 'SEGURO_VIDA'}
-                              onClick={() => {
-                                if (seguroNuevo) {
-                                  const url = window.URL.createObjectURL(seguroNuevo.archivo);
-                                  const link = document.createElement('a');
-                                  link.href = url;
-                                  link.download = seguroNuevo.archivo.name;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  link.remove();
-                                  window.URL.revokeObjectURL(url);
-                                } else if (docOriginal) {
-                                  handleDescargarDocumento('SEGURO_VIDA', docOriginal.archivoNombre);
-                                }
-                              }}
-                            >
-                              Descargar
-                            </Button>
-                            <Button
-                              size="small"
-                              style={{ flex: 1, minWidth: 90 }}
-                              icon={<SyncOutlined />}
-                              onClick={() => handleAbrirModalDoc('SEGURO_VIDA')}
-                            >
-                              Renovar
-                            </Button>
-                            <Button
-                              size="small"
-                              danger
-                              style={{ flex: 1, minWidth: 90 }}
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleAbrirBorrarDoc('SEGURO_VIDA')}
-                            >
-                              Borrar
-                            </Button>
-                          </Flex>
-                        </>
-                      ) : (
-                        <Button
-                          block
-                          icon={<FilePdfOutlined />}
-                          onClick={() => handleAbrirModalDoc('SEGURO_VIDA')}
-                        >
-                          Subir archivo PDF
-                        </Button>
-                      )}
-                    </Flex>
-                  );
-                })()}
-              </Card>
+              <TarjetaDocumento
+                titulo="Seguro de Accidentes Personales / Vida"
+                docOriginal={getDoc('SEGURO_VIDA')}
+                docNuevo={seguroNuevo}
+                eliminado={seguroEliminada}
+                descargando={descargandoDoc === 'SEGURO_VIDA'}
+                onCargar={() => handleAbrirModalDoc('SEGURO_VIDA')}
+                onBorrar={() => handleAbrirBorrarDoc('SEGURO_VIDA')}
+                onDescargar={() => handleDescargarDoc('SEGURO_VIDA', getDoc('SEGURO_VIDA'), seguroNuevo)}
+              />
             </Card>
           </Col>
 
@@ -670,7 +560,7 @@ export function DatosPersonalesPage() {
                     <Button
                       danger
                       icon={<DeleteOutlined />}
-                      onClick={() => setModalBorrarFotoVisible(true)}
+                      onClick={handleAbrirBorrarFoto}
                     >
                       Eliminar
                     </Button>
@@ -739,84 +629,6 @@ export function DatosPersonalesPage() {
         onCancel={() => setModalDocVisible(false)}
         onConfirm={handleConfirmarModalDoc}
       />
-
-      {/* Modal de confirmación para borrar foto */}
-      <Modal
-        open={modalBorrarFotoVisible}
-        centered
-        onCancel={() => setModalBorrarFotoVisible(false)}
-        destroyOnHidden
-        closable={false}
-        width={420}
-        footer={
-          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
-            <Button
-              block
-              style={{ flex: 1 }}
-              size="large"
-              onClick={() => setModalBorrarFotoVisible(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              danger
-              type="primary"
-              block
-              style={{ flex: 1 }}
-              size="large"
-              onClick={handleEjecutarBorrarFoto}
-            >
-              Borrar foto
-            </Button>
-          </Flex>
-        }
-      >
-        <Typography.Title
-          level={4}
-          style={{ textAlign: 'center', margin: '16px 0 8px 0', fontSize: 18 }}
-        >
-          ¿Seguro que quiere borrar la foto?
-        </Typography.Title>
-      </Modal>
-
-      {/* Modal de confirmación para borrar documento */}
-      <Modal
-        open={modalBorrarDocTipo !== null}
-        centered
-        onCancel={() => setModalBorrarDocTipo(null)}
-        destroyOnHidden
-        closable={false}
-        width={420}
-        footer={
-          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
-            <Button
-              block
-              style={{ flex: 1 }}
-              size="large"
-              onClick={() => setModalBorrarDocTipo(null)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              danger
-              type="primary"
-              block
-              style={{ flex: 1 }}
-              size="large"
-              onClick={handleEjecutarBorrarDoc}
-            >
-              Eliminar documento
-            </Button>
-          </Flex>
-        }
-      >
-        <Typography.Title
-          level={4}
-          style={{ textAlign: 'center', margin: '16px 0 8px 0', fontSize: 18 }}
-        >
-          ¿Seguro que desea eliminar este documento?
-        </Typography.Title>
-      </Modal>
     </div>
   );
 }
