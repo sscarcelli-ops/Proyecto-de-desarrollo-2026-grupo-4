@@ -40,6 +40,8 @@ import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import { ModalCargarDocumento } from '../../trabajadores/components/ModalCargarDocumento';
 import { TarjetaDocumento } from '../components/TarjetaDocumento';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { usePantalla } from '../../../shared/hooks/usePantalla';
 import type { ApiSchema } from '../../../shared/api/types';
 
 type DocumentoResponse = ApiSchema<'DocumentoResponse'>;
@@ -58,7 +60,8 @@ export function DatosPersonalesPage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
 
-  const { data: perfil, isLoading, isError, error } = useMiPerfilMonotributista();
+  const { data: perfil, dataUpdatedAt, isLoading, isError, error } = useMiPerfilMonotributista();
+  const { esCelular } = usePantalla();
   const modificarPerfil = useModificarPerfilMonotributista();
 
   // Foto guardada como blob autenticado con JWT
@@ -120,7 +123,7 @@ export function DatosPersonalesPage() {
       active = false;
       if (urlCreada) window.URL.revokeObjectURL(urlCreada);
     };
-  }, [tieneFoto]);
+  }, [tieneFoto, dataUpdatedAt]);
 
   if (isLoading) {
     return (
@@ -145,7 +148,7 @@ export function DatosPersonalesPage() {
     );
   }
 
-  const fotoActualUrl = fotoNuevaPreview ?? (fotoEliminada ? null : (fotoBlob?.url ?? null));
+  const fotoActualUrl = fotoNuevaPreview ?? (fotoEliminada || !tieneFoto ? null : (fotoBlob?.url ?? null));
 
   // Manejo de cambio de foto (JPG/PNG <= 2 MB)
   const handleFotoChange = (file: File) => {
@@ -344,44 +347,30 @@ export function DatosPersonalesPage() {
         flexDirection: 'column',
       }}
     >
-      {/* Título de la sección y estado general */}
-      <Flex justify="space-between" align="center" wrap="wrap" gap={12} style={{ marginBottom: 20 }}>
-        <div>
-          <Typography.Title
-            level={1}
+      {/* Encabezado estándar T-07 con badge de estado documental */}
+      <EncabezadoPagina
+        titulo="Datos personales"
+        descripcion="Completá y mantené actualizada tu información personal y documentación legal para ingresar a los barrios."
+        accion={
+          <Flex
+            align="center"
+            justify={esCelular ? 'space-between' : 'flex-end'}
+            gap={10}
             style={{
-              fontSize: 'clamp(26px, 2.2vw, 32px)',
-              fontWeight: 700,
-              color: palette.text,
-              marginTop: 0,
-              marginBottom: 4,
+              padding: '8px 16px',
+              backgroundColor: palette.surface,
+              borderRadius: 8,
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+              border: `1px solid ${palette.borderSoft}`,
             }}
           >
-            Datos personales
-          </Typography.Title>
-          <Typography.Paragraph type="secondary" style={{ margin: 0, fontSize: 14 }}>
-            Completá y mantené actualizada tu información personal y documentación legal para ingresar a los barrios.
-          </Typography.Paragraph>
-        </div>
-
-        {/* Estado documental badge en header */}
-        <Flex
-          align="center"
-          gap={10}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: palette.surface,
-            borderRadius: 8,
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-            border: `1px solid ${palette.borderSoft}`,
-          }}
-        >
-          <Typography.Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
-            Estado documental:
-          </Typography.Text>
-          <EstadoTag estado={perfil.estadoDocumental as Estado} />
-        </Flex>
-      </Flex>
+            <Typography.Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
+              Estado documental:
+            </Typography.Text>
+            <EstadoTag estado={perfil.estadoDocumental as Estado} />
+          </Flex>
+        }
+      />
 
       {/* Alerta de errores de validación o servidor */}
       {(modificarPerfil.isError || errorArchivos) && (

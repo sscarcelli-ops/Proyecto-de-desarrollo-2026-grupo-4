@@ -169,16 +169,13 @@ export async function descargarDocumento(trabajadorId: number, tipo: TipoDocumen
 
 /**
  * Listado paginado de trabajadores con soporte para búsqueda y filtros (US-26, US-29, RF-30).
- * Soporta un objeto `TrabajadoresFiltros` o parámetros posicionales `(page, size)`.
  * TanStack Query re-ejecuta el fetch automáticamente cuando cambia cualquier filtro.
  *
  * placeholderData: mientras carga la página o filtros nuevos, sigue mostrando los datos
  * anteriores para evitar parpadeos vacíos en la tabla.
  */
-export function useTrabajadores(filtros: TrabajadoresFiltros | number, maybeSize: number = 10) {
-  const params: TrabajadoresFiltros = typeof filtros === 'number'
-    ? { page: filtros, size: maybeSize }
-    : { size: 10, ...filtros };
+export function useTrabajadores(filtros: TrabajadoresFiltros) {
+  const params: TrabajadoresFiltros = { size: 10, ...filtros };
 
   return useQuery({
     queryKey: [...TRABAJADORES_KEY, params],

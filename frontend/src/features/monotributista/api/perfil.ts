@@ -3,12 +3,13 @@ import { httpClient } from '../../../shared/lib/httpClient';
 import type { ApiSchema } from '../../../shared/api/types';
 
 // ========================================================================================
-// Tipos — DTOs del perfil propio de Monotributista (US-24)
+// Tipos — generados desde los DTOs del backend (npm run api:types)
 // ========================================================================================
 
 export type MonotributistaPerfilResponse = ApiSchema<'MonotributistaPerfilResponse'>;
 export type MonotributistaPerfilModificarRequest = ApiSchema<'MonotributistaPerfilModificarRequest'>;
 export type DocumentoResponse = ApiSchema<'DocumentoResponse'>;
+export type TrabajadorResponse = ApiSchema<'TrabajadorResponse'>;
 export type TipoDocumento = DocumentoResponse['tipo'];
 
 export interface DocumentoUploadPayload {
@@ -24,17 +25,17 @@ export interface DocumentoUploadPayload {
 export const MONOTRIBUTISTA_PERFIL_KEY = ['monotributista', 'perfil'] as const;
 
 // ========================================================================================
-// Funciones HTTP puras
+// Funciones de fetch (llamadas HTTP puras)
 // ========================================================================================
 
-/** GET /api/monotributista/perfil — obtener el perfil propio del Monotributista autenticado (US-24) */
-export async function obtenerMiPerfil(): Promise<MonotributistaPerfilResponse> {
+/** GET /api/monotributista/perfil — obtener datos personales del Monotributista (US-24) */
+async function obtenerMiPerfil(): Promise<MonotributistaPerfilResponse> {
   const { data } = await httpClient.get<MonotributistaPerfilResponse>('/monotributista/perfil');
   return data;
 }
 
 /** PUT /api/monotributista/perfil — modificar nombre y apellido (US-24, CA-6) */
-export async function modificarMiPerfil(
+async function modificarMiPerfil(
   body: MonotributistaPerfilModificarRequest
 ): Promise<MonotributistaPerfilResponse> {
   const { data } = await httpClient.put<MonotributistaPerfilResponse>('/monotributista/perfil', body);
@@ -42,11 +43,11 @@ export async function modificarMiPerfil(
 }
 
 /** POST /api/monotributista/perfil/foto — cargar o actualizar foto de perfil (US-24) */
-export async function subirFoto(foto: File): Promise<MonotributistaPerfilResponse> {
+export async function subirFoto(foto: File): Promise<TrabajadorResponse> {
   const formData = new FormData();
   formData.append('foto', foto);
 
-  const { data } = await httpClient.post<MonotributistaPerfilResponse>(
+  const { data } = await httpClient.post<TrabajadorResponse>(
     '/monotributista/perfil/foto',
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
@@ -55,8 +56,8 @@ export async function subirFoto(foto: File): Promise<MonotributistaPerfilRespons
 }
 
 /** DELETE /api/monotributista/perfil/foto — eliminar foto de perfil (US-24) */
-export async function eliminarFoto(): Promise<MonotributistaPerfilResponse> {
-  const { data } = await httpClient.delete<MonotributistaPerfilResponse>('/monotributista/perfil/foto');
+export async function eliminarFoto(): Promise<TrabajadorResponse> {
+  const { data } = await httpClient.delete<TrabajadorResponse>('/monotributista/perfil/foto');
   return data;
 }
 
@@ -69,13 +70,13 @@ export async function obtenerFotoBlob(): Promise<string> {
 }
 
 /** POST /api/monotributista/perfil/documentos — cargar o renovar documento (ART / Seguro de Vida) (US-24) */
-export async function subirDocumento(payload: DocumentoUploadPayload): Promise<MonotributistaPerfilResponse> {
+export async function subirDocumento(payload: DocumentoUploadPayload): Promise<TrabajadorResponse> {
   const formData = new FormData();
   formData.append('tipo', payload.tipo);
   formData.append('archivo', payload.archivo);
   formData.append('fechaVencimiento', payload.fechaVencimiento);
 
-  const { data } = await httpClient.post<MonotributistaPerfilResponse>(
+  const { data } = await httpClient.post<TrabajadorResponse>(
     '/monotributista/perfil/documentos',
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
@@ -84,8 +85,8 @@ export async function subirDocumento(payload: DocumentoUploadPayload): Promise<M
 }
 
 /** DELETE /api/monotributista/perfil/documentos/:tipo — eliminar documento (US-24) */
-export async function eliminarDocumento(tipo: TipoDocumento): Promise<MonotributistaPerfilResponse> {
-  const { data } = await httpClient.delete<MonotributistaPerfilResponse>(
+export async function eliminarDocumento(tipo: TipoDocumento): Promise<TrabajadorResponse> {
+  const { data } = await httpClient.delete<TrabajadorResponse>(
     `/monotributista/perfil/documentos/${tipo}`
   );
   return data;
@@ -129,62 +130,6 @@ export function useModificarPerfilMonotributista() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: MonotributistaPerfilModificarRequest) => modificarMiPerfil(body),
-    onSuccess: (data) => {
-      queryClient.setQueryData(MONOTRIBUTISTA_PERFIL_KEY, data);
-      queryClient.invalidateQueries({ queryKey: MONOTRIBUTISTA_PERFIL_KEY });
-    },
-  });
-}
-
-/**
- * Hook para subir o actualizar la foto de perfil.
- */
-export function useCargarFotoMonotributista() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (foto: File) => subirFoto(foto),
-    onSuccess: (data) => {
-      queryClient.setQueryData(MONOTRIBUTISTA_PERFIL_KEY, data);
-      queryClient.invalidateQueries({ queryKey: MONOTRIBUTISTA_PERFIL_KEY });
-    },
-  });
-}
-
-/**
- * Hook para eliminar la foto de perfil.
- */
-export function useEliminarFotoMonotributista() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => eliminarFoto(),
-    onSuccess: (data) => {
-      queryClient.setQueryData(MONOTRIBUTISTA_PERFIL_KEY, data);
-      queryClient.invalidateQueries({ queryKey: MONOTRIBUTISTA_PERFIL_KEY });
-    },
-  });
-}
-
-/**
- * Hook para cargar o renovar un documento (ART o Seguro de Vida).
- */
-export function useCargarDocumentoMonotributista() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: DocumentoUploadPayload) => subirDocumento(payload),
-    onSuccess: (data) => {
-      queryClient.setQueryData(MONOTRIBUTISTA_PERFIL_KEY, data);
-      queryClient.invalidateQueries({ queryKey: MONOTRIBUTISTA_PERFIL_KEY });
-    },
-  });
-}
-
-/**
- * Hook para eliminar un documento.
- */
-export function useEliminarDocumentoMonotributista() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (tipo: TipoDocumento) => eliminarDocumento(tipo),
     onSuccess: (data) => {
       queryClient.setQueryData(MONOTRIBUTISTA_PERFIL_KEY, data);
       queryClient.invalidateQueries({ queryKey: MONOTRIBUTISTA_PERFIL_KEY });
