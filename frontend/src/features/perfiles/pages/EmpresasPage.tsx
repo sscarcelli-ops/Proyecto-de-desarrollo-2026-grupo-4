@@ -1,17 +1,5 @@
 import { useState } from 'react';
-import {
-  App,
-  Button,
-  Flex,
-  Input,
-  Modal,
-  Pagination,
-  Popconfirm,
-  Select,
-  Space,
-  Table,
-  Typography,
-} from 'antd';
+import { App, Button, Flex, Input, Modal, Pagination, Popconfirm, Select, Space, Typography } from 'antd';
 import {
   EyeOutlined,
   FilePdfOutlined,
@@ -28,13 +16,24 @@ import {
   type PerfilResponse,
 } from '../api/perfiles';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+
+const ESTADOS: PerfilResponse['estado'][] = ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'SUSPENDIDO'];
 
 export function EmpresasPage() {
   const { message } = App.useApp();
-  const [pagina, setPagina] = useState(1);
-  const [tamano, setTamano] = useState(10);
-  const [busqueda, setBusqueda] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState<PerfilResponse['estado'] | undefined>(undefined);
+  // Página, búsqueda y estado van en la dirección: al recargar, el listado sigue donde estaba
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  // Mismo límite que el buscador y el backend (100): un texto más largo pegado en la dirección se corta
+  const busqueda = url.texto('q').slice(0, 100);
+  const estadoUrl = url.texto('estado');
+  const filtroEstado = ESTADOS.includes(estadoUrl as PerfilResponse['estado'])
+    ? (estadoUrl as PerfilResponse['estado'])
+    : undefined;
+  const tamano = 10;
 
   // Perfil seleccionado para el modal de detalle
   const [perfilDetalle, setPerfilDetalle] = useState<PerfilResponse | null>(null);
@@ -52,6 +51,7 @@ export function EmpresasPage() {
     estado: filtroEstado,
   });
 
+  usePaginaValida(url, pagina, data?.totalPages);
   const aprobarMutation = useAprobarPerfil();
   const rechazarMutation = useRechazarPerfil();
 
@@ -149,51 +149,24 @@ export function EmpresasPage() {
     : 'No hay Empresas ni Monotributistas registradas aún.';
 
   return (
-    <div
-      style={{
-        maxWidth: 1080,
-        margin: '0 auto',
-        width: '100%',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Título de la pantalla */}
-      <Typography.Title
-        level={1}
-        style={{
-          fontSize: 'clamp(26px, 2.2vw, 32px)',
-          fontWeight: 700,
-          color: palette.text,
-          marginTop: 0,
-          marginBottom: 20,
-        }}
-      >
-        Empresas y Monotributistas
-      </Typography.Title>
-
-      {/* Barra de búsqueda y filtro por estado */}
-      <Flex gap={12} align="center" style={{ marginBottom: 20 }}>
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <EncabezadoPagina
+        titulo="Empresas y Monotributistas"
+        filtros={
+          <>
         <Input
           placeholder="Buscar Empresa o Monotributista..."
           maxLength={100}
           prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
           value={busqueda}
-          onChange={(e) => {
-            setBusqueda(e.target.value);
-            setPagina(1);
-          }}
+          onChange={(e) => url.cambiar({ q: e.target.value, pagina: null })}
           allowClear
-          style={{ maxWidth: 360, height: 38, borderRadius: 6 }}
+          style={{ flex: '1 1 220px', maxWidth: 360, height: 38, borderRadius: 6 }}
         />
         <Select<string>
           placeholder="Filtrar por estado"
           value={filtroEstado ?? 'TODOS'}
-          onChange={(val) => {
-            setFiltroEstado(val === 'TODOS' ? undefined : (val as PerfilResponse['estado']));
-            setPagina(1);
-          }}
+          onChange={(val) => url.cambiar({ estado: val === 'TODOS' ? null : val, pagina: null })}
           style={{ width: 200, height: 38 }}
           options={[
             { label: 'Todos los estados', value: 'TODOS' },
@@ -203,7 +176,9 @@ export function EmpresasPage() {
             { label: 'Suspendido', value: 'SUSPENDIDO' },
           ]}
         />
-      </Flex>
+          </>
+        }
+      />
 
       {/* Tabla con bordes redondeados y empty state exacto del Figma */}
       <div
@@ -213,7 +188,9 @@ export function EmpresasPage() {
           borderRadius: 8,
         }}
       >
-        <Table<PerfilResponse>
+        <TablaResponsiva<PerfilResponse>
+          columnaTitulo="nombre"
+          columnaAcciones="detalle"
           bordered
           className="tabla-redondeada"
           rowKey="id"
@@ -238,10 +215,7 @@ export function EmpresasPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={(page, size) => {
-            setPagina(page);
-            setTamano(size);
-          }}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
 

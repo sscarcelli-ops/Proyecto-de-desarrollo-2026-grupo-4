@@ -1,12 +1,13 @@
-import { Alert, Button, Card, Flex, Form, Skeleton, Typography, App as AntdApp } from 'antd';
+import { Alert, Button, Flex, Form, Skeleton, Typography, App as AntdApp } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router';
 import { marcarErroresDeOperador, useCrearOperador, type OperadorRequest } from '../api/operadores';
 import { OperadorForm } from '../components/OperadorForm';
 import { nombreConUbicacion, useAsignarOperador, useBarrio } from '../../barrios/api/barrios';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
+import { PaginaFormulario } from '../../../shared/components/PaginaFormulario';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // US-13: alta de Operador (Administrador). Queda "Disponible" hasta que se lo asigne a un barrio.
 // US-45: con ?barrio=<id> (desde "Crear un nuevo Operador" del listado de barrios) el Operador se crea y se asigna
@@ -59,12 +60,10 @@ export function OperadorNuevoPage() {
           : null;
 
   return (
-    <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Nuevo Operador</Title>
-
+    <PaginaFormulario titulo="Nuevo Operador">
       {/* Mismo formato que "No se pudo cargar el barrio" en Editar barrio: título, motivo y salida */}
       {problemaConElBarrio && (
-        <Flex vertical gap={12} align="flex-start" style={{ maxWidth: 560 }}>
+        <Flex vertical gap={16} align="center">
           <Alert
             type="error"
             showIcon
@@ -76,25 +75,23 @@ export function OperadorNuevoPage() {
         </Flex>
       )}
 
-      {tieneBarrio && barrioId !== null && cargandoBarrio && <Skeleton active style={{ maxWidth: 560 }} />}
+      {tieneBarrio && barrioId !== null && cargandoBarrio && <Skeleton active />}
 
       {!problemaConElBarrio && !(tieneBarrio && cargandoBarrio) && (
-        <Card style={{ maxWidth: 560 }}>
-          <Flex vertical gap={16}>
-            {barrio && (
-              <Text type="secondary">
-                Se asignará a <strong>{nombreConUbicacion(barrio)}</strong>, que quedará Activo.
-              </Text>
-            )}
-            <OperadorForm
-              form={form}
-              loading={crear.isPending || crearYAsignar.isPending}
-              onFinish={(values) => void onFinish(values)}
-              onCancel={volver}
-            />
-          </Flex>
-        </Card>
+        <Flex vertical gap={16}>
+          {barrio && (
+            <Text type="secondary">
+              Se asignará a <strong>{nombreConUbicacion(barrio)}</strong>, que quedará Activo.
+            </Text>
+          )}
+          <OperadorForm
+            form={form}
+            loading={crear.isPending || crearYAsignar.isPending}
+            onFinish={(values) => void onFinish(values)}
+            onCancel={volver}
+          />
+        </Flex>
       )}
-    </Flex>
+    </PaginaFormulario>
   );
 }
