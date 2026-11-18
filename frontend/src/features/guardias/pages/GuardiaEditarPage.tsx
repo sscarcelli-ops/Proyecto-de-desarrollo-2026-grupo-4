@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Flex, Form, Skeleton, Typography, App as AntdApp } from 'antd';
+import { Alert, Button, Flex, Form, Skeleton, App as AntdApp } from 'antd';
 import { useNavigate, useParams } from 'react-router';
 import { marcarErroresDeGuardia, useGuardia, useModificarGuardia } from '../api/guardias';
 import { GuardiaForm } from '../components/GuardiaForm';
@@ -6,8 +6,7 @@ import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 import { NotFoundPage } from '../../../routes/NotFoundPage';
 import { idDeRuta } from '../../../shared/lib/idDeRuta';
-
-const { Title } = Typography;
+import { PaginaFormulario } from '../../../shared/components/PaginaFormulario';
 
 // US-32: modificar un Guardia del barrio (Operador). La contraseña es opcional: en blanco no se cambia.
 export function GuardiaEditarPage() {
@@ -28,48 +27,44 @@ export function GuardiaEditarPage() {
   }
 
   return (
-    <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Editar Guardia</Title>
-
+    <PaginaFormulario titulo="Editar Guardia">
       {error && (
-        <Flex vertical gap={12} align="flex-start">
+        <Flex vertical gap={16} align="center">
           {/* Un Guardia de otro barrio responde 404, igual que uno inexistente (US-42) */}
-          <Alert type="error" showIcon title="No se pudo cargar el Guardia" description={getErrorMessage(error)} />
+          <Alert type="error" showIcon title="No se pudo cargar el Guardia" description={getErrorMessage(error)} style={{ width: '100%' }} />
           <Button onClick={volver}>Volver al listado</Button>
         </Flex>
       )}
 
-      {isLoading && <Skeleton active style={{ maxWidth: 560 }} />}
+      {isLoading && <Skeleton active />}
 
       {guardia && (
-        <Card style={{ maxWidth: 560 }}>
-          <GuardiaForm
-            form={form}
-            edicion
-            initialValues={{ nombre: guardia.nombre, apellido: guardia.apellido, email: guardia.email }}
-            loading={modificar.isPending}
-            textoBoton="Confirmar"
-            onCancel={volver}
-            onFinish={({ nombre, apellido, email, password }) => {
-              if (modificar.isPending) return;
-              modificar.mutate(
-                { nombre, apellido, email, password: password || undefined },
-                {
-                  onSuccess: () => {
-                    message.success('Guardia actualizado.');
-                    volver();
-                  },
-                  onError: (err) => {
-                    if (!marcarErroresDeGuardia(form, err)) {
-                      message.error(getErrorMessage(err));
-                    }
-                  },
+        <GuardiaForm
+          form={form}
+          edicion
+          initialValues={{ nombre: guardia.nombre, apellido: guardia.apellido, email: guardia.email }}
+          loading={modificar.isPending}
+          textoBoton="Confirmar"
+          onCancel={volver}
+          onFinish={({ nombre, apellido, email, password }) => {
+            if (modificar.isPending) return;
+            modificar.mutate(
+              { nombre, apellido, email, password: password || undefined },
+              {
+                onSuccess: () => {
+                  message.success('Guardia actualizado.');
+                  volver();
                 },
-              );
-            }}
-          />
-        </Card>
+                onError: (err) => {
+                  if (!marcarErroresDeGuardia(form, err)) {
+                    message.error(getErrorMessage(err));
+                  }
+                },
+              },
+            );
+          }}
+        />
       )}
-    </Flex>
+    </PaginaFormulario>
   );
 }

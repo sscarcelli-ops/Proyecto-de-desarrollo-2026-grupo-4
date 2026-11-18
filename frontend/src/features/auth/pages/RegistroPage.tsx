@@ -65,11 +65,12 @@ export function RegistroPage() {
           otros trabajadores a su nombre
         </Typography.Paragraph>
 
-        <Flex gap={16} justify="center" style={{ width: '100%', marginBottom: 24 }}>
+        {/* T-07: lado a lado si entran; en el celular, uno debajo del otro */}
+        <Flex gap={16} justify="center" wrap style={{ width: '100%', marginBottom: 24 }}>
           <Button
             type="primary"
             size="large"
-            style={{ flex: 1, maxWidth: 200, height: 44 }}
+            style={{ flex: '1 1 180px', maxWidth: 240, height: 44 }}
             onClick={() => {
               sessionStorage.setItem('registro_tipo', 'EMPRESA');
               setTipoSeleccionado('EMPRESA');
@@ -80,7 +81,7 @@ export function RegistroPage() {
           <Button
             type="primary"
             size="large"
-            style={{ flex: 1, maxWidth: 200, height: 44 }}
+            style={{ flex: '1 1 180px', maxWidth: 240, height: 44 }}
             onClick={() => {
               sessionStorage.setItem('registro_tipo', 'MONOTRIBUTISTA');
               setTipoSeleccionado('MONOTRIBUTISTA');

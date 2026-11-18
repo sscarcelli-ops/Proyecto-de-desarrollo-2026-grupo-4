@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { App, Button, Divider, Flex, Pagination, Table, Typography } from 'antd';
+import { App, Button, Divider, Flex, Pagination, Typography } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { EstadoTag } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { useMiBarrio } from '../../barrios/api/barrios';
 import { useCambiarHabilitacion, usePerfilesDelBarrio, type PerfilBarrio } from '../api/habilitaciones';
 import { palette } from '../../../app/theme';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
 
 const TIPO_LABEL: Record<PerfilBarrio['tipo'], string> = {
   EMPRESA: 'Empresa',
@@ -19,17 +22,17 @@ const TIPO_LABEL: Record<PerfilBarrio['tipo'], string> = {
  */
 export function EmpresasBarrioPage() {
   const { message } = App.useApp();
-  const [pagina, setPagina] = useState(1);
+  // La página va en la dirección (?pagina=2): al recargar, sigue en la misma
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
   const tamano = 10;
   const { data: barrio } = useMiBarrio();
   const { data, isLoading, error } = usePerfilesDelBarrio(pagina, tamano);
 
   // Si la página actual quedó vacía porque se fueron perfiles (por ejemplo, uno suspendido por el Administrador),
-  // vuelve a la última página con datos en lugar de mostrar el mensaje de "no existen"
-  const ultimaPagina = Math.max(1, data?.totalPages ?? 1);
-  if (data && pagina > ultimaPagina) {
-    setPagina(ultimaPagina);
-  }
+  // (o porque se escribió a mano ?pagina=99), vuelve a la última página con datos en lugar de mostrar el mensaje
+  // de "no existen"
+  usePaginaValida(url, pagina, data?.totalPages);
   const cambiarHabilitacion = useCambiarHabilitacion();
   // Fila que se está actualizando, para mostrar la carga solo en su botón
   const [enCurso, setEnCurso] = useState<number | null>(null);
@@ -78,24 +81,21 @@ export function EmpresasBarrioPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
       <Typography.Title level={4} style={{ margin: 0 }}>
         {barrio?.nombre ?? ' '}
       </Typography.Title>
       <Divider style={{ marginTop: 12, marginBottom: 20 }} />
 
-      <Typography.Title
-        level={1}
-        style={{ fontSize: 'clamp(26px, 2.2vw, 32px)', fontWeight: 700, color: palette.text, marginTop: 0, marginBottom: 4 }}
-      >
-        Empresas y Monotributistas
-      </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ marginBottom: 20 }}>
-        Empresas y monotributistas aprobados por el Administrador y su estado en tu barrio
-      </Typography.Paragraph>
+      <EncabezadoPagina
+        titulo="Empresas y Monotributistas"
+        descripcion="Empresas y monotributistas aprobados por el Administrador y su estado en tu barrio"
+      />
 
       <div style={{ backgroundColor: palette.surface, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)', borderRadius: 8 }}>
-        <Table<PerfilBarrio>
+        <TablaResponsiva<PerfilBarrio>
+          columnaTitulo="nombre"
+          columnaAcciones="acciones"
           bordered
           className="tabla-redondeada"
           rowKey="id"
@@ -121,7 +121,7 @@ export function EmpresasBarrioPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={setPagina}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
     </div>

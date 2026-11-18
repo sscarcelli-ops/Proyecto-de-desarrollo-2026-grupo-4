@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { App, Button, Dropdown, Flex, Modal, Pagination, Table, Tag, Typography } from 'antd';
+import { App, Button, Dropdown, Flex, Modal, Pagination, Tag, Typography } from 'antd';
 import {
   EllipsisOutlined,
   EditOutlined,
@@ -20,6 +20,9 @@ import { PATHS } from '../../../routes/paths';
 import { palette, estadoTonos } from '../../../app/theme';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import type { ColumnsType } from 'antd/es/table';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
 
 /**
  * US-26: listado paginado de trabajadores.
@@ -32,10 +35,13 @@ export function TrabajadoresPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
 
-  // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente
-  const [pagina, setPagina] = useState(1);
-  const [tamano, setTamano] = useState(10);
+  // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente.
+  // La página va en la dirección (?pagina=2): al recargar o al volver de Editar, sigue en la misma
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  const tamano = 10;
   const { data, isLoading } = useTrabajadores(pagina, tamano);
+  usePaginaValida(url, pagina, data?.totalPages);
   const darDeBaja = useDarDeBajaTrabajador();
   const reincorporar = useReincorporarTrabajador();
 
@@ -169,45 +175,20 @@ export function TrabajadoresPage() {
   ];
 
   return (
-    <div
-      style={{
-        maxWidth: 1080,
-        margin: '0 auto',
-        width: '100%',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Título adaptable */}
-      <Typography.Title
-        level={1}
-        style={{
-          fontSize: 'clamp(26px, 2.2vw, 32px)',
-          fontWeight: 700,
-          color: palette.text,
-          marginTop: 0,
-          marginBottom: 16,
-        }}
-      >
-        Trabajadores
-      </Typography.Title>
-
-      {/* Acción principal: botón de registrar trabajador */}
-      <Flex justify="flex-start" align="center" style={{ marginBottom: 24 }}>
-        <Button
-          type="primary"
-          size="large"
-          icon={<PlusCircleOutlined />}
-          onClick={() => navigate(PATHS.trabajadorNuevo)}
-          style={{
-            borderRadius: 6,
-            fontWeight: 600,
-          }}
-        >
-          Registrar trabajador
-        </Button>
-      </Flex>
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <EncabezadoPagina
+        titulo="Trabajadores"
+        accion={
+          <Button
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={() => navigate(PATHS.trabajadorNuevo)}
+            style={{ borderRadius: 6, fontWeight: 600 }}
+          >
+            Registrar trabajador
+          </Button>
+        }
+      />
 
       {/* Tabla con bordes redondeados y paginación desacoplada */}
       <div
@@ -217,7 +198,9 @@ export function TrabajadoresPage() {
           borderRadius: 8,
         }}
       >
-        <Table<TrabajadorResponse>
+        <TablaResponsiva<TrabajadorResponse>
+          columnaTitulo="nombre"
+          columnaAcciones="acciones"
           bordered
           className="tabla-redondeada"
           rowKey="id"
@@ -238,10 +221,7 @@ export function TrabajadoresPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={(page, size) => {
-            setPagina(page);
-            setTamano(size);
-          }}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
 

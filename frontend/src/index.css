@@ -50,3 +50,23 @@ body {
   text-align: left !important;
   padding-left: 14px !important;
 }
+
+/* T-07: etiquetas de las tarjetas de TablaResponsiva. Pisa el estilo propio que algunas pantallas le dan al
+   título de la columna (pensado para el encabezado de la tabla) */
+.tarjeta-etiqueta * {
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* T-07: en el celular la acción principal del encabezado (EncabezadoPagina) ocupa todo el ancho */
+.encabezado-accion-celular > .ant-btn {
+  width: 100%;
+}
+
+/* T-07: en las tarjetas de TablaResponsiva (celular) los botones miden al menos 40 px de alto y de ancho:
+   los de la tabla son chicos (size="small", 24 px), pensados para el mouse, y con el dedo cuesta acertarles */
+.tarjeta-responsiva .ant-btn {
+  /* !important: los botones redondos (shape="circle") traen su tamaño con un selector más específico */
+  min-height: 40px !important;
+  min-width: 40px !important;
+}
