@@ -72,7 +72,12 @@ public class TrabajadorController {
     // ========================================================================================
 
     /**
-     * Lista paginada de trabajadores del perfil del usuario autenticado.
+     * Lista paginada de trabajadores del perfil del usuario autenticado (US-26, US-29, RF-30).
+     * Permite filtrar por:
+     * - q: texto de búsqueda (nombre, apellido, DNI)
+     * - estadoDocumental: VIGENTE, VENCIDO, PENDIENTE_CARGA
+     * - incluirBajas: boolean (por defecto false)
+     *
      * Spring traduce automáticamente los query params (?page, ?size, ?sort) al objeto Pageable.
      *
      * @PageableDefault define los valores si el frontend no envía ninguno:
@@ -81,9 +86,17 @@ public class TrabajadorController {
      */
     @GetMapping
     public PageResponse<TrabajadorResponse> listar(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String estadoDocumental,
+            @RequestParam(required = false) Boolean incluirBajas,
             @PageableDefault(size = 10, sort = {"nombre", "apellido"}) Pageable pageable) {
 
-        return trabajadorService.listar(OrdenPermitido.validar(pageable, ORDEN_PERMITIDO));
+        return trabajadorService.listar(
+            q,
+            estadoDocumental,
+            incluirBajas,
+            OrdenPermitido.validar(pageable, ORDEN_PERMITIDO)
+        );
     }
 
     /**

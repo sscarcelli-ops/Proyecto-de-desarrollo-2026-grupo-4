@@ -12,6 +12,7 @@ import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -97,13 +99,85 @@ public class TrabajadorService {
         return trabajador;
     }
 
+    /**
+     * Obtiene el trabajador único asociado a un perfil (US-24, Monotributista).
+     */
+    @Transactional(readOnly = true)
+    public TrabajadorResponse obtenerPorPerfilId(Long perfilId) {
+        Trabajador trabajador = trabajadorRepository.findFirstByPerfilId(perfilId)
+            .orElseThrow(NotFoundException::new);
+        return TrabajadorResponse.from(trabajador, calcularEstadoDocumental(trabajador));
+    }
+
+    /**
+     * Obtiene la entidad Trabajador asociada al perfil de un Monotributista.
+     */
+    @Transactional(readOnly = true)
+    public Trabajador obtenerEntidadPorPerfilId(Long perfilId) {
+        return trabajadorRepository.findFirstByPerfilId(perfilId)
+            .orElseThrow(NotFoundException::new);
+    }
+
+    /**
+     * Sincroniza el nombre y apellido del trabajador automático cuando el Monotributista
+     * actualiza su perfil personal (US-24, CA-6).
+     */
+    @Transactional
+    public void sincronizarDatosMonotributista(Long perfilId, String nombre, String apellido) {
+        Trabajador trabajador = trabajadorRepository.findFirstByPerfilId(perfilId)
+            .orElseThrow(NotFoundException::new);
+        validarNoDadoDeBaja(trabajador);
+
+        trabajador.setNombre(nombre.trim());
+        trabajador.setApellido(apellido.trim());
+        trabajadorRepository.save(trabajador);
+        log.info("Trabajador {} sincronizado con nuevos datos del Monotributista {}", trabajador.getId(), perfilId);
+    }
+
     // ========================================================================================
     // US-26: Listar y modificar trabajadores
     // ========================================================================================
 
     /**
-     * Listado paginado de los trabajadores del perfil del usuario autenticado (RNF-08).
-     * Orden por defecto: alfabético por apellido (configurado en el Controller).
+     * US-26, US-29: Listado paginado de los trabajadores del perfil del usuario autenticado con búsqueda y filtros (RF-30).
+     *
+     * Filtros:
+     * - q: búsqueda insensible a mayúsculas por nombre, apellido o DNI (CA-3).
+     * - estadoDocumental: VIGENTE, VENCIDO, PENDIENTE_CARGA (CA-1).
+     * - incluirBajas: si es true incluye trabajadores dados de baja; por defecto false (ocultos).
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<TrabajadorResponse> listar(
+            String q,
+            String estadoDocumental,
+            Boolean incluirBajas,
+            Pageable pageable) {
+
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        String filtroTexto = (q != null && !q.isBlank()) ? escaparLike(q.trim()) : null;
+        String filtroEstado = (estadoDocumental != null && !estadoDocumental.isBlank())
+            ? validarEstadoDocumental(estadoDocumental.trim().toUpperCase())
+            : null;
+        boolean mostrarBajas = Boolean.TRUE.equals(incluirBajas);
+        LocalDate hoy = LocalDate.now();
+
+        Page<Trabajador> pagina = trabajadorRepository.listarConFiltros(
+            perfilId,
+            filtroTexto,
+            filtroEstado,
+            mostrarBajas,
+            hoy,
+            pageable
+        );
+
+        return PageResponse.from(
+            pagina,
+            t -> TrabajadorResponse.from(t, calcularEstadoDocumental(t))
+        );
+    }
+
+    /**
+     * Sobrecarga para retrocompatibilidad con tests existentes (US-41).
      */
     @Transactional(readOnly = true)
     public PageResponse<TrabajadorResponse> listar(Pageable pageable) {
@@ -112,6 +186,27 @@ public class TrabajadorService {
             trabajadorRepository.findByPerfilId(perfilId, pageable),
             t -> TrabajadorResponse.from(t, calcularEstadoDocumental(t))
         );
+    }
+
+    private String validarEstadoDocumental(String estado) {
+        if ("TODOS".equals(estado)) {
+            return null;
+        }
+        if ("VIGENTE".equals(estado) || "VENCIDO".equals(estado) || "PENDIENTE_CARGA".equals(estado)) {
+            return estado;
+        }
+        throw new BusinessException(
+            "ESTADO_DOCUMENTAL_INVALIDO",
+            "El estado documental debe ser VIGENTE, VENCIDO o PENDIENTE_CARGA",
+            HttpStatus.BAD_REQUEST
+        );
+    }
+
+    private String escaparLike(String texto) {
+        return texto
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
     }
 
     /**

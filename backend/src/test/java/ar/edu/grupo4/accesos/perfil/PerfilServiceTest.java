@@ -10,6 +10,9 @@ import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import ar.edu.grupo4.accesos.trabajador.TrabajadorService;
+import ar.edu.grupo4.accesos.trabajador.dto.MonotributistaPerfilModificarRequest;
+import ar.edu.grupo4.accesos.trabajador.dto.MonotributistaPerfilResponse;
+import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -450,5 +453,93 @@ class PerfilServiceTest {
         assertThatThrownBy(() -> perfilService.rechazar(101L, req))
             .isInstanceOf(BusinessException.class)
             .hasMessage("Solo se pueden rechazar solicitudes en estado pendiente");
+    }
+
+    // ========================================================================================
+    // US-24: Perfil propio del Monotributista
+    // ========================================================================================
+
+    @Test
+    @DisplayName("US-24 CA-1: obtenerPerfilMonotributista retorna los datos fiscales y operativos del trabajador")
+    void obtenerPerfilMonotributistaOk() {
+        Perfil p = new Perfil();
+        p.setId(200L);
+        p.setTipo(TipoPerfil.MONOTRIBUTISTA);
+        p.setEstado(EstadoPerfil.APROBADO);
+        p.setCuitCuil("27-33222111-1");
+        p.setNombre("Paula");
+        p.setApellido("Pendiente");
+        p.setDniTitular("33222111");
+        p.setTelefono("1122334455");
+
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            50L, "Paula", "Pendiente", "33222111",
+            "PENDIENTE_CARGA", false, false, List.of(), null
+        );
+
+        when(perfilRepository.findById(200L)).thenReturn(Optional.of(p));
+        when(trabajadorService.obtenerPorPerfilId(200L)).thenReturn(tResp);
+
+        MonotributistaPerfilResponse res = perfilService.obtenerPerfilMonotributista(200L);
+
+        assertThat(res.perfilId()).isEqualTo(200L);
+        assertThat(res.trabajadorId()).isEqualTo(50L);
+        assertThat(res.nombre()).isEqualTo("Paula");
+        assertThat(res.cuil()).isEqualTo("27-33222111-1");
+        assertThat(res.telefono()).isEqualTo("1122334455");
+        assertThat(res.estadoDocumental()).isEqualTo("PENDIENTE_CARGA");
+    }
+
+    @Test
+    @DisplayName("US-24: obtenerPerfilMonotributista falla con 403 si el perfil es de tipo EMPRESA")
+    void obtenerPerfilMonotributistaFallaSiEsEmpresa() {
+        Perfil p = new Perfil();
+        p.setId(201L);
+        p.setTipo(TipoPerfil.EMPRESA);
+
+        when(perfilRepository.findById(201L)).thenReturn(Optional.of(p));
+
+        assertThatThrownBy(() -> perfilService.obtenerPerfilMonotributista(201L))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("El perfil no corresponde a un Monotributista");
+    }
+
+    @Test
+    @DisplayName("US-24 CA-6: modificarPerfilMonotributista actualiza Perfil y sincroniza con Trabajador")
+    void modificarPerfilMonotributistaSincronizaConTrabajador() {
+        Perfil p = new Perfil();
+        p.setId(200L);
+        p.setTipo(TipoPerfil.MONOTRIBUTISTA);
+        p.setEstado(EstadoPerfil.APROBADO);
+        p.setCuitCuil("27-33222111-1");
+        p.setNombre("Paula");
+        p.setApellido("Pendiente");
+        p.setDniTitular("33222111");
+
+        when(perfilRepository.findById(200L)).thenReturn(Optional.of(p));
+        when(perfilRepository.save(any(Perfil.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            50L, "Paula Andrea", "Gómez", "33222111",
+            "PENDIENTE_CARGA", false, false, List.of(), null
+        );
+        when(trabajadorService.obtenerPorPerfilId(200L)).thenReturn(tResp);
+
+        MonotributistaPerfilModificarRequest req = new MonotributistaPerfilModificarRequest(
+            "Paula Andrea", "Gómez", "1199887766"
+        );
+
+        MonotributistaPerfilResponse res = perfilService.modificarPerfilMonotributista(200L, req);
+
+        assertThat(p.getNombre()).isEqualTo("Paula Andrea");
+        assertThat(p.getApellido()).isEqualTo("Gómez");
+        assertThat(p.getTelefono()).isEqualTo("1199887766");
+        assertThat(p.getCuitCuil()).isEqualTo("27-33222111-1"); // Inmutable
+        assertThat(p.getDniTitular()).isEqualTo("33222111");    // Inmutable
+
+        verify(perfilRepository).save(p);
+        verify(trabajadorService).sincronizarDatosMonotributista(200L, "Paula Andrea", "Gómez");
+        assertThat(res.nombre()).isEqualTo("Paula Andrea");
+        assertThat(res.apellido()).isEqualTo("Gómez");
     }
 }

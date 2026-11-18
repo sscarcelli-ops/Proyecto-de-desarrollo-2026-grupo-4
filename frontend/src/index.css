@@ -1,4 +1,9 @@
 /* Estilos globales mínimos: el resto lo resuelve Ant Design con app/theme.ts */
+html {
+  /* Reserva el espacio de la barra de desplazamiento para evitar saltos horizontales al filtrar */
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   /* Misma fuente que app/theme.ts, para el texto fuera de los componentes de Ant Design */

@@ -34,6 +34,7 @@ import { OperadorNuevoPage } from '../features/operadores/pages/OperadorNuevoPag
 import { GuardiasPage } from '../features/guardias/pages/GuardiasPage';
 import { GuardiaNuevoPage } from '../features/guardias/pages/GuardiaNuevoPage';
 import { GuardiaEditarPage } from '../features/guardias/pages/GuardiaEditarPage';
+import { DatosPersonalesPage } from '../features/monotributista/pages/DatosPersonalesPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04), activación del Administrador (US-01), registro (US-02)
@@ -92,10 +93,15 @@ export const router = createBrowserRouter([
           {
             element: <AppLayout />,
             children: [
-              // Inicio: Admin y Monotributista (hasta que tenga su pantalla, US-24). El resto va a su pantalla inicial.
+              // Inicio: exclusivo del Administrador (US-10, US-11, US-18, US-20). El resto va a su pantalla inicial.
               {
-                element: <RequireRole roles={['ADMIN', 'MONOTRIBUTISTA']} />,
+                element: <RequireRole roles={['ADMIN']} />,
                 children: [{ path: PATHS.inicio, element: <InicioPage /> }],
+              },
+              // Monotributista: Datos personales y documentación legal (US-24)
+              {
+                element: <RequireRole roles={['MONOTRIBUTISTA']} />,
+                children: [{ path: PATHS.datosPersonales, element: <DatosPersonalesPage /> }],
               },
               // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
               {

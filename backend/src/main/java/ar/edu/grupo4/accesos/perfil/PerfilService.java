@@ -10,6 +10,9 @@ import ar.edu.grupo4.accesos.perfil.dto.SolicitarPerfilRequest;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import ar.edu.grupo4.accesos.trabajador.TrabajadorService;
+import ar.edu.grupo4.accesos.trabajador.dto.MonotributistaPerfilModificarRequest;
+import ar.edu.grupo4.accesos.trabajador.dto.MonotributistaPerfilResponse;
+import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -267,6 +270,56 @@ public class PerfilService {
         p.setApellido(request.apellido().trim());
         p.setDniTitular(dni);
         return p;
+    }
+
+    // ========================================================================================
+    // US-24: Completar el perfil propio del Monotributista
+    // ========================================================================================
+
+    /**
+     * Obtiene el perfil propio del Monotributista y los datos de su trabajador vinculado (US-24).
+     */
+    @Transactional(readOnly = true)
+    public MonotributistaPerfilResponse obtenerPerfilMonotributista(Long perfilId) {
+        Perfil perfil = perfilRepository.findById(perfilId)
+            .orElseThrow(NotFoundException::new);
+
+        if (perfil.getTipo() != TipoPerfil.MONOTRIBUTISTA) {
+            throw new BusinessException("PERFIL_INVALIDO",
+                "El perfil no corresponde a un Monotributista", HttpStatus.FORBIDDEN);
+        }
+
+        TrabajadorResponse trabajador = trabajadorService.obtenerPorPerfilId(perfilId);
+        return MonotributistaPerfilResponse.from(perfil, trabajador);
+    }
+
+    /**
+     * Modifica nombre, apellido y teléfono del Monotributista (US-24, CA-6).
+     * Sincroniza atómicamente el nombre y apellido en la tabla trabajador.
+     * DNI y CUIL son inmutables.
+     */
+    @Transactional
+    public MonotributistaPerfilResponse modificarPerfilMonotributista(Long perfilId, MonotributistaPerfilModificarRequest request) {
+        Perfil perfil = perfilRepository.findById(perfilId)
+            .orElseThrow(NotFoundException::new);
+
+        if (perfil.getTipo() != TipoPerfil.MONOTRIBUTISTA) {
+            throw new BusinessException("PERFIL_INVALIDO",
+                "El perfil no corresponde a un Monotributista", HttpStatus.FORBIDDEN);
+        }
+
+        perfil.setNombre(request.nombre().trim());
+        perfil.setApellido(request.apellido().trim());
+        if (request.telefono() != null) {
+            perfil.setTelefono(request.telefono().trim().isEmpty() ? null : request.telefono().trim());
+        }
+        perfilRepository.save(perfil);
+        log.info("Perfil Monotributista {} actualizado", perfilId);
+
+        trabajadorService.sincronizarDatosMonotributista(perfilId, request.nombre(), request.apellido());
+
+        TrabajadorResponse trabajador = trabajadorService.obtenerPorPerfilId(perfilId);
+        return MonotributistaPerfilResponse.from(perfil, trabajador);
     }
 
     private void validarArchivoConstancia(MultipartFile archivo) {

@@ -1,10 +1,24 @@
 import { useState } from 'react';
-import { App, Button, Dropdown, Flex, Modal, Pagination, Table, Tag, Typography } from 'antd';
+import {
+  App,
+  Button,
+  Checkbox,
+  Dropdown,
+  Flex,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Table,
+  Tag,
+  Typography,
+} from 'antd';
 import {
   EllipsisOutlined,
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
   UserAddOutlined,
   UserDeleteOutlined,
 } from '@ant-design/icons';
@@ -19,23 +33,42 @@ import { EstadoTag, type Estado } from '../../../shared/components/EstadoTag';
 import { PATHS } from '../../../routes/paths';
 import { palette, estadoTonos } from '../../../app/theme';
 import { getErrorMessage } from '../../../shared/lib/apiError';
+import { useParametrosUrl } from '../../../shared/hooks/useParametrosUrl';
+import { usePaginaValida } from '../../../shared/hooks/usePaginaValida';
 import type { ColumnsType } from 'antd/es/table';
 
 /**
  * US-26: listado paginado de trabajadores.
  * US-27: dar de baja trabajador.
+ * US-29: filtrar y buscar nómina por estado documental, texto y bajas (RF-30).
  *
  * Muestra los trabajadores de la empresa logueada con su estado documental calculado al vuelo
- * (Vigente, Vencido, Pendiente de carga) y permite dar de baja a un trabajador.
+ * (Vigente, Vencido, Pendiente de carga), permite buscar por nombre/apellido/DNI, filtrar por estado,
+ * incluir u ocultar dados de baja, y sincroniza los parámetros en la URL (GUIA-DESARROLLO.md §5.2).
  */
 export function TrabajadoresPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
 
-  // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente
-  const [pagina, setPagina] = useState(1);
-  const [tamano, setTamano] = useState(10);
-  const { data, isLoading } = useTrabajadores(pagina, tamano);
+  // Parámetros sincronizados en la URL
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  const tamano = 10;
+  const busqueda = url.texto('q').slice(0, 100);
+  const estadoRaw = url.texto('estado');
+  const estado = ['VIGENTE', 'VENCIDO', 'PENDIENTE_CARGA'].includes(estadoRaw) ? estadoRaw : undefined;
+  const incluirBajas = url.booleano('bajas', false);
+
+  const { data, isLoading } = useTrabajadores({
+    page: pagina,
+    size: tamano,
+    q: busqueda || undefined,
+    estadoDocumental: estado,
+    incluirBajas,
+  });
+
+  usePaginaValida(url, pagina, data?.totalPages);
+
   const darDeBaja = useDarDeBajaTrabajador();
   const reincorporar = useReincorporarTrabajador();
 
@@ -44,6 +77,16 @@ export function TrabajadoresPage() {
 
   // Modal para confirmar reincorporar (US-27 CA-5)
   const [trabajadorParaReincorporar, setTrabajadorParaReincorporar] = useState<TrabajadorResponse | null>(null);
+
+  const hayFiltrosActivos = Boolean(busqueda.trim() || estado || incluirBajas);
+
+  const limpiarFiltros = () => {
+    url.cambiar({ q: null, estado: null, bajas: null, pagina: null });
+  };
+
+  const textoVacio = hayFiltrosActivos
+    ? 'No se encontraron resultados con los filtros aplicados'
+    : 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.';
 
   const handleConfirmarBaja = () => {
     if (!trabajadorParaBaja) return;
@@ -193,8 +236,9 @@ export function TrabajadoresPage() {
         Trabajadores
       </Typography.Title>
 
-      {/* Acción principal: botón de registrar trabajador */}
-      <Flex justify="flex-start" align="center" style={{ marginBottom: 24 }}>
+      {/* Barra superior de acciones y filtros (US-29, RF-30) */}
+      <Flex justify="space-between" align="flex-start" wrap="wrap" gap={16} style={{ marginBottom: 20 }}>
+        {/* Acción principal: registrar trabajador */}
         <Button
           type="primary"
           size="large"
@@ -203,10 +247,71 @@ export function TrabajadoresPage() {
           style={{
             borderRadius: 6,
             fontWeight: 600,
+            height: 40,
           }}
         >
           Registrar trabajador
         </Button>
+
+        {/* Bloque derecho: Buscador + Filtro de estado, y debajo el switch de bajas con el contador */}
+        <Flex vertical align="flex-end" gap={8} style={{ flex: 1, minWidth: 320, maxWidth: 520 }}>
+          <Flex gap={10} style={{ width: '100%' }}>
+            <Input
+              placeholder="Buscar trabajador..."
+              maxLength={100}
+              prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
+              value={busqueda}
+              onChange={(e) => url.cambiar({ q: e.target.value, pagina: null })}
+              allowClear
+              style={{ flex: 1, minWidth: 200, height: 40, borderRadius: 6 }}
+            />
+            <Select<string>
+              placeholder="Filtrar por estado"
+              value={estado ?? 'TODOS'}
+              onChange={(val) => url.cambiar({ estado: val === 'TODOS' ? null : val, pagina: null })}
+              style={{ width: 180, height: 40 }}
+              options={[
+                { label: 'Todos los estados', value: 'TODOS' },
+                { label: 'Vigente', value: 'VIGENTE' },
+                { label: 'Vencido', value: 'VENCIDO' },
+                { label: 'Pendiente de carga', value: 'PENDIENTE_CARGA' },
+              ]}
+            />
+          </Flex>
+
+          <Flex
+            align="center"
+            gap={12}
+            wrap="wrap"
+            justify="flex-end"
+            style={{ minHeight: 28, height: 28 }}
+          >
+            {hayFiltrosActivos && (
+              <>
+                <Typography.Text type="secondary" style={{ fontSize: 13, lineHeight: '20px' }}>
+                  {data?.totalElements ?? 0}{' '}
+                  {(data?.totalElements ?? 0) === 1 ? 'resultado encontrado' : 'resultados encontrados'}
+                </Typography.Text>
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={limpiarFiltros}
+                  style={{ padding: 0, fontSize: 13, height: 'auto', lineHeight: '20px' }}
+                >
+                  Limpiar filtros
+                </Button>
+                <span style={{ color: palette.borderSoft, lineHeight: '20px' }}>|</span>
+              </>
+            )}
+            <Checkbox
+              checked={incluirBajas}
+              onChange={(e) => url.cambiar({ bajas: e.target.checked ? true : null, pagina: null })}
+              style={{ fontSize: 13, lineHeight: '20px' }}
+            >
+              Mostrar dados de baja
+            </Checkbox>
+          </Flex>
+        </Flex>
       </Flex>
 
       {/* Tabla con bordes redondeados y paginación desacoplada */}
@@ -225,7 +330,18 @@ export function TrabajadoresPage() {
           dataSource={data?.content ?? []}
           loading={isLoading}
           locale={{
-            emptyText: 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
+            emptyText: (
+              <div style={{ padding: '40px 16px', textAlign: 'center' }}>
+                <Typography.Paragraph type="secondary" style={{ margin: 0, fontSize: 15 }}>
+                  {textoVacio}
+                </Typography.Paragraph>
+                {hayFiltrosActivos && (
+                  <Button type="link" onClick={limpiarFiltros} style={{ marginTop: 8 }}>
+                    Limpiar filtros
+                  </Button>
+                )}
+              </div>
+            ),
           }}
           pagination={false}
         />
@@ -238,9 +354,8 @@ export function TrabajadoresPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={(page, size) => {
-            setPagina(page);
-            setTamano(size);
+          onChange={(page) => {
+            url.cambiar({ pagina: page === 1 ? null : page });
           }}
         />
       </Flex>
