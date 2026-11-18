@@ -459,7 +459,7 @@ export function TrabajadorEditarPage() {
                       <Typography.Text type="secondary" style={{ fontSize: 13 }}>
                         Vencimiento: {fechaVenc?.format('DD/MM/YYYY')}
                       </Typography.Text>
-                      <Flex gap={8} style={{ width: '100%', marginTop: 6 }}>
+                      <Flex gap={8} wrap style={{ width: '100%', marginTop: 6 }}>
                         <Button
                           size="small"
                           style={{ flex: 1 }}
@@ -542,7 +542,7 @@ export function TrabajadorEditarPage() {
                       <Typography.Text type="secondary" style={{ fontSize: 13 }}>
                         Vencimiento: {fechaVenc?.format('DD/MM/YYYY')}
                       </Typography.Text>
-                      <Flex gap={8} style={{ width: '100%', marginTop: 6 }}>
+                      <Flex gap={8} wrap style={{ width: '100%', marginTop: 6 }}>
                         <Button
                           size="small"
                           style={{ flex: 1 }}
@@ -613,10 +613,11 @@ export function TrabajadorEditarPage() {
               </Button>
             </Flex>
           ) : (
-            <Flex gap={12} style={{ marginTop: 16 }}>
+            // T-07: lado a lado si entran; en el celular, uno debajo del otro a todo el ancho
+            <Flex gap={12} wrap style={{ marginTop: 16 }}>
               <Button
                 type="default"
-                block
+                style={{ flex: '1 1 160px' }}
                 onClick={() => navigate(PATHS.trabajadores)}
                 disabled={guardando}
               >
@@ -625,7 +626,7 @@ export function TrabajadorEditarPage() {
               <Button
                 type="primary"
                 htmlType="submit"
-                block
+                style={{ flex: '1 1 160px' }}
                 loading={guardando}
               >
                 Guardar cambios

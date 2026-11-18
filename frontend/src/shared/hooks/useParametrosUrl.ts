@@ -1,75 +1,75 @@
-import { useCallback } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 
+type Valor = string | number | boolean | null | undefined;
+
 /**
- * Hook para sincronizar parámetros de búsqueda, filtros y paginación en la URL.
- * Cumple con GUIA-DESARROLLO.md §5.2.
+ * Página, búsqueda y filtros de un listado guardados en la dirección (ej. /empresas?pagina=3&estado=PENDIENTE)
+ * en lugar de en un useState. Así, al recargar o al volver con "Atrás" el listado sigue donde estaba, y el link
+ * se puede copiar tal cual.
  *
- * Características:
- * - url.numero('pagina', 1): parsea un entero positivo (> 0). Valores inválidos ('abc', -3, 0) devuelven el default.
- * - url.texto('q', ''): devuelve el texto del parámetro o el default.
- * - url.booleano('bajas', false): parsea booleanos ('true' / '1' -> true; 'false' / '0' -> false).
- * - url.cambiar(nuevos): actualiza parámetros atómicamente en una sola llamada para evitar pisadas.
- *   Si el valor es null, undefined o '' (cadena vacía), se elimina de la URL.
+ *   const url = useParametrosUrl();
+ *   const pagina = url.numero('pagina', 1);
+ *   const busqueda = url.texto('q');
+ *   url.cambiar({ q: 'acme', pagina: null }); // null o '' borra el parámetro (la página vuelve a la 1)
+ *
+ * Varios cambios van en UNA llamada a cambiar(): dos llamadas seguidas se pisan, porque cada una parte de la
+ * dirección que había antes del clic.
  */
 export function useParametrosUrl() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [params, setParams] = useSearchParams();
 
-  const numero = useCallback(
-    (clave: string, porDefecto: number): number => {
-      const valor = searchParams.get(clave);
-      if (!valor) return porDefecto;
-      const num = Number(valor);
-      return Number.isInteger(num) && num > 0 ? num : porDefecto;
-    },
-    [searchParams]
-  );
+  /** Texto del parámetro, o '' si no está. */
+  const texto = (nombre: string): string => params.get(nombre) ?? '';
 
-  const texto = useCallback(
-    (clave: string, porDefecto: string = ''): string => {
-      return searchParams.get(clave) ?? porDefecto;
-    },
-    [searchParams]
-  );
-
-  const booleano = useCallback(
-    (clave: string, porDefecto: boolean = false): boolean => {
-      const valor = searchParams.get(clave);
-      if (valor === null || valor === undefined || valor === '') return porDefecto;
-      if (valor === 'true' || valor === '1') return true;
-      if (valor === 'false' || valor === '0') return false;
-      return porDefecto;
-    },
-    [searchParams]
-  );
-
-  const cambiar = useCallback(
-    (nuevos: Record<string, string | number | boolean | null | undefined>) => {
-      setSearchParams(
-        (prev) => {
-          const params = new URLSearchParams(prev);
-          for (const [clave, valor] of Object.entries(nuevos)) {
-            if (valor === null || valor === undefined || valor === '') {
-              params.delete(clave);
-            } else {
-              params.set(clave, String(valor));
-            }
-          }
-          return params;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
-
-  return {
-    numero,
-    texto,
-    booleano,
-    cambiar,
-    searchParams,
+  /** Número entero positivo del parámetro; si no está o es inválido (ej. ?pagina=abc), el valor por defecto. */
+  const numero = (nombre: string, porDefecto: number): number => {
+    const n = Number(params.get(nombre));
+    return Number.isInteger(n) && n > 0 ? n : porDefecto;
   };
+
+  /** Booleano del parámetro ('true' / 'false'); si no está, el valor por defecto. */
+  const booleano = (nombre: string, porDefecto: boolean = false): boolean => {
+    const val = params.get(nombre);
+    if (val === null || val === undefined || val === '') return porDefecto;
+    return val === 'true';
+  };
+
+  const cambiar = (cambios: Record<string, Valor>) => {
+    const nuevos = new URLSearchParams(params);
+    for (const [nombre, valor] of Object.entries(cambios)) {
+      if (valor === null || valor === undefined || valor === '') nuevos.delete(nombre);
+      else nuevos.set(nombre, String(valor));
+    }
+    // replace: no suma una entrada al historial por cada letra o página; "Atrás" vuelve a la pantalla anterior
+    setParams(nuevos, { replace: true });
+  };
+
+  return { texto, numero, booleano, cambiar };
 }
 
 export type ParametrosUrl = ReturnType<typeof useParametrosUrl>;
+
+/**
+ * Corrige la página de la dirección:
+ * - si no es un número válido (?pagina=abc, ?pagina=-3), la saca: queda la página 1;
+ * - si no existe, va a la última con datos en lugar de mostrar el listado vacío. Pasa si alguien escribe
+ *   ?pagina=99 a mano, o si recarga en la página 3 y mientras tanto se fueron registros.
+ *
+ *   usePaginaValida(url, pagina, data?.totalPages);
+ */
+export function usePaginaValida(
+  url: ReturnType<typeof useParametrosUrl>,
+  pagina: number,
+  totalPaginas: number | undefined,
+) {
+  const crudo = url.texto('pagina');
+  const invalida = crudo !== '' && crudo !== String(pagina);
+  const ultima = Math.max(1, totalPaginas ?? 1);
+  const fueraDeRango = totalPaginas !== undefined && pagina > ultima;
+  // En un efecto: cambiar la dirección mientras se dibuja la pantalla no está permitido
+  useEffect(() => {
+    if (fueraDeRango) url.cambiar({ pagina: ultima });
+    else if (invalida) url.cambiar({ pagina: null });
+  });
+}

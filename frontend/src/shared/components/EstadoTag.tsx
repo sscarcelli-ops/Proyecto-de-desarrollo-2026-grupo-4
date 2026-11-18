@@ -27,6 +27,12 @@ const ESTADOS = {
 
 export type Estado = keyof typeof ESTADOS;
 
+/**
+ * Ancho mínimo de una columna de tabla que muestra un EstadoTag: el tag mide al menos 135 (para que todos los
+ * estados midan lo mismo) + 16 de margen de la celda a cada lado + el borde. Con menos, el tag toca el borde.
+ */
+export const ANCHO_COLUMNA_ESTADO = 168;
+
 /** Etiqueta de estado con el color que le corresponde según el mapa de estados del theme. */
 export function EstadoTag({ estado }: { estado: Estado }) {
   const { label, tono } = ESTADOS[estado];

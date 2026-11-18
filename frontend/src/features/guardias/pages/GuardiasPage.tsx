@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { App as AntdApp, Button, Dropdown, Flex, Table, Typography } from 'antd';
+import { App as AntdApp, Button, Dropdown, Flex } from 'antd';
 import type { MenuProps, TableColumnsType } from 'antd';
 import { MoreOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
-import { EstadoTag } from '../../../shared/components/EstadoTag';
+import { ANCHO_COLUMNA_ESTADO, EstadoTag } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { palette } from '../../../app/theme';
 import { PATHS } from '../../../routes/paths';
 import { useCambiarEstadoGuardia, useGuardias, type Guardia } from '../api/guardias';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
-const { Title } = Typography;
 
 // US-32: Guardias del barrio del Operador. Sin paginar (bajo volumen por barrio, RNF-08).
 // Las acciones por fila van en el menú "⋯" con solo las que corresponden al estado del Guardia.
@@ -71,7 +72,7 @@ export function GuardiasPage() {
     {
       title: 'Estado',
       dataIndex: 'habilitado',
-      width: 150,
+      width: ANCHO_COLUMNA_ESTADO,
       align: 'center',
       render: (habilitado: boolean) => <EstadoTag estado={habilitado ? 'HABILITADO' : 'DESHABILITADO'} />,
     },
@@ -90,13 +91,16 @@ export function GuardiasPage() {
 
   return (
     <Flex vertical gap={16}>
-      <Flex justify="space-between" align="center" wrap gap={8}>
-        <Title level={3} style={{ margin: 0 }}>Guardias</Title>
-        <Button type="primary" onClick={() => navigate(PATHS.guardiaNuevo)}>Nuevo Guardia</Button>
-      </Flex>
+      <EncabezadoPagina
+        titulo="Guardias"
+        style={{ marginBottom: 0 }}
+        accion={<Button type="primary" onClick={() => navigate(PATHS.guardiaNuevo)}>Nuevo Guardia</Button>}
+      />
 
       <div style={{ backgroundColor: palette.surface, borderRadius: 8 }}>
-        <Table<Guardia>
+        <TablaResponsiva<Guardia>
+          columnaTitulo="nombre"
+          columnaAcciones="acciones"
           bordered
           className="tabla-redondeada"
           rowKey="id"
