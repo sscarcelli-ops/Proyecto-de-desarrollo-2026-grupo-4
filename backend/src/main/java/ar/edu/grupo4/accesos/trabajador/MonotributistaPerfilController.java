@@ -55,25 +55,19 @@ public class MonotributistaPerfilController {
     @PostMapping(value = "/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cargar o reemplazar foto de perfil")
     public TrabajadorResponse cargarFoto(@RequestParam("foto") MultipartFile foto) {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        Trabajador trabajador = trabajadorService.obtenerEntidadPorPerfilId(perfilId);
-        return trabajadorService.cargarFoto(trabajador.getId(), foto);
+        return trabajadorService.cargarFotoPropia(foto);
     }
 
     @DeleteMapping("/foto")
     @Operation(summary = "Eliminar foto de perfil")
     public TrabajadorResponse eliminarFoto() {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        Trabajador trabajador = trabajadorService.obtenerEntidadPorPerfilId(perfilId);
-        return trabajadorService.eliminarFoto(trabajador.getId());
+        return trabajadorService.eliminarFotoPropia();
     }
 
     @GetMapping("/foto")
     @Operation(summary = "Descargar o visualizar foto de perfil")
     public ResponseEntity<Resource> descargarFoto() {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        Trabajador trabajador = trabajadorService.obtenerEntidadPorPerfilId(perfilId);
-        Resource recurso = trabajadorService.descargarFoto(trabajador.getId());
+        Resource recurso = trabajadorService.descargarFotoPropia();
         String contentType = MediaTypeFactory.getMediaType(recurso)
             .map(MediaType::toString)
             .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
@@ -86,25 +80,19 @@ public class MonotributistaPerfilController {
     @PostMapping(value = "/documentos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cargar o renovar póliza de ART o Seguro de Vida")
     public TrabajadorResponse cargarDocumento(@Valid @ModelAttribute DocumentoRequest request) {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        Trabajador trabajador = trabajadorService.obtenerEntidadPorPerfilId(perfilId);
-        return trabajadorService.cargarDocumento(trabajador.getId(), request);
+        return trabajadorService.cargarDocumentoPropio(request);
     }
 
     @DeleteMapping("/documentos/{tipo}")
     @Operation(summary = "Eliminar póliza de ART o Seguro de Vida")
     public TrabajadorResponse eliminarDocumento(@PathVariable TipoDocumento tipo) {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        Trabajador trabajador = trabajadorService.obtenerEntidadPorPerfilId(perfilId);
-        return trabajadorService.eliminarDocumento(trabajador.getId(), tipo);
+        return trabajadorService.eliminarDocumentoPropio(tipo);
     }
 
     @GetMapping("/documentos/{tipo}")
     @Operation(summary = "Descargar PDF de póliza de ART o Seguro de Vida")
     public ResponseEntity<Resource> descargarDocumento(@PathVariable TipoDocumento tipo) {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        Trabajador trabajador = trabajadorService.obtenerEntidadPorPerfilId(perfilId);
-        Resource recurso = trabajadorService.descargarDocumento(trabajador.getId(), tipo);
+        Resource recurso = trabajadorService.descargarDocumentoPropio(tipo);
 
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)

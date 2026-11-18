@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   App,
   Button,
@@ -78,9 +78,29 @@ export function TrabajadoresPage() {
   // Modal para confirmar reincorporar (US-27 CA-5)
   const [trabajadorParaReincorporar, setTrabajadorParaReincorporar] = useState<TrabajadorResponse | null>(null);
 
+  // Debounce para el input de búsqueda (300 ms)
+  const [prevBusqueda, setPrevBusqueda] = useState(busqueda);
+  const [textoBusqueda, setTextoBusqueda] = useState(busqueda);
+
+  if (busqueda !== prevBusqueda) {
+    setPrevBusqueda(busqueda);
+    setTextoBusqueda(busqueda);
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (textoBusqueda.trim() !== busqueda.trim()) {
+        url.cambiar({ q: textoBusqueda.trim() || null, pagina: null });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [textoBusqueda, busqueda, url]);
+
   const hayFiltrosActivos = Boolean(busqueda.trim() || estado || incluirBajas);
 
   const limpiarFiltros = () => {
+    setTextoBusqueda('');
     url.cambiar({ q: null, estado: null, bajas: null, pagina: null });
   };
 
@@ -260,8 +280,19 @@ export function TrabajadoresPage() {
               placeholder="Buscar trabajador..."
               maxLength={100}
               prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
-              value={busqueda}
-              onChange={(e) => url.cambiar({ q: e.target.value, pagina: null })}
+              value={textoBusqueda}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTextoBusqueda(val);
+                if (!val) {
+                  url.cambiar({ q: null, pagina: null });
+                }
+              }}
+              onPressEnter={() => {
+                if (textoBusqueda.trim() !== busqueda.trim()) {
+                  url.cambiar({ q: textoBusqueda.trim() || null, pagina: null });
+                }
+              }}
               allowClear
               style={{ flex: 1, minWidth: 200, height: 40, borderRadius: 6 }}
             />

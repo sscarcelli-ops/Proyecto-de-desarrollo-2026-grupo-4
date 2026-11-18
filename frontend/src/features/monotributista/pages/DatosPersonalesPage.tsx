@@ -218,6 +218,7 @@ export function DatosPersonalesPage() {
   // Guardar cambios personales y mutaciones pendientes
   const onFinish = async (values: MonotributistaPerfilModificarRequest) => {
     setErrorArchivos(null);
+    let huboCambios = false;
 
     try {
       setGuardando(true);
@@ -229,35 +230,42 @@ export function DatosPersonalesPage() {
 
       if (cambioDatos) {
         await modificarPerfil.mutateAsync(values);
+        huboCambios = true;
       }
 
       // 2. Foto: eliminar o subir nueva
       if (fotoEliminada && perfil.tieneFoto) {
         await eliminarFoto();
+        huboCambios = true;
       } else if (fotoNuevaFile) {
         await subirFoto(fotoNuevaFile);
+        huboCambios = true;
       }
 
       // 3. ART: eliminar o subir nueva
       if (artEliminada && perfil.documentos?.some((d) => d.tipo === 'ART')) {
         await eliminarDocumento('ART');
+        huboCambios = true;
       } else if (artNuevo) {
         await subirDocumento({
           tipo: 'ART',
           archivo: artNuevo.archivo,
           fechaVencimiento: artNuevo.fecha.format('YYYY-MM-DD'),
         });
+        huboCambios = true;
       }
 
       // 4. Seguro de Vida: eliminar o subir nuevo
       if (seguroEliminada && perfil.documentos?.some((d) => d.tipo === 'SEGURO_VIDA')) {
         await eliminarDocumento('SEGURO_VIDA');
+        huboCambios = true;
       } else if (seguroNuevo) {
         await subirDocumento({
           tipo: 'SEGURO_VIDA',
           archivo: seguroNuevo.archivo,
           fechaVencimiento: seguroNuevo.fecha.format('YYYY-MM-DD'),
         });
+        huboCambios = true;
       }
 
       // Limpiar estados de borrador local
@@ -278,6 +286,9 @@ export function DatosPersonalesPage() {
       message.error(msg);
     } finally {
       setGuardando(false);
+      if (huboCambios) {
+        queryClient.invalidateQueries({ queryKey: MONOTRIBUTISTA_PERFIL_KEY });
+      }
     }
   };
 

@@ -691,7 +691,23 @@ class TrabajadorServiceTest {
     // ========================================================================================
 
     @Test
-    @DisplayName("US-24: obtenerPorPerfilId retorna el trabajador único del perfil")
+    @DisplayName("US-24: cargarFotoPropia y cargarDocumentoPropio delegan en el trabajador propio")
+    void operacionesPropiasMonotributistaDeleganEnTrabajadorPropio() {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(10L);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setDocumentos(new ArrayList<>());
+
+        when(usuarioActual.perfilIdAprobado()).thenReturn(PERFIL_ID);
+        when(trabajadorRepository.findFirstByPerfilId(PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(fileStorageService.guardar(any(), any())).thenReturn("trabajadores/10/foto/foto.jpg");
+
+        MockMultipartFile foto = new MockMultipartFile("foto", "foto.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        TrabajadorResponse res = service.cargarFotoPropia(foto);
+
+        assertThat(res.tieneFoto()).isTrue();
+        verify(trabajadorRepository).saveAndFlush(trabajador);
+    }
     void obtenerPorPerfilIdExitoso() {
         Trabajador trabajador = new Trabajador();
         trabajador.setId(10L);

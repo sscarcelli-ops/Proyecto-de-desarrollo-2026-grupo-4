@@ -298,6 +298,20 @@ public class TrabajadorService {
     public TrabajadorResponse cargarDocumento(Long trabajadorId, DocumentoRequest request) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        return ejecutarCargarDocumento(trabajador, request);
+    }
+
+    /**
+     * US-24: Carga o renovación de póliza de ART o Seguro de Vida del Monotributista autenticado.
+     */
+    @Transactional
+    public TrabajadorResponse cargarDocumentoPropio(DocumentoRequest request) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = obtenerEntidadPorPerfilId(perfilId);
+        return ejecutarCargarDocumento(trabajador, request);
+    }
+
+    private TrabajadorResponse ejecutarCargarDocumento(Trabajador trabajador, DocumentoRequest request) {
         validarNoDadoDeBaja(trabajador);
 
         // Sin archivo: mensaje propio de US-28 (validarPdf es común y usa uno genérico)
@@ -308,6 +322,7 @@ public class TrabajadorService {
         // Validación de tipo y tamaño del archivo PDF (T-05, RNF-10)
         fileStorageService.validarPdf(request.archivo());
 
+        Long trabajadorId = trabajador.getId();
         Optional<Documento> optDoc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, request.tipo());
         String rutaVieja = optDoc.map(Documento::getArchivoRuta).orElse(null);
 
@@ -348,9 +363,23 @@ public class TrabajadorService {
     public TrabajadorResponse eliminarDocumento(Long trabajadorId, TipoDocumento tipo) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        return ejecutarEliminarDocumento(trabajador, tipo);
+    }
+
+    /**
+     * US-24: Elimina un documento del Monotributista autenticado.
+     */
+    @Transactional
+    public TrabajadorResponse eliminarDocumentoPropio(TipoDocumento tipo) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = obtenerEntidadPorPerfilId(perfilId);
+        return ejecutarEliminarDocumento(trabajador, tipo);
+    }
+
+    private TrabajadorResponse ejecutarEliminarDocumento(Trabajador trabajador, TipoDocumento tipo) {
         validarNoDadoDeBaja(trabajador);
 
-        Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajadorId, tipo)
+        Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajador.getId(), tipo)
             .orElseThrow(NotFoundException::new);
 
         String ruta = doc.getArchivoRuta();
@@ -376,6 +405,20 @@ public class TrabajadorService {
         return fileStorageService.cargar(doc.getArchivoRuta());
     }
 
+    /**
+     * US-24: Descarga el archivo PDF de un documento legal del Monotributista autenticado.
+     */
+    @Transactional(readOnly = true)
+    public Resource descargarDocumentoPropio(TipoDocumento tipo) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = obtenerEntidadPorPerfilId(perfilId);
+
+        Documento doc = documentoRepository.findByTrabajadorIdAndTipo(trabajador.getId(), tipo)
+            .orElseThrow(NotFoundException::new);
+
+        return fileStorageService.cargar(doc.getArchivoRuta());
+    }
+
     // ========================================================================================
     // US-25 / US-26: Carga, reemplazo, eliminación y descarga de Foto
     // ========================================================================================
@@ -387,11 +430,26 @@ public class TrabajadorService {
     public TrabajadorResponse cargarFoto(Long trabajadorId, MultipartFile foto) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        return ejecutarCargarFoto(trabajador, foto);
+    }
+
+    /**
+     * US-24: Sube o reemplaza la foto del Monotributista autenticado.
+     */
+    @Transactional
+    public TrabajadorResponse cargarFotoPropia(MultipartFile foto) {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = obtenerEntidadPorPerfilId(perfilId);
+        return ejecutarCargarFoto(trabajador, foto);
+    }
+
+    private TrabajadorResponse ejecutarCargarFoto(Trabajador trabajador, MultipartFile foto) {
         validarNoDadoDeBaja(trabajador);
 
         // Validación de tipo y tamaño de la foto (T-05, RNF-10)
         fileStorageService.validarFoto(foto);
 
+        Long trabajadorId = trabajador.getId();
         String rutaVieja = trabajador.getFotoRuta();
         String subdirectorio = "trabajadores/" + trabajadorId + "/foto";
         String nuevaRuta = fileStorageService.guardar(foto, subdirectorio);
@@ -419,6 +477,20 @@ public class TrabajadorService {
     public TrabajadorResponse eliminarFoto(Long trabajadorId) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+        return ejecutarEliminarFoto(trabajador);
+    }
+
+    /**
+     * US-24: Elimina la foto del Monotributista autenticado.
+     */
+    @Transactional
+    public TrabajadorResponse eliminarFotoPropia() {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = obtenerEntidadPorPerfilId(perfilId);
+        return ejecutarEliminarFoto(trabajador);
+    }
+
+    private TrabajadorResponse ejecutarEliminarFoto(Trabajador trabajador) {
         validarNoDadoDeBaja(trabajador);
 
         String rutaVieja = trabajador.getFotoRuta();
@@ -438,6 +510,21 @@ public class TrabajadorService {
     public Resource descargarFoto(Long trabajadorId) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         Trabajador trabajador = buscarDelPerfil(perfilId, trabajadorId);
+
+        if (!trabajador.tieneFoto()) {
+            throw new NotFoundException();
+        }
+
+        return fileStorageService.cargar(trabajador.getFotoRuta());
+    }
+
+    /**
+     * US-24: Descarga la foto del Monotributista autenticado.
+     */
+    @Transactional(readOnly = true)
+    public Resource descargarFotoPropia() {
+        Long perfilId = usuarioActual.perfilIdAprobado();
+        Trabajador trabajador = obtenerEntidadPorPerfilId(perfilId);
 
         if (!trabajador.tieneFoto()) {
             throw new NotFoundException();

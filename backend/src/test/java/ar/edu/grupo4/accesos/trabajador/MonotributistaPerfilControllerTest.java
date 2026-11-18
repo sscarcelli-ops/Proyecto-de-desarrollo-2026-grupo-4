@@ -49,7 +49,6 @@ class MonotributistaPerfilControllerTest {
     private MonotributistaPerfilController controller;
 
     private MonotributistaPerfilResponse responseMock;
-    private Trabajador trabajadorMock;
 
     @BeforeEach
     void setUp() {
@@ -61,10 +60,6 @@ class MonotributistaPerfilControllerTest {
             10L, 20L, "Paula", "Gómez", "33222111", "27-33222111-1",
             "1133445566", "PENDIENTE_CARGA", false, null, List.of()
         );
-
-        trabajadorMock = new Trabajador();
-        trabajadorMock.setId(20L);
-        trabajadorMock.setPerfilId(10L);
     }
 
     @Test
@@ -136,14 +131,11 @@ class MonotributistaPerfilControllerTest {
     @Test
     @DisplayName("US-24 CA-2: POST /api/monotributista/perfil/foto sube foto de perfil delegando al trabajador")
     void cargarFotoDevuelveOk() throws Exception {
-        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
-        when(trabajadorService.obtenerEntidadPorPerfilId(10L)).thenReturn(trabajadorMock);
-
         TrabajadorResponse tResp = new TrabajadorResponse(
             20L, "Paula", "Gómez", "33222111", "PENDIENTE_CARGA",
             true, false, List.of(), "/api/trabajadores/20/foto"
         );
-        when(trabajadorService.cargarFoto(eq(20L), any())).thenReturn(tResp);
+        when(trabajadorService.cargarFotoPropia(any())).thenReturn(tResp);
 
         MockMultipartFile file = new MockMultipartFile("foto", "foto.jpg", "image/jpeg", new byte[]{1, 2, 3});
 
@@ -151,81 +143,90 @@ class MonotributistaPerfilControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.tieneFoto").value(true));
 
-        verify(trabajadorService).cargarFoto(eq(20L), any());
+        verify(trabajadorService).cargarFotoPropia(any());
     }
 
     @Test
     @DisplayName("US-24 CA-2: DELETE /api/monotributista/perfil/foto elimina foto de perfil")
     void eliminarFotoDevuelveOk() throws Exception {
-        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
-        when(trabajadorService.obtenerEntidadPorPerfilId(10L)).thenReturn(trabajadorMock);
-
         TrabajadorResponse tResp = new TrabajadorResponse(
             20L, "Paula", "Gómez", "33222111", "PENDIENTE_CARGA",
             false, false, List.of(), null
         );
-        when(trabajadorService.eliminarFoto(20L)).thenReturn(tResp);
+        when(trabajadorService.eliminarFotoPropia()).thenReturn(tResp);
 
         mockMvc.perform(delete("/api/monotributista/perfil/foto"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.tieneFoto").value(false));
 
-        verify(trabajadorService).eliminarFoto(20L);
+        verify(trabajadorService).eliminarFotoPropia();
     }
 
     @Test
     @DisplayName("US-24 CA-5: GET /api/monotributista/perfil/foto descarga foto")
     void descargarFotoDevuelveOk() throws Exception {
-        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
-        when(trabajadorService.obtenerEntidadPorPerfilId(10L)).thenReturn(trabajadorMock);
-
         Resource res = new ByteArrayResource(new byte[]{1, 2, 3}) {
             @Override
             public String getFilename() {
                 return "foto.jpg";
             }
         };
-        when(trabajadorService.descargarFoto(20L)).thenReturn(res);
+        when(trabajadorService.descargarFotoPropia()).thenReturn(res);
 
         mockMvc.perform(get("/api/monotributista/perfil/foto"))
             .andExpect(status().isOk())
             .andExpect(header().string("Content-Type", "image/jpeg"));
 
-        verify(trabajadorService).descargarFoto(20L);
+        verify(trabajadorService).descargarFotoPropia();
+    }
+
+    @Test
+    @DisplayName("US-24 CA-3: POST /api/monotributista/perfil/documentos carga póliza")
+    void cargarDocumentoDevuelveOk() throws Exception {
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            20L, "Paula", "Gómez", "33222111", "VIGENTE",
+            false, false, List.of(), null
+        );
+        when(trabajadorService.cargarDocumentoPropio(any())).thenReturn(tResp);
+
+        MockMultipartFile file = new MockMultipartFile("archivo", "art.pdf", "application/pdf", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/api/monotributista/perfil/documentos")
+                .file(file)
+                .param("tipo", "ART")
+                .param("fechaVencimiento", "2027-12-31"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.estadoDocumental").value("VIGENTE"));
+
+        verify(trabajadorService).cargarDocumentoPropio(any());
     }
 
     @Test
     @DisplayName("US-24 CA-2: DELETE /api/monotributista/perfil/documentos/{tipo} elimina documento")
     void eliminarDocumentoDevuelveOk() throws Exception {
-        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
-        when(trabajadorService.obtenerEntidadPorPerfilId(10L)).thenReturn(trabajadorMock);
-
         TrabajadorResponse tResp = new TrabajadorResponse(
             20L, "Paula", "Gómez", "33222111", "PENDIENTE_CARGA",
             false, false, List.of(), null
         );
-        when(trabajadorService.eliminarDocumento(20L, TipoDocumento.ART)).thenReturn(tResp);
+        when(trabajadorService.eliminarDocumentoPropio(TipoDocumento.ART)).thenReturn(tResp);
 
         mockMvc.perform(delete("/api/monotributista/perfil/documentos/ART"))
             .andExpect(status().isOk());
 
-        verify(trabajadorService).eliminarDocumento(20L, TipoDocumento.ART);
+        verify(trabajadorService).eliminarDocumentoPropio(TipoDocumento.ART);
     }
 
     @Test
     @DisplayName("US-24 CA-5: GET /api/monotributista/perfil/documentos/{tipo} descarga PDF")
     void descargarDocumentoDevuelvePdf() throws Exception {
-        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
-        when(trabajadorService.obtenerEntidadPorPerfilId(10L)).thenReturn(trabajadorMock);
-
         Resource res = new ByteArrayResource(new byte[]{1, 2, 3});
-        when(trabajadorService.descargarDocumento(20L, TipoDocumento.ART)).thenReturn(res);
+        when(trabajadorService.descargarDocumentoPropio(TipoDocumento.ART)).thenReturn(res);
 
         mockMvc.perform(get("/api/monotributista/perfil/documentos/ART"))
             .andExpect(status().isOk())
             .andExpect(header().string("Content-Type", "application/pdf"))
             .andExpect(header().string("Content-Disposition", "attachment; filename=\"ART.pdf\""));
 
-        verify(trabajadorService).descargarDocumento(20L, TipoDocumento.ART);
+        verify(trabajadorService).descargarDocumentoPropio(TipoDocumento.ART);
     }
 }
