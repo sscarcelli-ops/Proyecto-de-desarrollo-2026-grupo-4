@@ -50,3 +50,8 @@ body {
   text-align: left !important;
   padding-left: 14px !important;
 }
+
+/* RangePicker con texto de fechas centrado para mejor lectura */
+.range-picker-centrado input {
+  text-align: center !important;
+}

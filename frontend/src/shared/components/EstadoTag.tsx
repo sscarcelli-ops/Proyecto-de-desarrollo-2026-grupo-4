@@ -28,7 +28,7 @@ const ESTADOS = {
 export type Estado = keyof typeof ESTADOS;
 
 /** Etiqueta de estado con el color que le corresponde según el mapa de estados del theme. */
-export function EstadoTag({ estado }: { estado: Estado }) {
+export function EstadoTag({ estado, style }: { estado: Estado; style?: React.CSSProperties }) {
   const { label, tono } = ESTADOS[estado];
   return (
     <Tag
@@ -46,6 +46,7 @@ export function EstadoTag({ estado }: { estado: Estado }) {
         justifyContent: 'center',
         fontSize: 13,
         borderRadius: 4,
+        ...style,
       }}
     >
       {label}

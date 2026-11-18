@@ -449,10 +449,10 @@ export function GaritaPage() {
               <FichaTrabajador trabajador={trabajador} marginBottom={20} />
 
               <Paragraph style={{ fontSize: 14, color: palette.textSecondary, marginBottom: 18, marginTop: 25 }}>
-                Pertenece a más de una empresa habilitada.
+                El trabajador tiene más de un vínculo registrado.
                 <br />
                 <Text strong style={{ color: palette.text, fontSize: 15 }}>
-                  ¿Bajo qué empresa ingresa hoy?
+                  ¿Bajo qué empresa/monotributo ingresa hoy?
                 </Text>
               </Paragraph>
 

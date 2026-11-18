@@ -22,6 +22,7 @@ export const PATHS = {
   guardias: '/guardias', // US-32 (Operador)
   guardiaNuevo: '/guardias/nuevo', // US-32
   guardiaEditar: '/guardias/:id/editar', // US-32
+  historialAccesos: '/barrio/historial', // US-36 (Operador: Historial de accesos del barrio)
   trabajadores: '/trabajadores', // US-26
   trabajadorNuevo: '/trabajadores/nuevo', // US-25
   trabajadorEditar: '/trabajadores/:id/editar', // US-26
