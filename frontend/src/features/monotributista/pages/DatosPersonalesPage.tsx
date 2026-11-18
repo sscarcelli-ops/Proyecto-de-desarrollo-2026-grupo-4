@@ -9,6 +9,7 @@ import {
   Flex,
   Form,
   Input,
+  Modal,
   Row,
   Spin,
   Typography,
@@ -53,7 +54,7 @@ type DocumentoResponse = ApiSchema<'DocumentoResponse'>;
  * - Cargar, renovar, descargar y eliminar su documentación obligatoria (ART y Seguro de Vida).
  */
 export function DatosPersonalesPage() {
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
 
@@ -76,6 +77,10 @@ export function DatosPersonalesPage() {
 
   const [seguroNuevo, setSeguroNuevo] = useState<{ archivo: File; fecha: Dayjs } | null>(null);
   const [seguroEliminada, setSeguroEliminada] = useState(false);
+
+  // Modales de confirmación según wireframe (simétrico a TrabajadorEditarPage)
+  const [modalBorrarFotoVisible, setModalBorrarFotoVisible] = useState(false);
+  const [modalBorrarDocTipo, setModalBorrarDocTipo] = useState<TipoDocumento | null>(null);
 
   // Modal para carga/renovación de documento
   const [modalDocVisible, setModalDocVisible] = useState(false);
@@ -159,20 +164,16 @@ export function DatosPersonalesPage() {
     return false;
   };
 
-  // Confirmación de borrado de foto usando modal nativo de Ant Design (GUIA-DESARROLLO.md §5.4)
+  // Modal de confirmación para borrar foto (simétrico según wireframe)
   const handleAbrirBorrarFoto = () => {
-    modal.confirm({
-      title: '¿Seguro que quiere borrar la foto?',
-      okText: 'Borrar foto',
-      okButtonProps: { danger: true },
-      cancelText: 'Cancelar',
-      centered: true,
-      onOk: () => {
-        setFotoEliminada(true);
-        setFotoNuevaFile(null);
-        setFotoNuevaPreview(null);
-      },
-    });
+    setModalBorrarFotoVisible(true);
+  };
+
+  const handleEjecutarBorrarFoto = () => {
+    setFotoEliminada(true);
+    setFotoNuevaFile(null);
+    setFotoNuevaPreview(null);
+    setModalBorrarFotoVisible(false);
   };
 
   // Manejo de modal de documentos
@@ -192,24 +193,21 @@ export function DatosPersonalesPage() {
     }
   };
 
-  // Confirmación de borrado de documentos usando modal nativo de Ant Design (GUIA-DESARROLLO.md §5.4)
+  // Modal de confirmación para borrar documentos (simétrico según wireframe)
   const handleAbrirBorrarDoc = (tipo: TipoDocumento) => {
-    modal.confirm({
-      title: '¿Seguro que desea eliminar este documento?',
-      okText: 'Eliminar documento',
-      okButtonProps: { danger: true },
-      cancelText: 'Cancelar',
-      centered: true,
-      onOk: () => {
-        if (tipo === 'ART') {
-          setArtEliminada(true);
-          setArtNuevo(null);
-        } else {
-          setSeguroEliminada(true);
-          setSeguroNuevo(null);
-        }
-      },
-    });
+    setModalBorrarDocTipo(tipo);
+  };
+
+  const handleEjecutarBorrarDoc = () => {
+    if (!modalBorrarDocTipo) return;
+    if (modalBorrarDocTipo === 'ART') {
+      setArtEliminada(true);
+      setArtNuevo(null);
+    } else {
+      setSeguroEliminada(true);
+      setSeguroNuevo(null);
+    }
+    setModalBorrarDocTipo(null);
   };
 
   // Descarga unificada de documentos (guardados en backend o borradores locales)
@@ -629,6 +627,84 @@ export function DatosPersonalesPage() {
         onCancel={() => setModalDocVisible(false)}
         onConfirm={handleConfirmarModalDoc}
       />
+
+      {/* Modal de confirmación para borrar foto (simétrico según wireframe) */}
+      <Modal
+        open={modalBorrarFotoVisible}
+        centered
+        onCancel={() => setModalBorrarFotoVisible(false)}
+        destroyOnHidden
+        closable={false}
+        width={420}
+        footer={
+          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
+            <Button
+              block
+              style={{ flex: 1 }}
+              size="large"
+              onClick={() => setModalBorrarFotoVisible(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              danger
+              type="primary"
+              block
+              style={{ flex: 1 }}
+              size="large"
+              onClick={handleEjecutarBorrarFoto}
+            >
+              Borrar foto
+            </Button>
+          </Flex>
+        }
+      >
+        <Typography.Title
+          level={4}
+          style={{ textAlign: 'center', margin: '16px 0 8px 0', fontSize: 18 }}
+        >
+          ¿Seguro que quiere borrar la foto?
+        </Typography.Title>
+      </Modal>
+
+      {/* Modal de confirmación para borrar documento (simétrico según wireframe) */}
+      <Modal
+        open={modalBorrarDocTipo !== null}
+        centered
+        onCancel={() => setModalBorrarDocTipo(null)}
+        destroyOnHidden
+        closable={false}
+        width={420}
+        footer={
+          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
+            <Button
+              block
+              style={{ flex: 1 }}
+              size="large"
+              onClick={() => setModalBorrarDocTipo(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              danger
+              type="primary"
+              block
+              style={{ flex: 1 }}
+              size="large"
+              onClick={handleEjecutarBorrarDoc}
+            >
+              Eliminar documento
+            </Button>
+          </Flex>
+        }
+      >
+        <Typography.Title
+          level={4}
+          style={{ textAlign: 'center', margin: '16px 0 8px 0', fontSize: 18 }}
+        >
+          ¿Seguro que desea eliminar este documento?
+        </Typography.Title>
+      </Modal>
     </div>
   );
 }
