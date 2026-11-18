@@ -1,10 +1,23 @@
-import { useState } from 'react';
-import { App, Button, Dropdown, Flex, Modal, Pagination, Tag, Typography } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import {
+  App,
+  Button,
+  Checkbox,
+  Dropdown,
+  Flex,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Tag,
+  Typography,
+} from 'antd';
 import {
   EllipsisOutlined,
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
   UserAddOutlined,
   UserDeleteOutlined,
 } from '@ant-design/icons';
@@ -26,22 +39,47 @@ import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/usePara
 
 /**
  * US-26: listado paginado de trabajadores.
- * US-27: dar de baja trabajador.
+ * US-27: dar de baja y reincorporar trabajador.
+ * US-29: filtrar y buscar la nómina de trabajadores (RF-30).
  *
  * Muestra los trabajadores de la empresa logueada con su estado documental calculado al vuelo
- * (Vigente, Vencido, Pendiente de carga) y permite dar de baja a un trabajador.
+ * (Vigente, Vencido, Pendiente de carga) y permite buscar, filtrar y dar de baja / reincorporar.
  */
 export function TrabajadoresPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
 
-  // Paginación: Ant Design cuenta desde 1, el hook convierte a 0-based internamente.
-  // La página va en la dirección (?pagina=2): al recargar o al volver de Editar, sigue en la misma
+  // Parámetros sincronizados en la URL (GUIA-DESARROLLO.md §5.2)
   const url = useParametrosUrl();
   const pagina = url.numero('pagina', 1);
   const tamano = 10;
-  const { data, isLoading } = useTrabajadores(pagina, tamano);
+  const busqueda = url.texto('q').slice(0, 100);
+  const estadoRaw = url.texto('estado');
+  const estado = ['VIGENTE', 'VENCIDO', 'PENDIENTE_CARGA'].includes(estadoRaw) ? estadoRaw : undefined;
+  const incluirBajas = url.booleano('bajas', false);
+
+  // Buscador con debounce de 300 ms (GUIA-DESARROLLO.md §5.2)
+  const [textoBusqueda, setTextoBusqueda] = useState(busqueda);
+  const [prevBusqueda, setPrevBusqueda] = useState(busqueda);
+  const esperaBusqueda = useRef<number | undefined>(undefined);
+
+  if (busqueda !== prevBusqueda) {
+    setPrevBusqueda(busqueda);
+    setTextoBusqueda(busqueda);
+  }
+
+  useEffect(() => () => window.clearTimeout(esperaBusqueda.current), []);
+
+  const { data, isLoading } = useTrabajadores({
+    page: pagina,
+    size: tamano,
+    q: busqueda || undefined,
+    estadoDocumental: estado,
+    incluirBajas,
+  });
+
   usePaginaValida(url, pagina, data?.totalPages);
+
   const darDeBaja = useDarDeBajaTrabajador();
   const reincorporar = useReincorporarTrabajador();
 
@@ -50,6 +88,14 @@ export function TrabajadoresPage() {
 
   // Modal para confirmar reincorporar (US-27 CA-5)
   const [trabajadorParaReincorporar, setTrabajadorParaReincorporar] = useState<TrabajadorResponse | null>(null);
+
+  const hayFiltrosActivos = Boolean(busqueda.trim() || estado || incluirBajas);
+
+  const limpiarFiltros = () => {
+    setTextoBusqueda('');
+    window.clearTimeout(esperaBusqueda.current);
+    url.cambiar({ q: null, estado: null, bajas: null, pagina: null });
+  };
 
   const handleConfirmarBaja = () => {
     if (!trabajadorParaBaja) return;
@@ -105,7 +151,7 @@ export function TrabajadoresPage() {
       dataIndex: 'estadoDocumental',
       width: 220,
       align: 'center' as const,
-      render: (estado: string, t) =>
+      render: (est: string, t) =>
         t.dadoDeBaja ? (
           <Tag
             bordered
@@ -127,7 +173,7 @@ export function TrabajadoresPage() {
             Dado de baja
           </Tag>
         ) : (
-          <EstadoTag estado={estado as Estado} />
+          <EstadoTag estado={est as Estado} />
         ),
     },
     {
@@ -140,28 +186,36 @@ export function TrabajadoresPage() {
           placement="topRight"
           trigger={['click']}
           menu={{
-            items: [
-              {
-                key: 'editar',
-                icon: t.dadoDeBaja ? <EyeOutlined /> : <EditOutlined />,
-                label: t.dadoDeBaja ? 'Ver detalle' : 'Editar',
-                onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
-              },
-              t.dadoDeBaja
-                ? {
+            items: t.dadoDeBaja
+              ? [
+                  {
+                    key: 'detalle',
+                    label: 'Ver detalle',
+                    icon: <EyeOutlined />,
+                    onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
+                  },
+                  {
                     key: 'reincorporar',
-                    icon: <UserAddOutlined />,
                     label: 'Reincorporar',
+                    icon: <UserAddOutlined />,
                     onClick: () => setTrabajadorParaReincorporar(t),
-                  }
-                : {
+                  },
+                ]
+              : [
+                  {
+                    key: 'editar',
+                    label: 'Editar',
+                    icon: <EditOutlined />,
+                    onClick: () => navigate(generatePath(PATHS.trabajadorEditar, { id: String(t.id) })),
+                  },
+                  {
                     key: 'baja',
-                    icon: <UserDeleteOutlined />,
                     label: 'Dar de baja',
+                    icon: <UserDeleteOutlined />,
                     danger: true,
                     onClick: () => setTrabajadorParaBaja(t),
                   },
-            ],
+                ],
           }}
         >
           <Button
@@ -188,9 +242,73 @@ export function TrabajadoresPage() {
             Registrar trabajador
           </Button>
         }
+        filtros={
+          <Flex vertical gap={10} style={{ width: '100%' }}>
+            <Flex gap={12} align="center" wrap style={{ width: '100%' }}>
+              <Input
+                placeholder="Buscar trabajador..."
+                maxLength={100}
+                prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
+                value={textoBusqueda}
+                allowClear
+                style={{ flex: '1 1 220px', maxWidth: 360 }}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  setTextoBusqueda(valor);
+                  window.clearTimeout(esperaBusqueda.current);
+                  esperaBusqueda.current = window.setTimeout(() => {
+                    url.cambiar({ q: valor.trim() || null, pagina: null });
+                  }, 300);
+                }}
+                onPressEnter={() => {
+                  window.clearTimeout(esperaBusqueda.current);
+                  if (textoBusqueda.trim() !== busqueda.trim()) {
+                    url.cambiar({ q: textoBusqueda.trim() || null, pagina: null });
+                  }
+                }}
+              />
+              <Select<string>
+                placeholder="Filtrar por estado"
+                value={estado ?? 'TODOS'}
+                onChange={(val) => url.cambiar({ estado: val === 'TODOS' ? null : val, pagina: null })}
+                style={{ minWidth: 170 }}
+                options={[
+                  { label: 'Todos los estados', value: 'TODOS' },
+                  { label: 'Vigente', value: 'VIGENTE' },
+                  { label: 'Vencido', value: 'VENCIDO' },
+                  { label: 'Pendiente de carga', value: 'PENDIENTE_CARGA' },
+                ]}
+              />
+              <Checkbox
+                checked={incluirBajas}
+                onChange={(e) => url.cambiar({ bajas: e.target.checked ? true : null, pagina: null })}
+              >
+                Mostrar dados de baja
+              </Checkbox>
+            </Flex>
+
+            {hayFiltrosActivos && (
+              <Flex align="center" gap={8} wrap>
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                  {data?.totalElements ?? 0}{' '}
+                  {(data?.totalElements ?? 0) === 1 ? 'resultado encontrado' : 'resultados encontrados'}
+                </Typography.Text>
+                <span style={{ color: palette.borderSoft }}>•</span>
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={limpiarFiltros}
+                  style={{ padding: 0, fontSize: 13 }}
+                >
+                  Limpiar filtros
+                </Button>
+              </Flex>
+            )}
+          </Flex>
+        }
       />
 
-      {/* Tabla con bordes redondeados y paginación desacoplada */}
+      {/* Tabla con bordes redondeados y paginación desacoplada (T-07) */}
       <div
         style={{
           backgroundColor: palette.surface,
@@ -208,9 +326,12 @@ export function TrabajadoresPage() {
           dataSource={data?.content ?? []}
           loading={isLoading}
           locale={{
-            emptyText: 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
+            emptyText: hayFiltrosActivos
+              ? 'No se encontraron trabajadores que coincidan con los criterios de búsqueda'
+              : 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
           }}
           pagination={false}
+          scroll={{ x: 750 }}
         />
       </div>
 
@@ -221,7 +342,7 @@ export function TrabajadoresPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
-          onChange={(page) => url.cambiar({ pagina: page })}
+          onChange={(page) => url.cambiar({ pagina: page === 1 ? null : page })}
         />
       </Flex>
 

@@ -1036,6 +1036,26 @@ export interface components {
             nombre: string | null;
             roles: string[];
         };
+        MonotributistaPerfilResponse: {
+            /** Format: int64 */
+            perfilId: number;
+            /** Format: int64 */
+            trabajadorId: number;
+            nombre: string;
+            apellido: string;
+            dni: string;
+            cuil: string;
+            telefono: string | null;
+            /** @enum {string} */
+            estadoDocumental: "SIN_DOCUMENTACION" | "PENDIENTE" | "VENCIDA" | "COMPLETA";
+            tieneFoto: boolean;
+            fotoUrl: string | null;
+            documentos: components["schemas"]["DocumentoResponse"][];
+        };
+        MonotributistaPerfilModificarRequest: {
+            nombre: string;
+            apellido: string;
+        };
     };
     responses: never;
     parameters: never;

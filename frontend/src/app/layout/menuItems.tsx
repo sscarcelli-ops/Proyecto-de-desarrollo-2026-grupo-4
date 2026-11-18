@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ApartmentOutlined, HomeOutlined, SafetyOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons';
+import { ApartmentOutlined, HomeOutlined, SafetyOutlined, ShopOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
 import type { Rol } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
 
@@ -24,6 +24,8 @@ export const MENU_ITEMS: AppMenuItem[] = [
   { path: PATHS.guardias, label: 'Guardias', icon: <SafetyOutlined />, roles: ['OPERADOR'] },
   // US-25, US-26: Trabajadores de la Empresa
   { path: PATHS.trabajadores, label: 'Trabajadores', icon: <TeamOutlined />, roles: ['EMPRESA'] },
+  // US-24: Datos personales del Monotributista (RF-09, RN-07)
+  { path: PATHS.datosPersonales, label: 'Datos personales', icon: <UserOutlined />, roles: ['MONOTRIBUTISTA'] },
 ];
 
 /** Opciones visibles para los roles del usuario (RF-22). */

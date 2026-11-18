@@ -25,4 +25,5 @@ export const PATHS = {
   trabajadores: '/trabajadores', // US-26
   trabajadorNuevo: '/trabajadores/nuevo', // US-25
   trabajadorEditar: '/trabajadores/:id/editar', // US-26
+  datosPersonales: '/datos-personales', // US-24: Datos personales del Monotributista (RF-09, RN-07)
 } as const;

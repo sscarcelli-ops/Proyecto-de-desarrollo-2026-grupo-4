@@ -13,11 +13,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -680,5 +684,143 @@ class TrabajadorServiceTest {
         Resource resultado = service.descargarDocumento(trabajadorId, TipoDocumento.ART);
 
         assertThat(resultado).isSameAs(mockResource);
+    }
+
+    // ========================================================================================
+    // US-24: Soporte para Monotributista
+    // ========================================================================================
+
+    @Test
+    @DisplayName("US-24: cargarFotoPropia y cargarDocumentoPropio delegan en el trabajador propio")
+    void operacionesPropiasMonotributistaDeleganEnTrabajadorPropio() {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(10L);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setDocumentos(new ArrayList<>());
+
+        when(usuarioActual.perfilIdAprobado()).thenReturn(PERFIL_ID);
+        when(trabajadorRepository.findFirstByPerfilId(PERFIL_ID)).thenReturn(Optional.of(trabajador));
+        when(fileStorageService.guardar(any(), any())).thenReturn("trabajadores/10/foto/foto.jpg");
+
+        MockMultipartFile foto = new MockMultipartFile("foto", "foto.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        TrabajadorResponse res = service.cargarFotoPropia(foto);
+
+        assertThat(res.tieneFoto()).isTrue();
+        verify(trabajadorRepository).saveAndFlush(trabajador);
+    }
+    void obtenerPorPerfilIdExitoso() {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(10L);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Paula");
+        trabajador.setApellido("Pendiente");
+        trabajador.setDni("33222111");
+
+        when(trabajadorRepository.findFirstByPerfilId(PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        TrabajadorResponse res = service.obtenerPorPerfilId(PERFIL_ID);
+
+        assertThat(res.id()).isEqualTo(10L);
+        assertThat(res.nombre()).isEqualTo("Paula");
+        assertThat(res.dni()).isEqualTo("33222111");
+        assertThat(res.estadoDocumental()).isEqualTo("PENDIENTE_CARGA");
+    }
+
+    @Test
+    @DisplayName("US-24: obtenerPorPerfilId lanza NotFoundException si no existe")
+    void obtenerPorPerfilIdInexistenteLanzaNotFound() {
+        when(trabajadorRepository.findFirstByPerfilId(PERFIL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.obtenerPorPerfilId(PERFIL_ID))
+            .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("US-24 CA-6: sincronizarDatosMonotributista actualiza nombre y apellido del trabajador")
+    void sincronizarDatosMonotributistaActualizaNombreYApellido() {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(10L);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setNombre("Paula");
+        trabajador.setApellido("Pendiente");
+
+        when(trabajadorRepository.findFirstByPerfilId(PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        service.sincronizarDatosMonotributista(PERFIL_ID, "Paula María", "Gómez");
+
+        assertThat(trabajador.getNombre()).isEqualTo("Paula María");
+        assertThat(trabajador.getApellido()).isEqualTo("Gómez");
+        verify(trabajadorRepository).save(trabajador);
+    }
+
+    @Test
+    @DisplayName("US-24: sincronizarDatosMonotributista lanza excepción si el trabajador está dado de baja")
+    void sincronizarDatosMonotributistaTrabajadorDadoDeBajaLanzaExcepcion() {
+        Trabajador trabajador = new Trabajador();
+        trabajador.setId(10L);
+        trabajador.setPerfilId(PERFIL_ID);
+        trabajador.setFechaBaja(Instant.now());
+
+        when(trabajadorRepository.findFirstByPerfilId(PERFIL_ID)).thenReturn(Optional.of(trabajador));
+
+        assertThatThrownBy(() -> service.sincronizarDatosMonotributista(PERFIL_ID, "Paula", "Gómez"))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("No se puede modificar un trabajador dado de baja.");
+    }
+
+    @Test
+    @DisplayName("US-29 / CA-1, CA-3: listar con filtros delega parámetros procesados en el repository")
+    void listarConFiltrosDelegaEnRepository() {
+        Trabajador t = new Trabajador();
+        t.setId(1L);
+        t.setPerfilId(PERFIL_ID);
+        t.setNombre("Mario");
+        t.setApellido("Kempes");
+        t.setDni("12345678");
+        t.setDocumentos(new ArrayList<>());
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(trabajadorRepository.listarConFiltros(
+            eq(PERFIL_ID), eq("kempes"), eq(EstadoDocumental.VENCIDO), eq(true), any(LocalDate.class), eq(pageable)
+        )).thenReturn(new PageImpl<>(List.of(t), pageable, 1));
+
+        var resultado = service.listar("kempes", EstadoDocumental.VENCIDO, true, pageable);
+
+        assertThat(resultado.content()).hasSize(1);
+        assertThat(resultado.content().get(0).nombre()).isEqualTo("Mario");
+        verify(trabajadorRepository).listarConFiltros(
+            eq(PERFIL_ID), eq("kempes"), eq(EstadoDocumental.VENCIDO), eq(true), any(LocalDate.class), eq(pageable)
+        );
+    }
+
+    @Test
+    @DisplayName("US-29: listar sin filtro de estado envía null al repository")
+    void listarSinFiltroDeEstadoEnviaNullAlRepository() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(trabajadorRepository.listarConFiltros(
+            eq(PERFIL_ID), isNull(), isNull(), eq(false), any(LocalDate.class), eq(pageable)
+        )).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        var resultado = service.listar(null, null, false, pageable);
+
+        assertThat(resultado.content()).isEmpty();
+        verify(trabajadorRepository).listarConFiltros(
+            eq(PERFIL_ID), isNull(), isNull(), eq(false), any(LocalDate.class), eq(pageable)
+        );
+    }
+
+    @Test
+    @DisplayName("US-29: listar escapa caracteres especiales de LIKE (%, _, \\)")
+    void listarEscapaCaracteresEspecialesDeLike() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(trabajadorRepository.listarConFiltros(
+            eq(PERFIL_ID), eq("100\\%\\_test\\\\"), isNull(), eq(false), any(LocalDate.class), eq(pageable)
+        )).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        service.listar("100%_test\\", null, null, pageable);
+
+        verify(trabajadorRepository).listarConFiltros(
+            eq(PERFIL_ID), eq("100\\%\\_test\\\\"), isNull(), eq(false), any(LocalDate.class), eq(pageable)
+        );
     }
 }

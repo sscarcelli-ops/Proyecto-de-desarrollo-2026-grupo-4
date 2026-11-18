@@ -5,7 +5,6 @@ import {
   Avatar,
   Button,
   Card,
-  DatePicker,
   Divider,
   Flex,
   Form,
@@ -44,6 +43,7 @@ import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError
 import { EstadoTag } from '../../../shared/components/EstadoTag';
 import { PATHS } from '../../../routes/paths';
 import { palette } from '../../../app/theme';
+import { ModalCargarDocumento } from '../components/ModalCargarDocumento';
 
 /**
  * US-26: Modificar trabajador.
@@ -93,9 +93,6 @@ export function TrabajadorEditarPage() {
   // Estados para modal de carga/renovación de documento
   const [modalDocVisible, setModalDocVisible] = useState(false);
   const [modalDocTipo, setModalDocTipo] = useState<TipoDocumento | null>(null);
-  const [modalDocArchivo, setModalDocArchivo] = useState<File | null>(null);
-  const [modalDocFecha, setModalDocFecha] = useState<Dayjs | null>(null);
-  const [modalDocError, setModalDocError] = useState<string | null>(null);
 
   // Cargar datos en el formulario cuando el trabajador esté disponible
   useEffect(() => {
@@ -271,36 +268,19 @@ export function TrabajadorEditarPage() {
   // Abrir modal para subir o renovar documento
   const handleAbrirModalDoc = (tipo: TipoDocumento) => {
     setModalDocTipo(tipo);
-    setModalDocArchivo(null);
-    setModalDocFecha(null);
-    setModalDocError(null);
     setModalDocVisible(true);
   };
 
   // Confirmar archivo y fecha de documento (guarda en borrador local)
-  const handleGuardarModalDoc = () => {
+  const handleConfirmarModalDoc = (archivo: File, fecha: Dayjs) => {
     if (!modalDocTipo) return;
-    if (!modalDocArchivo) {
-      setModalDocError('Debe adjuntar el archivo del documento');
-      return;
-    }
-    if (!modalDocFecha) {
-      setModalDocError('La fecha de vencimiento es obligatoria');
-      return;
-    }
-
     if (modalDocTipo === 'ART') {
-      setArtNuevo({ archivo: modalDocArchivo, fecha: modalDocFecha });
+      setArtNuevo({ archivo, fecha });
       setArtEliminada(false);
     } else {
-      setSeguroNuevo({ archivo: modalDocArchivo, fecha: modalDocFecha });
+      setSeguroNuevo({ archivo, fecha });
       setSeguroEliminada(false);
     }
-
-    setModalDocVisible(false);
-    setModalDocArchivo(null);
-    setModalDocFecha(null);
-    setModalDocError(null);
   };
 
   // Abrir modal de confirmación para eliminar documento
@@ -657,80 +637,12 @@ export function TrabajadorEditarPage() {
       </Card>
 
       {/* Modal para Subir o Renovar Documento */}
-      <Modal
-        title={modalDocTipo === 'ART' ? 'Cargar / Renovar Póliza de ART' : 'Cargar / Renovar Seguro de Vida'}
+      <ModalCargarDocumento
         open={modalDocVisible}
-        centered
+        tipo={modalDocTipo}
         onCancel={() => setModalDocVisible(false)}
-        destroyOnHidden
-        footer={
-          <Flex gap={12} style={{ width: '100%', marginTop: 20 }}>
-            <Button
-              block
-              style={{ flex: 1 }}
-              size="large"
-              onClick={() => setModalDocVisible(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="primary"
-              block
-              style={{ flex: 1 }}
-              size="large"
-              disabled={!modalDocArchivo || !modalDocFecha}
-              onClick={handleGuardarModalDoc}
-            >
-              Cargar documento
-            </Button>
-          </Flex>
-        }
-      >
-        <Flex vertical gap={16} style={{ marginTop: 16 }}>
-          {modalDocError && <Alert type="error" showIcon title={modalDocError} />}
-
-          <div>
-            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
-              Archivo (PDF hasta 8 MB)
-            </Typography.Text>
-            <Upload
-              accept=".pdf"
-              maxCount={1}
-              fileList={modalDocArchivo ? [{ uid: '-1', name: modalDocArchivo.name, status: 'done' }] : []}
-              beforeUpload={(file) => {
-                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-                if (!isPdf || file.size > 8 * 1024 * 1024) {
-                  setModalDocError('El archivo debe ser un PDF de hasta 8 MB');
-                  return Upload.LIST_IGNORE;
-                }
-                setModalDocError(null);
-                setModalDocArchivo(file);
-                return false;
-              }}
-              onRemove={() => setModalDocArchivo(null)}
-              className="upload-block"
-            >
-              <Button block className="btn-upload-input" icon={<UploadOutlined />}>
-                {modalDocArchivo ? 'Cambiar archivo' : 'Subir archivo pdf'}
-              </Button>
-            </Upload>
-          </div>
-
-          <div>
-            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
-              Indique fecha de vencimiento
-            </Typography.Text>
-            <DatePicker
-              size="large"
-              placeholder="DD/MM/AAAA"
-              format="DD/MM/YYYY"
-              value={modalDocFecha}
-              onChange={(date) => setModalDocFecha(date)}
-              style={{ width: '100%' }}
-            />
-          </div>
-        </Flex>
-      </Modal>
+        onConfirm={handleConfirmarModalDoc}
+      />
 
       {/* Modal de confirmación para borrar foto (simétrico según wireframe) */}
       <Modal
