@@ -1055,7 +1055,6 @@ export interface components {
         MonotributistaPerfilModificarRequest: {
             nombre: string;
             apellido: string;
-            telefono?: string | null;
         };
     };
     responses: never;

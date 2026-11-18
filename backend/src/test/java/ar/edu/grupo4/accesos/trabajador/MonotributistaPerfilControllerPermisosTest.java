@@ -118,7 +118,7 @@ class MonotributistaPerfilControllerPermisosTest {
     @DisplayName("Otros roles son rechazados con 403 al intentar modificar el perfil de monotributista")
     void otrosRolesRechazadosEnModificar(String rol) {
         sesionCon(rol);
-        MonotributistaPerfilModificarRequest req = new MonotributistaPerfilModificarRequest("Nuevo", "Nombre", "123");
+        MonotributistaPerfilModificarRequest req = new MonotributistaPerfilModificarRequest("Nuevo", "Nombre");
         assertThatThrownBy(() -> controller.modificar(req))
             .isInstanceOf(AccessDeniedException.class);
         verifyNoInteractions(perfilService);

@@ -33,7 +33,7 @@ export async function obtenerMiPerfil(): Promise<MonotributistaPerfilResponse> {
   return data;
 }
 
-/** PUT /api/monotributista/perfil — modificar nombre, apellido y teléfono (US-24) */
+/** PUT /api/monotributista/perfil — modificar nombre y apellido (US-24, CA-6) */
 export async function modificarMiPerfil(
   body: MonotributistaPerfilModificarRequest
 ): Promise<MonotributistaPerfilResponse> {
@@ -123,7 +123,7 @@ export function useMiPerfilMonotributista() {
 }
 
 /**
- * Hook para modificar datos personales (nombre, apellido, teléfono).
+ * Hook para modificar datos personales (nombre, apellido) (US-24, CA-6).
  */
 export function useModificarPerfilMonotributista() {
   const queryClient = useQueryClient();

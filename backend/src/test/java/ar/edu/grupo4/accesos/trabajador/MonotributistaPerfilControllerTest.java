@@ -89,12 +89,12 @@ class MonotributistaPerfilControllerTest {
     }
 
     @Test
-    @DisplayName("US-24 CA-6: PUT /api/monotributista/perfil actualiza nombre, apellido y teléfono")
+    @DisplayName("US-24 CA-6: PUT /api/monotributista/perfil actualiza nombre y apellido")
     void modificarPerfilDevuelveOk() throws Exception {
         when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
         MonotributistaPerfilResponse actualizada = new MonotributistaPerfilResponse(
             10L, 20L, "Paula María", "Gómez Pérez", "33222111", "27-33222111-1",
-            "1199887766", "PENDIENTE_CARGA", false, null, List.of()
+            "1133445566", "PENDIENTE_CARGA", false, null, List.of()
         );
         when(perfilService.modificarPerfilMonotributista(eq(10L), any(MonotributistaPerfilModificarRequest.class)))
             .thenReturn(actualizada);
@@ -102,8 +102,7 @@ class MonotributistaPerfilControllerTest {
         String json = """
             {
                 "nombre": "Paula María",
-                "apellido": "Gómez Pérez",
-                "telefono": "1199887766"
+                "apellido": "Gómez Pérez"
             }
             """;
 
@@ -112,8 +111,7 @@ class MonotributistaPerfilControllerTest {
                 .content(json))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nombre").value("Paula María"))
-            .andExpect(jsonPath("$.apellido").value("Gómez Pérez"))
-            .andExpect(jsonPath("$.telefono").value("1199887766"));
+            .andExpect(jsonPath("$.apellido").value("Gómez Pérez"));
 
         verify(perfilService).modificarPerfilMonotributista(eq(10L), any(MonotributistaPerfilModificarRequest.class));
     }
@@ -124,8 +122,7 @@ class MonotributistaPerfilControllerTest {
         String json = """
             {
                 "nombre": "",
-                "apellido": "",
-                "telefono": "1122334455"
+                "apellido": ""
             }
             """;
 

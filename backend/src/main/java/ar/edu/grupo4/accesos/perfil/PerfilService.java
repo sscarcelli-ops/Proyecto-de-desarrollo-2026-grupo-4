@@ -294,7 +294,7 @@ public class PerfilService {
     }
 
     /**
-     * Modifica nombre, apellido y teléfono del Monotributista (US-24, CA-6).
+     * Modifica nombre y apellido del Monotributista (US-24, CA-6).
      * Sincroniza atómicamente el nombre y apellido en la tabla trabajador.
      * DNI y CUIL son inmutables.
      */
@@ -310,9 +310,6 @@ public class PerfilService {
 
         perfil.setNombre(request.nombre().trim());
         perfil.setApellido(request.apellido().trim());
-        if (request.telefono() != null) {
-            perfil.setTelefono(request.telefono().trim().isEmpty() ? null : request.telefono().trim());
-        }
         perfilRepository.save(perfil);
         log.info("Perfil Monotributista {} actualizado", perfilId);
 

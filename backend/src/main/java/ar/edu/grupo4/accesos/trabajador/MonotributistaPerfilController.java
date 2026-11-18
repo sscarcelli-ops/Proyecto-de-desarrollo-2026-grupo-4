@@ -46,7 +46,7 @@ public class MonotributistaPerfilController {
     }
 
     @PutMapping
-    @Operation(summary = "Modificar nombre, apellido y teléfono del Monotributista")
+    @Operation(summary = "Modificar nombre y apellido del Monotributista")
     public MonotributistaPerfilResponse modificar(@Valid @RequestBody MonotributistaPerfilModificarRequest request) {
         Long perfilId = usuarioActual.perfilIdAprobado();
         return perfilService.modificarPerfilMonotributista(perfilId, request);

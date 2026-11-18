@@ -90,7 +90,6 @@ export function DatosPersonalesPage() {
       form.setFieldsValue({
         nombre: perfil.nombre,
         apellido: perfil.apellido,
-        telefono: perfil.telefono ?? '',
       });
     }
   }, [perfil, form]);
@@ -223,11 +222,10 @@ export function DatosPersonalesPage() {
     try {
       setGuardando(true);
 
-      // 1. Modificar nombre, apellido o teléfono si cambiaron
+      // 1. Modificar nombre o apellido si cambiaron
       const cambioDatos =
         values.nombre !== perfil.nombre ||
-        values.apellido !== perfil.apellido ||
-        (values.telefono || null) !== (perfil.telefono || null);
+        values.apellido !== perfil.apellido;
 
       if (cambioDatos) {
         await modificarPerfil.mutateAsync(values);
@@ -288,7 +286,6 @@ export function DatosPersonalesPage() {
       form.setFieldsValue({
         nombre: perfil.nombre,
         apellido: perfil.apellido,
-        telefono: perfil.telefono ?? '',
       });
     }
     setFotoNuevaFile(null);
@@ -425,18 +422,6 @@ export function DatosPersonalesPage() {
                     extra="El CUIL no puede modificarse por ser un identificador fiscal."
                   >
                     <Input value={perfil.cuil} disabled />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Teléfono"
-                    name="telefono"
-                    rules={[{ max: 30, message: 'Máximo 30 caracteres' }]}
-                  >
-                    <Input placeholder="Ej. 11 2345-6789" maxLength={30} />
                   </Form.Item>
                 </Col>
               </Row>

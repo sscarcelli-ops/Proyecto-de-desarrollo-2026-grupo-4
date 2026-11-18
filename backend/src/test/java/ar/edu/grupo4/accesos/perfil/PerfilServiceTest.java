@@ -526,14 +526,13 @@ class PerfilServiceTest {
         when(trabajadorService.obtenerPorPerfilId(200L)).thenReturn(tResp);
 
         MonotributistaPerfilModificarRequest req = new MonotributistaPerfilModificarRequest(
-            "Paula Andrea", "Gómez", "1199887766"
+            "Paula Andrea", "Gómez"
         );
 
         MonotributistaPerfilResponse res = perfilService.modificarPerfilMonotributista(200L, req);
 
         assertThat(p.getNombre()).isEqualTo("Paula Andrea");
         assertThat(p.getApellido()).isEqualTo("Gómez");
-        assertThat(p.getTelefono()).isEqualTo("1199887766");
         assertThat(p.getCuitCuil()).isEqualTo("27-33222111-1"); // Inmutable
         assertThat(p.getDniTitular()).isEqualTo("33222111");    // Inmutable
 
