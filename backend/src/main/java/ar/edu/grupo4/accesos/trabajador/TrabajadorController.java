@@ -7,6 +7,7 @@ import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
@@ -86,8 +87,8 @@ public class TrabajadorController {
      */
     @GetMapping
     public PageResponse<TrabajadorResponse> listar(
-            @RequestParam(required = false) String q,
-            @RequestParam(required = false) String estadoDocumental,
+            @RequestParam(required = false) @Size(max = 100, message = "La búsqueda no puede superar los 100 caracteres") String q,
+            @RequestParam(required = false) EstadoDocumental estadoDocumental,
             @RequestParam(required = false) Boolean incluirBajas,
             @PageableDefault(size = 10, sort = {"nombre", "apellido"}) Pageable pageable) {
 

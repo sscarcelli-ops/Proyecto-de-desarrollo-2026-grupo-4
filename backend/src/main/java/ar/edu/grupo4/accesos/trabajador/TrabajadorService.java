@@ -149,22 +149,19 @@ public class TrabajadorService {
     @Transactional(readOnly = true)
     public PageResponse<TrabajadorResponse> listar(
             String q,
-            String estadoDocumental,
+            EstadoDocumental estadoDocumental,
             Boolean incluirBajas,
             Pageable pageable) {
 
         Long perfilId = usuarioActual.perfilIdAprobado();
         String filtroTexto = (q != null && !q.isBlank()) ? escaparLike(q.trim()) : null;
-        String filtroEstado = (estadoDocumental != null && !estadoDocumental.isBlank())
-            ? validarEstadoDocumental(estadoDocumental.trim().toUpperCase())
-            : null;
         boolean mostrarBajas = Boolean.TRUE.equals(incluirBajas);
         LocalDate hoy = LocalDate.now();
 
         Page<Trabajador> pagina = trabajadorRepository.listarConFiltros(
             perfilId,
             filtroTexto,
-            filtroEstado,
+            estadoDocumental,
             mostrarBajas,
             hoy,
             pageable
@@ -173,32 +170,6 @@ public class TrabajadorService {
         return PageResponse.from(
             pagina,
             t -> TrabajadorResponse.from(t, calcularEstadoDocumental(t))
-        );
-    }
-
-    /**
-     * Sobrecarga para retrocompatibilidad con tests existentes (US-41).
-     */
-    @Transactional(readOnly = true)
-    public PageResponse<TrabajadorResponse> listar(Pageable pageable) {
-        Long perfilId = usuarioActual.perfilIdAprobado();
-        return PageResponse.from(
-            trabajadorRepository.findByPerfilId(perfilId, pageable),
-            t -> TrabajadorResponse.from(t, calcularEstadoDocumental(t))
-        );
-    }
-
-    private String validarEstadoDocumental(String estado) {
-        if ("TODOS".equals(estado)) {
-            return null;
-        }
-        if ("VIGENTE".equals(estado) || "VENCIDO".equals(estado) || "PENDIENTE_CARGA".equals(estado)) {
-            return estado;
-        }
-        throw new BusinessException(
-            "ESTADO_DOCUMENTAL_INVALIDO",
-            "El estado documental debe ser VIGENTE, VENCIDO o PENDIENTE_CARGA",
-            HttpStatus.BAD_REQUEST
         );
     }
 

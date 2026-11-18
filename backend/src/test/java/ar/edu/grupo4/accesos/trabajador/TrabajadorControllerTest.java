@@ -26,6 +26,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -177,7 +178,7 @@ class TrabajadorControllerTest {
             new PageImpl<>(List.of(item), PageRequest.of(0, 10), 1)
         );
 
-        when(trabajadorService.listar(eq("perez"), eq("VENCIDO"), eq(true), any(Pageable.class)))
+        when(trabajadorService.listar(eq("perez"), eq(EstadoDocumental.VENCIDO), eq(true), any(Pageable.class)))
             .thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/trabajadores")
@@ -189,24 +190,28 @@ class TrabajadorControllerTest {
             .andExpect(jsonPath("$.content[0].estadoDocumental").value("VENCIDO"))
             .andExpect(jsonPath("$.content[0].dadoDeBaja").value(true));
 
-        verify(trabajadorService).listar(eq("perez"), eq("VENCIDO"), eq(true), any(Pageable.class));
+        verify(trabajadorService).listar(eq("perez"), eq(EstadoDocumental.VENCIDO), eq(true), any(Pageable.class));
     }
 
     @Test
     @DisplayName("US-29: GET /api/trabajadores con estadoDocumental inválido devuelve 400 Bad Request")
     void listarConEstadoInvalidoDevuelve400() throws Exception {
-        when(trabajadorService.listar(isNull(), eq("INVALIDO"), isNull(), any(Pageable.class)))
-            .thenThrow(new BusinessException(
-                "ESTADO_DOCUMENTAL_INVALIDO",
-                "El estado documental debe ser VIGENTE, VENCIDO o PENDIENTE_CARGA",
-                HttpStatus.BAD_REQUEST
-            ));
-
         mockMvc.perform(get("/api/trabajadores")
                 .param("estadoDocumental", "INVALIDO"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value("ESTADO_DOCUMENTAL_INVALIDO"));
+            .andExpect(status().isBadRequest());
 
-        verify(trabajadorService).listar(isNull(), eq("INVALIDO"), isNull(), any(Pageable.class));
+        verify(trabajadorService, never()).listar(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("US-29: GET /api/trabajadores con búsqueda q de más de 100 caracteres devuelve 400 Bad Request")
+    void listarConQDemasiadoLargoDevuelve400() throws Exception {
+        String qInvalido = "a".repeat(101);
+
+        mockMvc.perform(get("/api/trabajadores")
+                .param("q", qInvalido))
+            .andExpect(status().isBadRequest());
+
+        verify(trabajadorService, never()).listar(any(), any(), any(), any());
     }
 }

@@ -20,13 +20,33 @@ import java.util.Optional;
  */
 public interface TrabajadorRepository extends JpaRepository<Trabajador, Long> {
 
-    /**
-     * Listado paginado de los trabajadores de un perfil (US-26, RNF-08).
-     * No lleva @EntityGraph para permitir que PostgreSQL aplique LIMIT/OFFSET en la BD sin
-     * paginar en memoria (aviso HHH90003004). Los documentos se cargan en lote mediante
-     * @BatchSize en la entidad Trabajador.
-     */
-    Page<Trabajador> findByPerfilId(Long perfilId, Pageable pageable);
+    /** Cláusula común de filtrado para consulta paginada y cálculo de totalElements (US-29, RF-30). */
+    String CLAUSULA_FILTROS_TRABAJADOR = """
+        WHERE t.perfilId = :perfilId
+          AND (:incluirBajas = true OR t.fechaBaja IS NULL)
+          AND (
+            :q IS NULL OR :q = '' OR
+            LOWER(t.nombre) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(t.apellido) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(t.dni) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(CONCAT(t.nombre, ' ', t.apellido)) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
+            LOWER(CONCAT(t.apellido, ' ', t.nombre)) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\'
+          )
+          AND (
+            :estadoDocumental IS NULL OR
+            (:estadoDocumental = ar.edu.grupo4.accesos.trabajador.EstadoDocumental.PENDIENTE_CARGA AND NOT EXISTS (
+                SELECT d0 FROM Documento d0 WHERE d0.trabajador = t
+            )) OR
+            (:estadoDocumental = ar.edu.grupo4.accesos.trabajador.EstadoDocumental.VENCIDO AND EXISTS (
+                SELECT d1 FROM Documento d1 WHERE d1.trabajador = t AND d1.fechaVencimiento < :hoy
+            )) OR
+            (:estadoDocumental = ar.edu.grupo4.accesos.trabajador.EstadoDocumental.VIGENTE AND EXISTS (
+                SELECT d2 FROM Documento d2 WHERE d2.trabajador = t
+            ) AND NOT EXISTS (
+                SELECT d3 FROM Documento d3 WHERE d3.trabajador = t AND d3.fechaVencimiento < :hoy
+            ))
+          )
+        """;
 
     /**
      * US-29: Listado paginado de los trabajadores con filtros y búsqueda (RF-30).
@@ -39,64 +59,14 @@ public interface TrabajadorRepository extends JpaRepository<Trabajador, Long> {
      * No lleva @EntityGraph para permitir que PostgreSQL aplique LIMIT/OFFSET en la BD sin
      * paginar en memoria. Los documentos se cargan en lote mediante @BatchSize en Trabajador.
      */
-    @Query(value = """
-        SELECT t FROM Trabajador t
-        WHERE t.perfilId = :perfilId
-          AND (:incluirBajas = true OR t.fechaBaja IS NULL)
-          AND (
-            :q IS NULL OR :q = '' OR
-            LOWER(t.nombre) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(t.apellido) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(t.dni) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(CONCAT(t.nombre, ' ', t.apellido)) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(CONCAT(t.apellido, ' ', t.nombre)) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\'
-          )
-          AND (
-            :estadoDocumental IS NULL OR :estadoDocumental = '' OR
-            (:estadoDocumental = 'PENDIENTE_CARGA' AND NOT EXISTS (
-                SELECT d0 FROM Documento d0 WHERE d0.trabajador = t
-            )) OR
-            (:estadoDocumental = 'VENCIDO' AND EXISTS (
-                SELECT d1 FROM Documento d1 WHERE d1.trabajador = t AND d1.fechaVencimiento < :hoy
-            )) OR
-            (:estadoDocumental = 'VIGENTE' AND EXISTS (
-                SELECT d2 FROM Documento d2 WHERE d2.trabajador = t
-            ) AND NOT EXISTS (
-                SELECT d3 FROM Documento d3 WHERE d3.trabajador = t AND d3.fechaVencimiento < :hoy
-            ))
-          )
-        """,
-        countQuery = """
-        SELECT COUNT(t) FROM Trabajador t
-        WHERE t.perfilId = :perfilId
-          AND (:incluirBajas = true OR t.fechaBaja IS NULL)
-          AND (
-            :q IS NULL OR :q = '' OR
-            LOWER(t.nombre) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(t.apellido) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(t.dni) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(CONCAT(t.nombre, ' ', t.apellido)) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\' OR
-            LOWER(CONCAT(t.apellido, ' ', t.nombre)) LIKE LOWER(CONCAT('%', :q, '%')) ESCAPE '\\'
-          )
-          AND (
-            :estadoDocumental IS NULL OR :estadoDocumental = '' OR
-            (:estadoDocumental = 'PENDIENTE_CARGA' AND NOT EXISTS (
-                SELECT d0 FROM Documento d0 WHERE d0.trabajador = t
-            )) OR
-            (:estadoDocumental = 'VENCIDO' AND EXISTS (
-                SELECT d1 FROM Documento d1 WHERE d1.trabajador = t AND d1.fechaVencimiento < :hoy
-            )) OR
-            (:estadoDocumental = 'VIGENTE' AND EXISTS (
-                SELECT d2 FROM Documento d2 WHERE d2.trabajador = t
-            ) AND NOT EXISTS (
-                SELECT d3 FROM Documento d3 WHERE d3.trabajador = t AND d3.fechaVencimiento < :hoy
-            ))
-          )
-        """)
+    @Query(
+        value = "SELECT t FROM Trabajador t " + CLAUSULA_FILTROS_TRABAJADOR,
+        countQuery = "SELECT COUNT(t) FROM Trabajador t " + CLAUSULA_FILTROS_TRABAJADOR
+    )
     Page<Trabajador> listarConFiltros(
         @Param("perfilId") Long perfilId,
         @Param("q") String q,
-        @Param("estadoDocumental") String estadoDocumental,
+        @Param("estadoDocumental") EstadoDocumental estadoDocumental,
         @Param("incluirBajas") boolean incluirBajas,
         @Param("hoy") LocalDate hoy,
         Pageable pageable

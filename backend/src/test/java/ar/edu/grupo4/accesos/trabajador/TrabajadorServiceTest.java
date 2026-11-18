@@ -781,42 +781,32 @@ class TrabajadorServiceTest {
 
         Pageable pageable = PageRequest.of(0, 10);
         when(trabajadorRepository.listarConFiltros(
-            eq(PERFIL_ID), eq("kempes"), eq("VENCIDO"), eq(true), any(LocalDate.class), eq(pageable)
+            eq(PERFIL_ID), eq("kempes"), eq(EstadoDocumental.VENCIDO), eq(true), any(LocalDate.class), eq(pageable)
         )).thenReturn(new PageImpl<>(List.of(t), pageable, 1));
 
-        var resultado = service.listar("kempes", "vencido", true, pageable);
+        var resultado = service.listar("kempes", EstadoDocumental.VENCIDO, true, pageable);
 
         assertThat(resultado.content()).hasSize(1);
         assertThat(resultado.content().get(0).nombre()).isEqualTo("Mario");
         verify(trabajadorRepository).listarConFiltros(
-            eq(PERFIL_ID), eq("kempes"), eq("VENCIDO"), eq(true), any(LocalDate.class), eq(pageable)
+            eq(PERFIL_ID), eq("kempes"), eq(EstadoDocumental.VENCIDO), eq(true), any(LocalDate.class), eq(pageable)
         );
     }
 
     @Test
-    @DisplayName("US-29: listar con filtro estado TODOS envía null al repository")
-    void listarConFiltroTodosEnviaNullAlRepository() {
+    @DisplayName("US-29: listar sin filtro de estado envía null al repository")
+    void listarSinFiltroDeEstadoEnviaNullAlRepository() {
         Pageable pageable = PageRequest.of(0, 10);
         when(trabajadorRepository.listarConFiltros(
             eq(PERFIL_ID), isNull(), isNull(), eq(false), any(LocalDate.class), eq(pageable)
         )).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        var resultado = service.listar(null, "TODOS", false, pageable);
+        var resultado = service.listar(null, null, false, pageable);
 
         assertThat(resultado.content()).isEmpty();
         verify(trabajadorRepository).listarConFiltros(
             eq(PERFIL_ID), isNull(), isNull(), eq(false), any(LocalDate.class), eq(pageable)
         );
-    }
-
-    @Test
-    @DisplayName("US-29: listar con estado documental inválido lanza BusinessException")
-    void listarConEstadoInvalidoLanzaBusinessException() {
-        Pageable pageable = PageRequest.of(0, 10);
-
-        assertThatThrownBy(() -> service.listar(null, "INVENTADO", false, pageable))
-            .isInstanceOf(BusinessException.class)
-            .hasFieldOrPropertyWithValue("code", "ESTADO_DOCUMENTAL_INVALIDO");
     }
 
     @Test
