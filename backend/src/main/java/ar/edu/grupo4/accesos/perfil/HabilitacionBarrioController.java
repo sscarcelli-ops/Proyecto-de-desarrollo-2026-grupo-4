@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Set;
@@ -27,11 +28,17 @@ public class HabilitacionBarrioController {
 
     private final HabilitacionBarrioService habilitacionBarrioService;
 
-    /** US-33: listado paginado de perfiles aprobados, con su habilitación en el barrio. */
+    /**
+     * US-33: listado paginado de perfiles aprobados, con su habilitación en el barrio.
+     * US-35: filtros opcionales por tipo de entidad y por condición en el barrio, combinables (RF-29).
+     */
     @GetMapping
-    public PageResponse<PerfilBarrioResponse> listar(@PageableDefault(size = 10) Pageable pageable) {
+    public PageResponse<PerfilBarrioResponse> listar(
+        @RequestParam(required = false) TipoPerfil tipo,
+        @RequestParam(required = false) CondicionBarrio condicion,
+        @PageableDefault(size = 10) Pageable pageable) {
         // El orden lo fija la consulta (alfabético, RNF-08): no se acepta ?sort=
-        return habilitacionBarrioService.listar(OrdenPermitido.validar(pageable, Set.of()));
+        return habilitacionBarrioService.listar(tipo, condicion, OrdenPermitido.validar(pageable, Set.of()));
     }
 
     /** US-34: habilita el perfil en el barrio. */

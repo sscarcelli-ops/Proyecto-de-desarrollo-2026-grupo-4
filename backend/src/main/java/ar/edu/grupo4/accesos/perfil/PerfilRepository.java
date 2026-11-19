@@ -52,6 +52,36 @@ public interface PerfilRepository extends JpaRepository<Perfil, Long> {
     );
 
     /**
+     * US-33 y US-35: perfiles Aprobados para el listado del Operador, filtrados por tipo y por su condición en el
+     * barrio (null = todos). Mismo orden alfabético que el listado del Administrador, con el id como desempate.
+     * Nativa porque la habilitación por barrio es una tabla sin entidad.
+     */
+    @Query(value = """
+        SELECT p.* FROM perfil p
+        WHERE p.estado = 'APROBADO'
+          AND (CAST(:tipo AS VARCHAR) IS NULL OR p.tipo = CAST(:tipo AS VARCHAR))
+          AND (CAST(:condicion AS VARCHAR) IS NULL
+               OR (CAST(:condicion AS VARCHAR) = 'HABILITADO') = EXISTS (
+                   SELECT 1 FROM habilitacion_barrio hb WHERE hb.perfil_id = p.id AND hb.barrio_id = :barrioId))
+        ORDER BY LOWER(COALESCE(p.razon_social, p.nombre)) ASC, LOWER(COALESCE(p.apellido, '')) ASC, p.id ASC
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM perfil p
+        WHERE p.estado = 'APROBADO'
+          AND (CAST(:tipo AS VARCHAR) IS NULL OR p.tipo = CAST(:tipo AS VARCHAR))
+          AND (CAST(:condicion AS VARCHAR) IS NULL
+               OR (CAST(:condicion AS VARCHAR) = 'HABILITADO') = EXISTS (
+                   SELECT 1 FROM habilitacion_barrio hb WHERE hb.perfil_id = p.id AND hb.barrio_id = :barrioId))
+        """,
+        nativeQuery = true)
+    Page<Perfil> listarAprobadosParaBarrio(
+        @Param("barrioId") Long barrioId,
+        @Param("tipo") String tipo,
+        @Param("condicion") String condicion,
+        Pageable pageable
+    );
+
+    /**
      * US-33: de los perfiles indicados, los que están habilitados en el barrio.
      * Sin fila en habilitacion_barrio el perfil está deshabilitado (RF-05: al aprobarse no tiene ninguna).
      */
