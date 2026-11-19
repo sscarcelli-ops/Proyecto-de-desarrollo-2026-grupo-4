@@ -235,7 +235,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["listar_1"];
         put?: never;
         post: operations["crear_1"];
         delete?: never;
@@ -251,7 +251,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_1"];
+        get: operations["listar_2"];
         put?: never;
         post: operations["crear_2"];
         delete?: never;
@@ -315,7 +315,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_2"];
+        get: operations["listar_3"];
         put?: never;
         post: operations["crear_3"];
         delete?: never;
@@ -571,7 +571,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -683,7 +683,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -982,6 +982,40 @@ export interface components {
         };
         PageResponsePerfilResponse: {
             content: components["schemas"]["PerfilResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        OperadorListadoResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            apellido: string;
+            email: string;
+            telefono: string;
+            /** Format: int64 */
+            barrioId: number | null;
+            barrioNombre: string | null;
+            estado: string;
+        };
+        PageResponseOperadorListadoResponse: {
+            content: components["schemas"]["OperadorListadoResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseGuardiaResponse: {
+            content: components["schemas"]["GuardiaResponse"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -1528,6 +1562,30 @@ export interface operations {
             };
         };
     };
+    listar_1: {
+        parameters: {
+            query: {
+                estado?: "DISPONIBLE" | "OCUPADO";
+                q?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseOperadorListadoResponse"];
+                };
+            };
+        };
+    };
     crear_1: {
         parameters: {
             query?: never;
@@ -1552,9 +1610,11 @@ export interface operations {
             };
         };
     };
-    listar_1: {
+    listar_2: {
         parameters: {
-            query?: never;
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1567,7 +1627,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["GuardiaResponse"][];
+                    "*/*": components["schemas"]["PageResponseGuardiaResponse"];
                 };
             };
         };
@@ -1668,7 +1728,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2059,7 +2119,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query: {
                 estado?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "SUSPENDIDO";
@@ -2209,7 +2269,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query: {
                 pageable: components["schemas"]["Pageable"];

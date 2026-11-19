@@ -12,7 +12,7 @@ const { Text } = Typography;
 // US-13: alta de Operador (Administrador). Queda "Disponible" hasta que se lo asigne a un barrio.
 // US-45: con ?barrio=<id> (desde "Crear un nuevo Operador" del listado de barrios) el Operador se crea y se asigna
 // a ese barrio en la misma operación, y el barrio queda Activo.
-// Cuando exista el listado de Operadores (US-15), "volver" y el destino al guardar sin barrio pasan a ser ese listado.
+// US-15: sin ?barrio, "Cancelar" y el destino al guardar son el listado de Operadores; con ?barrio, el de Barrios.
 export function OperadorNuevoPage() {
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
@@ -28,7 +28,7 @@ export function OperadorNuevoPage() {
   const crear = useCrearOperador();
   const crearYAsignar = useAsignarOperador(barrioId ?? 0);
 
-  const volver = () => navigate(PATHS.barrios);
+  const volver = () => navigate(tieneBarrio ? PATHS.barrios : PATHS.operadores);
 
   const onFinish = async (values: OperadorRequest) => {
     // Enter dos veces seguidas dispara el envío dos veces: mientras se guarda, no se acepta otro

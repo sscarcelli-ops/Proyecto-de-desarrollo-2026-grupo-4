@@ -4,8 +4,12 @@ import ar.edu.grupo4.accesos.guardia.dto.EstadoGuardiaRequest;
 import ar.edu.grupo4.accesos.guardia.dto.GuardiaModificarRequest;
 import ar.edu.grupo4.accesos.guardia.dto.GuardiaRequest;
 import ar.edu.grupo4.accesos.guardia.dto.GuardiaResponse;
+import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import java.util.Set;
 
 /** US-32: Guardias del barrio del Operador (RF-14). */
 @RestController
@@ -34,10 +38,10 @@ public class GuardiaController {
         return guardiaService.crear(request);
     }
 
-    // Sin paginar: bajo volumen por barrio (RNF-08)
+    // Paginado (RNF-08). El orden lo fija la consulta (apellido y nombre): no se acepta ?sort=
     @GetMapping
-    public List<GuardiaResponse> listar() {
-        return guardiaService.listar();
+    public PageResponse<GuardiaResponse> listar(@PageableDefault(size = 10) Pageable pageable) {
+        return guardiaService.listar(OrdenPermitido.validar(pageable, Set.of()));
     }
 
     @GetMapping("/{id}")

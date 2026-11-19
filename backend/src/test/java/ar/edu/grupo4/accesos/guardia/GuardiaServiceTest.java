@@ -12,6 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,13 +86,16 @@ class GuardiaServiceTest {
     }
 
     @Test
-    void listarMuestraSoloLosDelBarrioConSuEmail() {
-        when(guardiaRepository.findByBarrioIdOrderByApellidoAscNombreAsc(BARRIO)).thenReturn(List.of(guardia(9L)));
+    void listarMuestraSoloLosDelBarrioConSuEmailYPagina() {
+        Pageable pagina = PageRequest.of(0, 10);
+        when(guardiaRepository.findByBarrioIdOrderByApellidoAscNombreAscUsuarioIdAsc(BARRIO, pagina))
+            .thenReturn(new PageImpl<>(List.of(guardia(9L)), pagina, 1));
         when(usuarioService.buscarPorIds(List.of(9L))).thenReturn(Map.of(9L, cuenta(9L, "gabi@barrio.test")));
 
-        List<GuardiaResponse> lista = service.listar();
+        PageResponse<GuardiaResponse> respuesta = service.listar(pagina);
 
-        assertThat(lista).singleElement().satisfies(g -> {
+        assertThat(respuesta.totalElements()).isEqualTo(1);
+        assertThat(respuesta.content()).singleElement().satisfies(g -> {
             assertThat(g.id()).isEqualTo(9L);
             assertThat(g.email()).isEqualTo("gabi@barrio.test");
             assertThat(g.habilitado()).isTrue();

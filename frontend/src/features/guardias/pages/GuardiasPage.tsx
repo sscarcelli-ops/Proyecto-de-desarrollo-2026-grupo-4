@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { App as AntdApp, Button, Dropdown, Flex } from 'antd';
+import { App as AntdApp, Button, Dropdown, Flex, Pagination } from 'antd';
 import type { MenuProps, TableColumnsType } from 'antd';
 import { MoreOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
@@ -10,14 +10,22 @@ import { PATHS } from '../../../routes/paths';
 import { useCambiarEstadoGuardia, useGuardias, type Guardia } from '../api/guardias';
 import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
+
+const TAMANO_PAGINA = 10;
 
 
-// US-32: Guardias del barrio del Operador. Sin paginar (bajo volumen por barrio, RNF-08).
+// US-32: Guardias del barrio del Operador, paginados y en orden alfabético (RNF-08). La página va en la dirección
+// (?pagina=2): al recargar o al volver de Editar, el listado sigue donde estaba.
 // Las acciones por fila van en el menú "⋯" con solo las que corresponden al estado del Guardia.
 export function GuardiasPage() {
   const navigate = useNavigate();
   const { message, modal } = AntdApp.useApp();
-  const { data, error, isLoading } = useGuardias();
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  const { data, error, isLoading } = useGuardias(pagina, TAMANO_PAGINA);
+  // Si la página quedó vacía (se fueron Guardias) o se escribió a mano ?pagina=99, va a la última con datos
+  usePaginaValida(url, pagina, data?.totalPages);
   const cambiarEstado = useCambiarEstadoGuardia();
   // Fila que se está actualizando, para mostrar la carga solo en su botón
   const [enCurso, setEnCurso] = useState<number | null>(null);
@@ -105,7 +113,7 @@ export function GuardiasPage() {
           className="tabla-redondeada"
           rowKey="id"
           columns={columnas}
-          dataSource={data ?? []}
+          dataSource={data?.content ?? []}
           loading={isLoading}
           scroll={{ x: 640 }}
           pagination={false}
@@ -119,6 +127,17 @@ export function GuardiasPage() {
           }}
         />
       </div>
+
+      <Flex justify="center">
+        <Pagination
+          current={pagina}
+          pageSize={TAMANO_PAGINA}
+          total={data?.totalElements ?? 0}
+          showSizeChanger={false}
+          hideOnSinglePage
+          onChange={(page) => url.cambiar({ pagina: page })}
+        />
+      </Flex>
     </Flex>
   );
 }

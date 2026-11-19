@@ -1,19 +1,27 @@
 package ar.edu.grupo4.accesos.barrio;
 
+import ar.edu.grupo4.accesos.barrio.dto.OperadorListadoResponse;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorResponse;
+import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/operadores")
@@ -34,5 +42,16 @@ public class OperadorController {
     @GetMapping("/disponibles")
     public List<OperadorResponse> disponibles() {
         return operadorService.listarDisponibles();
+    }
+
+    // US-15: listado paginado de Operadores con su barrio. El orden lo fija la consulta (alfabético, RNF-08): no se
+    // acepta ?sort=
+    @GetMapping
+    public PageResponse<OperadorListadoResponse> listar(
+        @RequestParam(required = false) EstadoOperador estado,
+        @RequestParam(required = false) @Size(max = 100, message = "La búsqueda no puede superar los 100 caracteres") String q,
+        @PageableDefault(size = 10) Pageable pageable
+    ) {
+        return operadorService.listar(estado, q, OrdenPermitido.validar(pageable, Set.of()));
     }
 }
