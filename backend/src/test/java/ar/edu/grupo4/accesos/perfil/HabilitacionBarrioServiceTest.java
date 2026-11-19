@@ -72,11 +72,11 @@ class HabilitacionBarrioServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Perfil limpiezas = empresa(10L, "Limpiezas del Norte S.R.L.");
         Perfil marcos = monotributista(20L, "Marcos", "Aprobado");
-        when(perfilRepository.listarConFiltros(EstadoPerfil.APROBADO, null, pageable))
+        when(perfilRepository.listarAprobadosParaBarrio(BARRIO_ID, null, null, pageable))
             .thenReturn(new PageImpl<>(List.of(limpiezas, marcos), pageable, 2));
         when(perfilRepository.perfilesHabilitadosEnBarrio(BARRIO_ID, List.of(10L, 20L))).thenReturn(List.of(10L));
 
-        PageResponse<PerfilBarrioResponse> resultado = service.listar(pageable);
+        PageResponse<PerfilBarrioResponse> resultado = service.listar(null, null, pageable);
 
         assertThat(resultado.content()).extracting(PerfilBarrioResponse::nombre, PerfilBarrioResponse::habilitado)
             .containsExactly(tuple("Limpiezas del Norte S.R.L.", true), tuple("Marcos Aprobado", false));
@@ -84,24 +84,67 @@ class HabilitacionBarrioServiceTest {
     }
 
     @Test
-    @DisplayName("US-33 CA-1 y CA-2: se consultan solo los perfiles Aprobados, en el orden alfabético de la consulta")
-    void listar_consultaSoloPerfilesAprobados() {
+    @DisplayName("US-33 CA-1 y CA-2: sin filtros se consultan los perfiles Aprobados del barrio de la sesión")
+    void listar_sinFiltros_consultaElBarrioDeLaSesion() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(perfilRepository.listarConFiltros(any(), any(), any())).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(perfilRepository.listarAprobadosParaBarrio(any(), any(), any(), any()))
+            .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        service.listar(pageable);
+        service.listar(null, null, pageable);
 
-        verify(perfilRepository).listarConFiltros(EstadoPerfil.APROBADO, null, pageable);
+        verify(perfilRepository).listarAprobadosParaBarrio(BARRIO_ID, null, null, pageable);
+    }
+
+    // ── US-35: Filtrar por condición de acceso y tipo de entidad ─────────────────────
+
+    @Test
+    @DisplayName("US-35: el filtro de tipo y el de condición se pasan juntos a la consulta del barrio de la sesión")
+    void listar_conFiltrosCombinados_losPasaALaConsulta() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Perfil limpiezas = empresa(10L, "Limpiezas del Norte S.R.L.");
+        when(perfilRepository.listarAprobadosParaBarrio(BARRIO_ID, "EMPRESA", "HABILITADO", pageable))
+            .thenReturn(new PageImpl<>(List.of(limpiezas), pageable, 1));
+        when(perfilRepository.perfilesHabilitadosEnBarrio(BARRIO_ID, List.of(10L))).thenReturn(List.of(10L));
+
+        PageResponse<PerfilBarrioResponse> resultado =
+            service.listar(TipoPerfil.EMPRESA, CondicionBarrio.HABILITADO, pageable);
+
+        assertThat(resultado.content()).extracting(PerfilBarrioResponse::nombre, PerfilBarrioResponse::habilitado)
+            .containsExactly(tuple("Limpiezas del Norte S.R.L.", true));
+    }
+
+    @Test
+    @DisplayName("US-35: filtrar solo por condición deja el tipo en todos")
+    void listar_soloCondicion_noFiltraPorTipo() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(perfilRepository.listarAprobadosParaBarrio(any(), any(), any(), any()))
+            .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        service.listar(null, CondicionBarrio.DESHABILITADO, pageable);
+
+        verify(perfilRepository).listarAprobadosParaBarrio(BARRIO_ID, null, "DESHABILITADO", pageable);
+    }
+
+    @Test
+    @DisplayName("US-35: filtrar solo por tipo deja la condición en todos")
+    void listar_soloTipo_noFiltraPorCondicion() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(perfilRepository.listarAprobadosParaBarrio(any(), any(), any(), any()))
+            .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        service.listar(TipoPerfil.MONOTRIBUTISTA, null, pageable);
+
+        verify(perfilRepository).listarAprobadosParaBarrio(BARRIO_ID, "MONOTRIBUTISTA", null, pageable);
     }
 
     @Test
     @DisplayName("US-33 CA-4: sin perfiles aprobados devuelve una página vacía sin consultar habilitaciones")
     void listar_sinPerfilesAprobados_devuelvePaginaVacia() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(perfilRepository.listarConFiltros(EstadoPerfil.APROBADO, null, pageable))
+        when(perfilRepository.listarAprobadosParaBarrio(BARRIO_ID, null, null, pageable))
             .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        PageResponse<PerfilBarrioResponse> resultado = service.listar(pageable);
+        PageResponse<PerfilBarrioResponse> resultado = service.listar(null, null, pageable);
 
         assertThat(resultado.content()).isEmpty();
         assertThat(resultado.totalElements()).isZero();
@@ -114,8 +157,8 @@ class HabilitacionBarrioServiceTest {
         when(usuarioActual.barrioId())
             .thenThrow(new BusinessException("SIN_BARRIO", "No tenés un barrio asignado.", HttpStatus.FORBIDDEN));
 
-        assertThatThrownBy(() -> service.listar(PageRequest.of(0, 10))).isInstanceOf(BusinessException.class);
-        verify(perfilRepository, never()).listarConFiltros(any(), any(), any());
+        assertThatThrownBy(() -> service.listar(null, null, PageRequest.of(0, 10))).isInstanceOf(BusinessException.class);
+        verify(perfilRepository, never()).listarAprobadosParaBarrio(any(), any(), any(), any());
     }
 
     // ── US-34: Habilitar o deshabilitar un perfil en el barrio ───────────────────────

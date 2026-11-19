@@ -2212,6 +2212,8 @@ export interface operations {
     listar_4: {
         parameters: {
             query: {
+                tipo?: "EMPRESA" | "MONOTRIBUTISTA";
+                condicion?: "HABILITADO" | "DESHABILITADO";
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
