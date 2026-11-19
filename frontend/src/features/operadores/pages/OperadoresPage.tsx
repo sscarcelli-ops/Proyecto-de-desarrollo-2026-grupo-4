@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { Button, Flex, Input, Pagination, Select, Table, Typography } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { Button, Flex, Input, Pagination, Select } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { useNavigate } from 'react-router';
 import { palette } from '../../../app/theme';
-import { EstadoTag } from '../../../shared/components/EstadoTag';
+import { ANCHO_COLUMNA_ESTADO, EstadoTag } from '../../../shared/components/EstadoTag';
+import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
+import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
+import { usePaginaValida, useParametrosUrl } from '../../../shared/hooks/useParametrosUrl';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
 import { useOperadores, type EstadoOperador, type OperadorListado } from '../api/operadores';
 
-const { Title } = Typography;
-
 const TAMANO_PAGINA = 10;
+
+const ESTADOS: EstadoOperador[] = ['DISPONIBLE', 'OCUPADO'];
 
 const OPCIONES_ESTADO: { value: EstadoOperador | 'TODOS'; label: string }[] = [
   { value: 'TODOS', label: 'Todos' },
@@ -19,21 +22,27 @@ const OPCIONES_ESTADO: { value: EstadoOperador | 'TODOS'; label: string }[] = [
 ];
 
 // US-15: Operadores del Administrador, con el barrio a cargo. Paginado y en orden alfabético (RNF-08).
-// El buscador (nombre o email) se ejecuta con Enter o con el botón, no al escribir; el filtro por estado es directo.
+// Página, búsqueda y estado van en la dirección (?pagina=2&q=olga&estado=OCUPADO): al recargar el listado sigue igual.
+// El buscador busca solo, 300 ms después de la última tecla; el filtro por estado cambia al instante.
 // Las acciones por fila (editar datos y cambiar contraseña, US-16 y US-17) se suman al menú "⋯" cuando existan.
 export function OperadoresPage() {
   const navigate = useNavigate();
-  const [pagina, setPagina] = useState(1);
-  const [texto, setTexto] = useState(''); // lo que se escribe
-  const [busqueda, setBusqueda] = useState(''); // lo que se buscó
-  const [estado, setEstado] = useState<EstadoOperador | undefined>(undefined);
+  const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  // Mismo límite que el buscador y el backend (100): un texto más largo pegado en la dirección se corta
+  const busqueda = url.texto('q').slice(0, 100);
+  const estadoUrl = url.texto('estado');
+  // Solo valores conocidos: un ?estado=cualquiera se ignora
+  const estado = ESTADOS.includes(estadoUrl as EstadoOperador) ? (estadoUrl as EstadoOperador) : undefined;
+
+  const [texto, setTexto] = useState(busqueda); // lo que se escribe
+  const espera = useRef<number | undefined>(undefined);
+  // Al salir de la pantalla se cancela la búsqueda pendiente
+  useEffect(() => () => window.clearTimeout(espera.current), []);
 
   const { data, error, isLoading } = useOperadores({ page: pagina, size: TAMANO_PAGINA, q: busqueda, estado });
-
-  const buscar = (valor: string) => {
-    setBusqueda(valor.trim());
-    setPagina(1);
-  };
+  // Una página inexistente (?pagina=99) va a la última con datos
+  usePaginaValida(url, pagina, data?.totalPages);
 
   const hayFiltros = busqueda !== '' || estado !== undefined;
 
@@ -55,7 +64,7 @@ export function OperadoresPage() {
     {
       title: 'Estado',
       dataIndex: 'estado',
-      width: 170,
+      width: ANCHO_COLUMNA_ESTADO,
       align: 'center',
       render: (valor: EstadoOperador) => <EstadoTag estado={valor} />,
     },
@@ -63,40 +72,40 @@ export function OperadoresPage() {
 
   return (
     <Flex vertical gap={16}>
-      <Flex justify="space-between" align="center" wrap gap={8}>
-        <Title level={3} style={{ margin: 0 }}>Operadores</Title>
-        <Button type="primary" onClick={() => navigate(PATHS.operadorNuevo)}>Crear Operador</Button>
-      </Flex>
-
-      <Flex gap={12} wrap>
-        <Input.Search
-          placeholder="Buscar por nombre o email"
-          maxLength={100}
-          allowClear
-          enterButton
-          value={texto}
-          onChange={(e) => {
-            setTexto(e.target.value);
-            // Al borrar el texto (con la cruz o a mano) se vuelve a mostrar todo, sin esperar otro Enter
-            if (e.target.value === '' && busqueda !== '') buscar('');
-          }}
-          onSearch={buscar}
-          style={{ maxWidth: 380 }}
-        />
-        <Select<EstadoOperador | 'TODOS'>
-          aria-label="Filtrar por estado"
-          value={estado ?? 'TODOS'}
-          options={OPCIONES_ESTADO}
-          onChange={(valor) => {
-            setEstado(valor === 'TODOS' ? undefined : valor);
-            setPagina(1);
-          }}
-          style={{ width: 170 }}
-        />
-      </Flex>
+      <EncabezadoPagina
+        titulo="Operadores"
+        style={{ marginBottom: 0 }}
+        accion={<Button type="primary" onClick={() => navigate(PATHS.operadorNuevo)}>Crear Operador</Button>}
+        filtros={
+          <Flex gap={12} wrap>
+            <Input
+              value={texto}
+              maxLength={100}
+              allowClear
+              placeholder="Buscar por nombre o email"
+              aria-label="Buscar Operador"
+              onChange={(e) => {
+                const valor = e.target.value;
+                setTexto(valor);
+                window.clearTimeout(espera.current); // cada tecla reinicia la espera
+                espera.current = window.setTimeout(() => url.cambiar({ q: valor.trim(), pagina: null }), 300);
+              }}
+              style={{ width: 340, maxWidth: '100%' }}
+            />
+            <Select<EstadoOperador | 'TODOS'>
+              aria-label="Filtrar por estado"
+              value={estado ?? 'TODOS'}
+              options={OPCIONES_ESTADO}
+              onChange={(valor) => url.cambiar({ estado: valor === 'TODOS' ? null : valor, pagina: null })}
+              style={{ width: 170 }}
+            />
+          </Flex>
+        }
+      />
 
       <div style={{ backgroundColor: palette.surface, borderRadius: 8 }}>
-        <Table<OperadorListado>
+        <TablaResponsiva<OperadorListado>
+          columnaTitulo="nombre"
           bordered
           className="tabla-redondeada"
           rowKey="id"
@@ -127,7 +136,7 @@ export function OperadoresPage() {
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
           hideOnSinglePage
-          onChange={setPagina}
+          onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>
     </Flex>

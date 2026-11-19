@@ -1014,6 +1014,17 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        PageResponseGuardiaResponse: {
+            content: components["schemas"]["GuardiaResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         BusquedaDniResponse: {
             nombre: string;
             apellido: string;
@@ -1601,7 +1612,9 @@ export interface operations {
     };
     listar_2: {
         parameters: {
-            query?: never;
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1614,7 +1627,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["GuardiaResponse"][];
+                    "*/*": components["schemas"]["PageResponseGuardiaResponse"];
                 };
             };
         };
