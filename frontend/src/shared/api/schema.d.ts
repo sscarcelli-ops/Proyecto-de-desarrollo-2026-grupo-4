@@ -1046,8 +1046,7 @@ export interface components {
             dni: string;
             cuil: string;
             telefono: string | null;
-            /** @enum {string} */
-            estadoDocumental: "SIN_DOCUMENTACION" | "PENDIENTE" | "VENCIDA" | "COMPLETA";
+            estadoDocumental: string;
             tieneFoto: boolean;
             fotoUrl: string | null;
             documentos: components["schemas"]["DocumentoResponse"][];
