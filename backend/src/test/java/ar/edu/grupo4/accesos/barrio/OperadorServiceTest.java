@@ -149,4 +149,11 @@ class OperadorServiceTest {
 
         verify(operadorRepository).listarConFiltros("DISPONIBLE", null, pageable);
     }
+
+    @Test
+    void cerrarSesionesDelOperadorCierraLasSesionesDeSuCuenta() {
+        service.cerrarSesiones(7L);
+
+        verify(usuarioService).cerrarSesiones(7L);
+    }
 }

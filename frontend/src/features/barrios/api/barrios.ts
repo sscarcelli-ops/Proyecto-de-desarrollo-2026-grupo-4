@@ -117,6 +117,25 @@ export function useAsignarOperador(barrioId: number) {
   });
 }
 
+// US-14: reemplaza al Operador del barrio por uno disponible o uno nuevo (se crea en la misma operación). El anterior
+// queda disponible y sin sesión; el barrio conserva su estado.
+async function reemplazarOperador(id: number, request: AsignarOperadorRequest): Promise<Barrio> {
+  const { data } = await httpClient.put<Barrio>(`/barrios/${id}/operador/reemplazo`, request);
+  return data;
+}
+
+export function useReemplazarOperador(barrioId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: AsignarOperadorRequest) => reemplazarOperador(barrioId, request),
+    // También si falla: si otro Administrador tomó al Operador, la lista de disponibles se actualiza
+    onSettled: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: barriosKeys.all }),
+      queryClient.invalidateQueries({ queryKey: operadoresKeys.all }),
+    ]),
+  });
+}
+
 /**
  * Marca en el formulario los errores que devuelve el backend: el barrio repetido (mismo nombre en la misma
  * localidad/provincia) va debajo del campo nombre y el resto de las validaciones en su propio campo.

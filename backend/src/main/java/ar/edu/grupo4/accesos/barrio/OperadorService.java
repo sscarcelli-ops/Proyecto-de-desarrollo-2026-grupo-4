@@ -51,6 +51,12 @@ public class OperadorService {
             .toList();
     }
 
+    /** US-14: cierra las sesiones de un Operador que deja de tener barrio (el id del Operador es el de su cuenta). */
+    @Transactional
+    public void cerrarSesiones(Long operadorId) {
+        usuarioService.cerrarSesiones(operadorId);
+    }
+
     @Transactional(readOnly = true)
     public boolean existe(Long operadorId) {
         return operadorRepository.existsById(operadorId);
