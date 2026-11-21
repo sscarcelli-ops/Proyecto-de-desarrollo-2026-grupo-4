@@ -61,7 +61,7 @@ services:
     # - Adentro de Docker la base se llama "postgres" y escucha en su puerto interno.
     # - Usuario y contraseña: los mismos con los que se crea la base.
     # - Qué base y qué perfiles usa: DOCKER_BASE y DOCKER_PERFILES del ambiente (SPRING_PROFILES_ACTIVE no aplica acá).
-    # - Los archivos subidos y los logs van a volúmenes, para no perderse al recrear el contenedor.
+    # - Los archivos subidos y los logs se guardan en /data dentro del contenedor (ver "volumes" más abajo).
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -77,9 +77,12 @@ services:
     ports:
       # Publicado para Swagger y Postman. La app no lo necesita: el frontend llega al backend por nginx.
       - "${BACKEND_PORT:-8080}:8080"
+    # Dónde quedan en la máquina los archivos subidos y los logs (RNF-12). Por defecto, en los volúmenes de Docker
+    # "archivos" y "logs". Con ARCHIVOS_DIR o LOGS_DIR en el archivo del ambiente van a esa carpeta de la máquina, por
+    # ejemplo la de un file server montada en el servidor. Se crea si no existe.
     volumes:
-      - archivos:/data/archivos
-      - logs:/data/logs
+      - ${ARCHIVOS_DIR:-archivos}:/data/archivos
+      - ${LOGS_DIR:-logs}:/data/logs
     depends_on:
       postgres:
         condition: service_healthy

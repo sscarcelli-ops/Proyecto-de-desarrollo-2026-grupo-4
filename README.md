@@ -11,7 +11,9 @@ Plataforma de control de accesos para barrios privados.
 
 - JDK 17 o superior
 - Node.js 20 o superior
-- Docker (para PostgreSQL). Alternativa: PostgreSQL 15+ instalado, con una base vacía `accesos_db`
+- Docker con Docker Compose 2.24 o más nuevo (`docker compose version`; el `docker-compose` antiguo con guion no
+  sirve). Para el desarrollo alcanza con la base en Docker. Alternativa: PostgreSQL 15+ instalado, con una base vacía
+  `accesos_db`
 - Solo para usar la app sin desarrollar: alcanza con Docker (ver "Ambientes")
 
 ## Ramas (gitflow)
@@ -64,12 +66,36 @@ Qué tiene cada uno:
   puertos de la base y del backend.
 - Otros comandos: `docker compose ps` (estado), `docker compose logs -f backend` (logs en vivo), `docker compose
   down` (apagar), `docker compose rm -sf backend frontend` (apagar la app y dejar la base para el IDE).
-- Los archivos subidos quedan en el volumen `archivos` y los logs en el volumen `logs` (`/data/logs/accesos.log`).
+- Los archivos subidos quedan en el volumen `archivos` y los logs en el volumen `logs` (`/data/logs/accesos.log`),
+  salvo que se elija otra carpeta (ver "Archivos y logs en otra carpeta").
 - **Cómo llega el frontend al backend:** el frontend no tiene la dirección del backend. Llama a `/api` en su misma
   dirección y nginx reenvía esos pedidos al contenedor del backend (`BACKEND_URL` en `docker-compose.yml`). En
   desarrollo hace lo mismo Vite (`frontend/vite.config.ts`). Así la misma compilación sirve en cualquier máquina.
 - La primera vez tarda varios minutos (descarga las imágenes y las dependencias); después, `--build` solo
   recompila lo que cambió.
+
+### Archivos y logs en otra carpeta (file server)
+
+Dónde se guardan los archivos subidos (constancias, pólizas y fotos) es configuración de la instalación (RNF-12): no
+hace falta tocar el código ni el `docker-compose.yml`.
+
+- **Con Docker:** en el archivo del ambiente (por ejemplo `docker/produccion.env`) poner `ARCHIVOS_DIR` con la carpeta
+  de la máquina donde se guardan. Para un file server, montar antes su carpeta compartida en el servidor y poner esa
+  ruta. Lo mismo con `LOGS_DIR` para los logs. Vacías, se usan los volúmenes `archivos` y `logs`.
+  ```bash
+  # docker/produccion.env
+  ARCHIVOS_DIR=/mnt/fileserver/accesos/archivos     # Linux
+  ARCHIVOS_DIR=Z:/accesos/archivos                  # Windows: la unidad tiene que estar compartida en Docker Desktop
+  ```
+  Después, `docker compose --env-file docker/produccion.env up -d`. La carpeta se crea si no existe.
+- **Desde el IDE:** `STORAGE_PATH` en `backend/.env` (por defecto `./uploads`).
+- En la base solo se guarda la ruta **relativa** de cada archivo (por ejemplo `trabajadores/42/documentos/<id>.pdf`).
+  Para mudar los archivos existentes alcanza con copiar la carpeta entera a la nueva ubicación, respetando las
+  subcarpetas, y cambiar la variable.
+- `docker compose down -v` no borra una carpeta elegida con `ARCHIVOS_DIR`: solo los volúmenes de Docker.
+- El backend guarda y lee los archivos a través de `FileStorageService` (implementado en disco por
+  `DiscoFileStorageService`). Para un almacenamiento que no sea una carpeta (por ejemplo S3), se agrega otra
+  implementación de esa interfaz sin cambiar el resto del sistema.
 
 ### Desarrollo
 
@@ -150,7 +176,7 @@ Para agregar datos: un archivo nuevo y fechado por US (`V<fecha>__seed_<tema>.sq
 
 **Usuario Guardia de prueba:**
 - **Email:** `guardia@seed.test`
-- **Contraseña:** `Password1!`
+- **Contraseña:** `Prueba123` (la misma de todos los usuarios de prueba)
 - **Barrio:** Barrio Los Álamos (ID: 1)
 
 | DNI | Nombre y Apellido | Vínculo / Empresa | Documentación | Estado Inicial | Caso de prueba que cubre |
