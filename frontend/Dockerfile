@@ -15,5 +15,7 @@ RUN npm run build
 # (variable de entorno del contenedor, definida en docker-compose.yml).
 FROM nginx:1.27-alpine
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+# Headers de seguridad (CSP, clickjacking...), incluidos desde default.conf
+COPY nginx/seguridad.conf /etc/nginx/snippets/seguridad.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

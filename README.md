@@ -199,6 +199,14 @@ Para agregar datos: un archivo nuevo y fechado por US (`V<fecha>__seed_<tema>.sq
 - El token sobrevive al cierre del navegador: cerrar sesión (RF-25) siempre borra el token. En dispositivos
   compartidos (garita), cada Guardia debe cerrar sesión al terminar su turno.
 - Nunca usar `dangerouslySetInnerHTML` con datos del usuario: un XSS podría leer el token.
+- **Headers de seguridad** (`frontend/nginx/seguridad.conf`): en Docker, nginx manda una Content-Security-Policy
+  que solo deja cargar scripts, estilos, imágenes y llamadas de la propia app (si algo inyectara un script, el
+  navegador no lo ejecuta), prohíbe meter la app en un iframe de otro sitio (clickjacking) y no muestra la versión de
+  nginx. Si se agrega algo que cargue de otro dominio (una fuente, un mapa), hay que sumarlo a la CSP o el navegador
+  lo bloquea: se ve en la consola como "Content Security Policy".
+- Sin cookies no hay CSRF (por eso está deshabilitado en `SecurityConfig`), y CORS solo acepta los orígenes de
+  `CORS_ALLOWED_ORIGINS`. La API igual se puede llamar sin el frontend (Postman, scripts): por eso sesión, rol,
+  pertenencia de los datos, validaciones y reglas se controlan siempre en el backend.
 - **Política de contraseñas (US-44):** todo DTO que **define** una contraseña (registro, alta de Operador y Guardia,
   cambio, recupero, activación) la marca con `@PasswordSegura` (`common/security`): mínimo 8 caracteres, una
   mayúscula, una minúscula y un número, y como máximo 72 bytes (límite de bcrypt). El login no la usa.
