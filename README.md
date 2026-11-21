@@ -297,6 +297,29 @@ npm run api:types      # regenera src/shared/api/schema.d.ts
   declararlo en el record con `@Schema(types = {"string", "null"})`. En los `XxxRequest`, lo obligatorio sale de
   Bean Validation (`@NotNull`, `@NotBlank`...).
 
+## Pruebas de la API con Postman (T-08)
+
+La carpeta `postman/` tiene la colección `accesos.postman_collection.json`, el environment
+`local.postman_environment.json` y los archivos que se suben en las pruebas (`archivos/`).
+
+1. Levantar la app con los datos de prueba (`docker compose --env-file docker/prueba.env up -d`).
+2. En Postman: **Import** → elegir los dos `.json` de `postman/` → arriba a la derecha elegir el environment
+   **Local (Docker)**.
+3. Para que encuentre los archivos que se suben: **Settings → General → Working directory** = la carpeta `postman/`
+   del repo (si no, en esos pedidos hay que volver a elegir el archivo en la pestaña Body).
+4. Correr la colección entera con **Run collection**, en orden. La carpeta "1. Inicio de sesión" guarda el token de
+   cada rol y las siguientes lo usan.
+
+- Son 76 pedidos con sus tests: camino feliz de cada rol (Administrador, Operador, Guardia, Empresa) y los errores
+  esperados: sin sesión (401), rol equivocado (403), datos inválidos (400), reglas de negocio (422 con su `code`)
+  y token usado después de cerrar sesión.
+- Cada corrida crea datos nuevos con un sufijo, así que se puede repetir sin reiniciar la base.
+- Si el backend está en otra dirección, cambiar `baseUrl` en el environment.
+- Desde la terminal (sin abrir Postman), con Node instalado:
+  `npx newman run postman/accesos.postman_collection.json -e postman/local.postman_environment.json --working-dir postman`
+- Si se agrega o cambia un endpoint, sumar el pedido en la carpeta del rol que lo usa, con al menos un test del
+  código de respuesta.
+
 ## Frontend
 
 ```bash
