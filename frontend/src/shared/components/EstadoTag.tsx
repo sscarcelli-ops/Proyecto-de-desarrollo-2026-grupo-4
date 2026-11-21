@@ -20,6 +20,9 @@ const ESTADOS = {
   // Barrio (RF-02)
   ACTIVO: { label: 'Activo', tono: 'exito' },
   INACTIVO: { label: 'Inactivo', tono: 'neutro' },
+  // Operador del listado del Administrador (RF-31): sin barrio / con barrio a cargo
+  DISPONIBLE: { label: 'Disponible', tono: 'exito' },
+  OCUPADO: { label: 'Ocupado', tono: 'marca' },
   // Tipo de movimiento (RN-06)
   INGRESO: { label: 'Ingreso', tono: 'marca' },
   EGRESO: { label: 'Egreso', tono: 'neutro' },

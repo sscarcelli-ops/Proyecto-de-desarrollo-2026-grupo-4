@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Alert, Button, Flex, Select, Switch, Tooltip, Typography, App as AntdApp } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { EditOutlined, PlusOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { generatePath, useNavigate } from 'react-router';
 import { useBarrios, useCambiarEstadoBarrio, type Barrio } from '../api/barrios';
 import { AsignarOperadorSelect } from '../components/AsignarOperadorSelect';
+import { ReemplazarOperadorBoton } from '../components/ReemplazarOperadorBoton';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 import { PATHS } from '../../../routes/paths';
@@ -119,17 +120,7 @@ export function BarriosPage() {
           // El nombre a la izquierda y el botón a la derecha, con borde: se lee como acción y no como adorno del nombre
           <Flex align="center" justify="space-between" gap={8}>
             <Text ellipsis={{ tooltip: nombre }}>{nombre}</Text>
-            {/* TODO US-14: abrir el mismo SelectorOperador de US-45 (con el Operador actual arriba) y, al elegir,
-                confirmar "¿Reemplazar a [actual] por [nuevo] como Operador de [barrio]? [actual] quedará disponible y
-                se cerrará su sesión." Por ahora solo avisa que no está disponible. */}
-            <Tooltip title="Reemplazar Operador">
-              <Button
-                size="small"
-                icon={<UserSwitchOutlined />}
-                aria-label="Reemplazar Operador"
-                onClick={() => message.info('Reemplazar el Operador todavía no está disponible (US-14).')}
-              />
-            </Tooltip>
+            <ReemplazarOperadorBoton barrio={barrio} />
           </Flex>
         );
       },

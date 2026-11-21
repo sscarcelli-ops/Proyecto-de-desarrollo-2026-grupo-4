@@ -1,11 +1,14 @@
 package ar.edu.grupo4.accesos.barrio;
 
+import ar.edu.grupo4.accesos.barrio.dto.OperadorListadoResponse;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorResponse;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +51,12 @@ public class OperadorService {
             .toList();
     }
 
+    /** US-14: cierra las sesiones de un Operador que deja de tener barrio (el id del Operador es el de su cuenta). */
+    @Transactional
+    public void cerrarSesiones(Long operadorId) {
+        usuarioService.cerrarSesiones(operadorId);
+    }
+
     @Transactional(readOnly = true)
     public boolean existe(Long operadorId) {
         return operadorRepository.existsById(operadorId);
@@ -58,5 +67,25 @@ public class OperadorService {
     public Map<Long, Operador> buscarPorIds(Collection<Long> ids) {
         return operadorRepository.findAllById(ids).stream()
             .collect(Collectors.toMap(Operador::getUsuarioId, Function.identity()));
+    }
+
+    /**
+     * US-15: listado paginado de Operadores del Administrador, con su barrio. Filtros opcionales: estado (Disponible
+     * si no tiene barrio, Ocupado si lo tiene) y texto, que se busca en nombre, apellido o email.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<OperadorListadoResponse> listar(EstadoOperador estado, String q, Pageable pageable) {
+        String texto = (q != null && !q.isBlank()) ? escaparLike(q.trim()) : null;
+        return PageResponse.from(
+            operadorRepository.listarConFiltros(estado == null ? null : estado.name(), texto, pageable),
+            OperadorListadoResponse::from);
+    }
+
+    // Lo que escribe la persona se busca como texto: %, _ y la barra no actúan como comodines
+    private String escaparLike(String texto) {
+        return texto
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
     }
 }

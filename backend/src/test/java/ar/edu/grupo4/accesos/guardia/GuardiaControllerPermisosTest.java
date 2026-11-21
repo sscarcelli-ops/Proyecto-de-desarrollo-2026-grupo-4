@@ -1,5 +1,6 @@
 package ar.edu.grupo4.accesos.guardia;
 
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.guardia.dto.GuardiaResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -72,10 +75,12 @@ class GuardiaControllerPermisosTest {
     @DisplayName("US-32: el Operador puede listar los Guardias de su barrio")
     void operadorPuedeListar() {
         sesionCon("OPERADOR");
-        List<GuardiaResponse> guardias = List.of(new GuardiaResponse(4L, "Gustavo", "Guardia", "guardia@seed.test", true));
-        when(service.listar()).thenReturn(guardias);
+        Pageable pagina = PageRequest.of(0, 10);
+        PageResponse<GuardiaResponse> guardias = new PageResponse<>(
+            List.of(new GuardiaResponse(4L, "Gustavo", "Guardia", "guardia@seed.test", true)), 0, 10, 1, 1);
+        when(service.listar(pagina)).thenReturn(guardias);
 
-        assertThat(controller.listar()).isEqualTo(guardias);
+        assertThat(controller.listar(pagina)).isEqualTo(guardias);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -86,7 +91,7 @@ class GuardiaControllerPermisosTest {
 
         // La seguridad se evalúa antes de ejecutar el método: los argumentos no llegan a usarse
         assertThatThrownBy(() -> controller.crear(null)).isInstanceOf(AccessDeniedException.class);
-        assertThatThrownBy(() -> controller.listar()).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> controller.listar(PageRequest.of(0, 10))).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> controller.obtener(4L)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> controller.modificar(4L, null)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> controller.cambiarEstado(4L, null)).isInstanceOf(AccessDeniedException.class);
