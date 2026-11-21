@@ -155,13 +155,14 @@ public class TrabajadorService {
 
         Long perfilId = usuarioActual.perfilIdAprobado();
         String filtroTexto = (q != null && !q.isBlank()) ? escaparLike(q.trim()) : null;
+        String estadoFiltro = (estadoDocumental != null) ? estadoDocumental.name() : null;
         boolean mostrarBajas = Boolean.TRUE.equals(incluirBajas);
         LocalDate hoy = LocalDate.now();
 
         Page<Trabajador> pagina = trabajadorRepository.listarConFiltros(
             perfilId,
             filtroTexto,
-            estadoDocumental,
+            estadoFiltro,
             mostrarBajas,
             hoy,
             pageable

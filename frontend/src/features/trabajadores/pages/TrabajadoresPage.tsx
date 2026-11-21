@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   App,
   Button,
   Checkbox,
@@ -70,7 +71,7 @@ export function TrabajadoresPage() {
 
   useEffect(() => () => window.clearTimeout(esperaBusqueda.current), []);
 
-  const { data, isLoading } = useTrabajadores({
+  const { data, isLoading, isError, error } = useTrabajadores({
     page: pagina,
     size: tamano,
     q: busqueda || undefined,
@@ -308,6 +309,17 @@ export function TrabajadoresPage() {
         }
       />
 
+      {/* Aviso de error si la petición al backend falla */}
+      {isError && (
+        <Alert
+          type="error"
+          showIcon
+          title="No se pudieron cargar los trabajadores"
+          description={getErrorMessage(error)}
+          style={{ marginBottom: 16, borderRadius: 8 }}
+        />
+      )}
+
       {/* Tabla con bordes redondeados y paginación desacoplada (T-07) */}
       <div
         style={{
@@ -326,9 +338,11 @@ export function TrabajadoresPage() {
           dataSource={data?.content ?? []}
           loading={isLoading}
           locale={{
-            emptyText: hayFiltrosActivos
-              ? 'No se encontraron trabajadores que coincidan con los criterios de búsqueda'
-              : 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
+            emptyText: isError
+              ? 'No se pudo cargar la nómina de trabajadores debido a un error del servidor.'
+              : hayFiltrosActivos
+                ? 'No se encontraron trabajadores que coincidan con los criterios de búsqueda'
+                : 'No hay trabajadores registrados. Usá el botón "Registrar trabajador" para agregar uno.',
           }}
           pagination={false}
           scroll={{ x: 750 }}

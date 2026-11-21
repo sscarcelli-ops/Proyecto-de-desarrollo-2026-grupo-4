@@ -34,13 +34,13 @@ public interface TrabajadorRepository extends JpaRepository<Trabajador, Long> {
           )
           AND (
             :estadoDocumental IS NULL OR
-            (:estadoDocumental = ar.edu.grupo4.accesos.trabajador.EstadoDocumental.PENDIENTE_CARGA AND NOT EXISTS (
+            (:estadoDocumental = 'PENDIENTE_CARGA' AND NOT EXISTS (
                 SELECT d0 FROM Documento d0 WHERE d0.trabajador = t
             )) OR
-            (:estadoDocumental = ar.edu.grupo4.accesos.trabajador.EstadoDocumental.VENCIDO AND EXISTS (
+            (:estadoDocumental = 'VENCIDO' AND EXISTS (
                 SELECT d1 FROM Documento d1 WHERE d1.trabajador = t AND d1.fechaVencimiento < :hoy
             )) OR
-            (:estadoDocumental = ar.edu.grupo4.accesos.trabajador.EstadoDocumental.VIGENTE AND EXISTS (
+            (:estadoDocumental = 'VIGENTE' AND EXISTS (
                 SELECT d2 FROM Documento d2 WHERE d2.trabajador = t
             ) AND NOT EXISTS (
                 SELECT d3 FROM Documento d3 WHERE d3.trabajador = t AND d3.fechaVencimiento < :hoy
@@ -66,7 +66,7 @@ public interface TrabajadorRepository extends JpaRepository<Trabajador, Long> {
     Page<Trabajador> listarConFiltros(
         @Param("perfilId") Long perfilId,
         @Param("q") String q,
-        @Param("estadoDocumental") EstadoDocumental estadoDocumental,
+        @Param("estadoDocumental") String estadoDocumental,
         @Param("incluirBajas") boolean incluirBajas,
         @Param("hoy") LocalDate hoy,
         Pageable pageable

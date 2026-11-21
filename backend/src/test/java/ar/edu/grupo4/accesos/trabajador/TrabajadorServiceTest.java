@@ -781,7 +781,7 @@ class TrabajadorServiceTest {
 
         Pageable pageable = PageRequest.of(0, 10);
         when(trabajadorRepository.listarConFiltros(
-            eq(PERFIL_ID), eq("kempes"), eq(EstadoDocumental.VENCIDO), eq(true), any(LocalDate.class), eq(pageable)
+            eq(PERFIL_ID), eq("kempes"), eq("VENCIDO"), eq(true), any(LocalDate.class), eq(pageable)
         )).thenReturn(new PageImpl<>(List.of(t), pageable, 1));
 
         var resultado = service.listar("kempes", EstadoDocumental.VENCIDO, true, pageable);
@@ -789,7 +789,7 @@ class TrabajadorServiceTest {
         assertThat(resultado.content()).hasSize(1);
         assertThat(resultado.content().get(0).nombre()).isEqualTo("Mario");
         verify(trabajadorRepository).listarConFiltros(
-            eq(PERFIL_ID), eq("kempes"), eq(EstadoDocumental.VENCIDO), eq(true), any(LocalDate.class), eq(pageable)
+            eq(PERFIL_ID), eq("kempes"), eq("VENCIDO"), eq(true), any(LocalDate.class), eq(pageable)
         );
     }
 

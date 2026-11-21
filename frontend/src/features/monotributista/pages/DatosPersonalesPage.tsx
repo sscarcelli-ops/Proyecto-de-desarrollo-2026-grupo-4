@@ -362,6 +362,8 @@ export function DatosPersonalesPage() {
               borderRadius: 8,
               boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
               border: `1px solid ${palette.borderSoft}`,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             <Typography.Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
@@ -553,15 +555,19 @@ export function DatosPersonalesPage() {
                     </Button>
                   </Flex>
                 ) : (
-                  <Upload
-                    accept="image/png,image/jpeg"
-                    showUploadList={false}
-                    beforeUpload={handleFotoChange}
-                  >
-                    <Button icon={<UploadOutlined />} style={{ width: 256 }}>
-                      Subir foto
-                    </Button>
-                  </Upload>
+                  <div style={{ width: 256, maxWidth: '100%' }}>
+                    <Upload
+                      accept="image/png,image/jpeg"
+                      showUploadList={false}
+                      beforeUpload={handleFotoChange}
+                      className="upload-block"
+                      style={{ width: '100%' }}
+                    >
+                      <Button block icon={<UploadOutlined />}>
+                        Subir foto
+                      </Button>
+                    </Upload>
+                  </div>
                 )}
 
                 {/* Aclaración del wireframe */}
