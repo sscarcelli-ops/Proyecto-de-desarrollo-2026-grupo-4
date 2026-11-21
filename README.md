@@ -46,7 +46,8 @@ Qué tiene cada uno:
 | Credenciales (base, JWT) | Las de ejemplo | Las de ejemplo | Las de ejemplo | Propias: **no arranca con las de ejemplo** |
 | Swagger | ✅ | ✅ | ✅ | — |
 | SQL en el log | ✅ | — | — | — |
-| Log en archivo | Opcional (`LOG_FILE`) | Volumen `logs` | Volumen `logs` | Volumen `logs` |
+| Archivos subidos | `STORAGE_PATH` (`./uploads`) | Volumen `archivos` | Volumen `archivos` | Volumen `archivos` o la carpeta de `ARCHIVOS_DIR` |
+| Log en archivo | Opcional (`LOG_FILE`) | Volumen `logs` | Volumen `logs` | Volumen `logs` o la carpeta de `LOGS_DIR` |
 | Correo (T-04) | `MAIL_HOST` o, vacío, al log | Mailpit | Mailpit | SMTP real (`MAIL_HOST`) |
 
 - **Sin `--env-file`**, `docker compose up -d --build` levanta Prueba con datos.
