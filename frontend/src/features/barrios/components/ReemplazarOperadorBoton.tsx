@@ -67,6 +67,7 @@ export function ReemplazarOperadorBoton({ barrio }: { barrio: Barrio }) {
           <Text type="secondary">Elegí quién queda a cargo del barrio. {actual} quedará disponible.</Text>
           <SelectorOperador
             placeholder="Elegir el nuevo Operador"
+            block
             loading={reemplazar.isPending}
             disabled={reemplazar.isPending}
             onSeleccionar={confirmarReemplazo}

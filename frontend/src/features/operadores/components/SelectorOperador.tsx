@@ -7,6 +7,8 @@ interface SelectorOperadorProps {
   placeholder?: string;
   disabled?: boolean;
   loading?: boolean;
+  // Ocupa todo el ancho disponible (en una ventana); sin esto mide lo justo para la columna de la tabla de barrios
+  block?: boolean;
   // Se llama con el Operador elegido de la lista de disponibles
   onSeleccionar: (operador: Operador) => void;
   // Se llama con la opción fija del final: "Crear un nuevo Operador"
@@ -24,6 +26,7 @@ export function SelectorOperador({
   placeholder = 'Asignar un Operador',
   disabled = false,
   loading = false,
+  block = false,
   onSeleccionar,
   onCrearNuevo,
 }: SelectorOperadorProps) {
@@ -35,7 +38,7 @@ export function SelectorOperador({
       // Siempre vuelve a mostrar el texto de ayuda: elegir un Operador dispara la acción, no queda seleccionado
       value={null}
       placeholder={placeholder}
-      style={{ width: 190 }}
+      style={{ width: block ? '100%' : 190 }}
       loading={loading || isLoading}
       disabled={disabled}
       popupMatchSelectWidth={false}
