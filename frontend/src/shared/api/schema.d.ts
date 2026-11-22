@@ -2291,6 +2291,8 @@ export interface operations {
     listar_5: {
         parameters: {
             query: {
+                tipo?: "EMPRESA" | "MONOTRIBUTISTA";
+                condicion?: "HABILITADO" | "DESHABILITADO";
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;

@@ -19,6 +19,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,7 +52,7 @@ class HabilitacionBarrioControllerTest {
     void listarDevuelveOk() throws Exception {
         PerfilBarrioResponse item = new PerfilBarrioResponse(
             10L, TipoPerfil.EMPRESA, "Limpiezas del Norte S.R.L.", "30-11223344-5", true);
-        when(habilitacionBarrioService.listar(any(Pageable.class)))
+        when(habilitacionBarrioService.listar(isNull(), isNull(), any(Pageable.class)))
             .thenReturn(new PageResponse<>(List.of(item), 0, 10, 1, 1));
 
         mockMvc.perform(get("/api/barrio/perfiles").param("page", "0").param("size", "10"))
@@ -58,6 +60,29 @@ class HabilitacionBarrioControllerTest {
             .andExpect(jsonPath("$.totalElements").value(1))
             .andExpect(jsonPath("$.content[0].nombre").value("Limpiezas del Norte S.R.L."))
             .andExpect(jsonPath("$.content[0].habilitado").value(true));
+    }
+
+    @Test
+    @DisplayName("US-35: GET /api/barrio/perfiles con ?tipo= y ?condicion= pasa los dos filtros al servicio")
+    void listarConFiltrosLosPasaAlServicio() throws Exception {
+        when(habilitacionBarrioService.listar(eq(TipoPerfil.MONOTRIBUTISTA), eq(CondicionBarrio.DESHABILITADO),
+            any(Pageable.class)))
+            .thenReturn(new PageResponse<>(List.of(), 0, 10, 0, 0));
+
+        mockMvc.perform(get("/api/barrio/perfiles").param("tipo", "MONOTRIBUTISTA").param("condicion", "DESHABILITADO"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    @DisplayName("US-35: GET /api/barrio/perfiles con un tipo o una condición que no existe devuelve 400")
+    void listarConFiltroInvalidoDevuelve400() throws Exception {
+        mockMvc.perform(get("/api/barrio/perfiles").param("tipo", "OPERADOR"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/barrio/perfiles").param("condicion", "SUSPENDIDO"))
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(habilitacionBarrioService);
     }
 
     @Test
