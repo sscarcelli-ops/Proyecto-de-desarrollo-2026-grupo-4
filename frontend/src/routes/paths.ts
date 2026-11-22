@@ -17,6 +17,7 @@ export const PATHS = {
   barrioNuevo: '/barrios/nuevo', // US-10
   barrioEditar: '/barrios/:id/editar', // US-11
   empresas: '/empresas', // US-18 (Admin: Empresas y Monotributistas)
+  operadores: '/operadores', // US-15 (Admin: listado de Operadores)
   operadorNuevo: '/operadores/nuevo', // US-13
   empresasBarrio: '/barrio/empresas', // US-33, US-34 (Operador: Empresas y Monotributistas del barrio)
   guardias: '/guardias', // US-32 (Operador)

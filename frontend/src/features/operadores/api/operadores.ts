@@ -3,6 +3,7 @@ import type { FormInstance } from 'antd';
 import { httpClient } from '../../../shared/lib/httpClient';
 import { getApiProblem, getErrorMessage } from '../../../shared/lib/apiError';
 import type { ApiSchema } from '../../../shared/api/types';
+import type { PageResponse } from '../../../shared/types/page';
 
 // Tipos generados desde los DTO del backend (npm run api:types)
 export type Operador = ApiSchema<'OperadorResponse'>;
@@ -62,4 +63,32 @@ export function marcarErroresDeOperador(form: FormInstance, error: unknown): boo
     return true;
   }
   return false;
+}
+
+// US-15: listado paginado de Operadores (Administrador). Estado: Disponible = sin barrio, Ocupado = con barrio.
+export type OperadorListado = ApiSchema<'OperadorListadoResponse'>;
+export type EstadoOperador = 'DISPONIBLE' | 'OCUPADO';
+
+export interface FiltrosOperadores {
+  page: number; // desde 1, como la tabla; el backend cuenta desde 0
+  size?: number;
+  q?: string;
+  estado?: EstadoOperador;
+}
+
+async function listarOperadores({ page, size = 10, q, estado }: FiltrosOperadores): Promise<PageResponse<OperadorListado>> {
+  const params: Record<string, unknown> = { page: page - 1, size };
+  if (q && q.trim()) params.q = q.trim();
+  if (estado) params.estado = estado;
+  const { data } = await httpClient.get<PageResponse<OperadorListado>>('/operadores', { params });
+  return data;
+}
+
+export function useOperadores(filtros: FiltrosOperadores) {
+  return useQuery({
+    // operadoresKeys.all es prefijo: crear o asignar un Operador vuelve a pedir el listado
+    queryKey: [...operadoresKeys.all, 'listado', filtros],
+    queryFn: () => listarOperadores(filtros),
+    placeholderData: (prev) => prev,
+  });
 }

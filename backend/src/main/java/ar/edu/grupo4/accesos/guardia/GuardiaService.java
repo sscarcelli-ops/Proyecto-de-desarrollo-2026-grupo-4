@@ -2,6 +2,7 @@ package ar.edu.grupo4.accesos.guardia;
 
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
 import ar.edu.grupo4.accesos.common.exception.NotFoundException;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.common.security.PoliticaPassword;
 import ar.edu.grupo4.accesos.guardia.dto.GuardiaModificarRequest;
 import ar.edu.grupo4.accesos.guardia.dto.GuardiaRequest;
@@ -11,10 +12,11 @@ import ar.edu.grupo4.accesos.usuario.UsuarioActual;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,13 +47,15 @@ public class GuardiaService {
         return GuardiaResponse.from(guardia, usuario.getEmail());
     }
 
+    /** Guardias del barrio del Operador, por apellido y nombre, paginados (RNF-08). */
     @Transactional(readOnly = true)
-    public List<GuardiaResponse> listar() {
-        List<Guardia> guardias = guardiaRepository.findByBarrioIdOrderByApellidoAscNombreAsc(usuarioActual.barrioId());
-        Map<Long, Usuario> cuentas = usuarioService.buscarPorIds(guardias.stream().map(Guardia::getUsuarioId).toList());
-        return guardias.stream()
-            .map(g -> GuardiaResponse.from(g, cuentas.get(g.getUsuarioId()).getEmail()))
-            .toList();
+    public PageResponse<GuardiaResponse> listar(Pageable pageable) {
+        Page<Guardia> pagina = guardiaRepository.findByBarrioIdOrderByApellidoAscNombreAscUsuarioIdAsc(
+            usuarioActual.barrioId(), pageable);
+        // Los emails de toda la página en una sola consulta
+        Map<Long, Usuario> cuentas = usuarioService.buscarPorIds(
+            pagina.getContent().stream().map(Guardia::getUsuarioId).toList());
+        return PageResponse.from(pagina, g -> GuardiaResponse.from(g, cuentas.get(g.getUsuarioId()).getEmail()));
     }
 
     @Transactional(readOnly = true)
