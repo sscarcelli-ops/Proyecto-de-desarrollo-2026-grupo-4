@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Flex, Input, Pagination, Select } from 'antd';
 import type { TableColumnsType } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import { palette } from '../../../app/theme';
 import { ANCHO_COLUMNA_ESTADO, EstadoTag } from '../../../shared/components/EstadoTag';
@@ -16,14 +17,15 @@ const TAMANO_PAGINA = 10;
 const ESTADOS: EstadoOperador[] = ['DISPONIBLE', 'OCUPADO'];
 
 const OPCIONES_ESTADO: { value: EstadoOperador | 'TODOS'; label: string }[] = [
-  { value: 'TODOS', label: 'Todos' },
+  { value: 'TODOS', label: 'Todos los estados' },
   { value: 'DISPONIBLE', label: 'Disponibles' },
   { value: 'OCUPADO', label: 'Ocupados' },
 ];
 
 // US-15: Operadores del Administrador, con el barrio a cargo. Paginado y en orden alfabético (RNF-08).
 // Página, búsqueda y estado van en la dirección (?pagina=2&q=olga&estado=OCUPADO): al recargar el listado sigue igual.
-// El buscador busca solo, 300 ms después de la última tecla; el filtro por estado cambia al instante.
+// El buscador busca solo, 300 ms después de la última tecla (o al instante con Enter), igual que los demás listados;
+// el filtro por estado cambia al instante.
 // Las acciones por fila (editar datos y cambiar contraseña, US-16 y US-17) se suman al menú "⋯" cuando existan.
 export function OperadoresPage() {
   const navigate = useNavigate();
@@ -82,22 +84,27 @@ export function OperadoresPage() {
               value={texto}
               maxLength={100}
               allowClear
-              placeholder="Buscar por nombre o email"
-              aria-label="Buscar Operador"
+              placeholder="Buscar Operador..."
+              aria-label="Buscar Operador por nombre o email"
+              prefix={<SearchOutlined style={{ color: palette.textSecondary }} />}
               onChange={(e) => {
                 const valor = e.target.value;
                 setTexto(valor);
                 window.clearTimeout(espera.current); // cada tecla reinicia la espera
                 espera.current = window.setTimeout(() => url.cambiar({ q: valor.trim(), pagina: null }), 300);
               }}
-              style={{ width: 340, maxWidth: '100%' }}
+              onPressEnter={() => {
+                window.clearTimeout(espera.current);
+                url.cambiar({ q: texto.trim(), pagina: null });
+              }}
+              style={{ flex: '1 1 220px', maxWidth: 360 }}
             />
             <Select<EstadoOperador | 'TODOS'>
               aria-label="Filtrar por estado"
               value={estado ?? 'TODOS'}
               options={OPCIONES_ESTADO}
               onChange={(valor) => url.cambiar({ estado: valor === 'TODOS' ? null : valor, pagina: null })}
-              style={{ width: 170 }}
+              style={{ width: 200 }}
             />
           </Flex>
         }
