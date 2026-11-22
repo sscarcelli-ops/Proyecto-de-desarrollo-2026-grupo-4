@@ -86,8 +86,12 @@ public class UsuarioActual {
      *   <li>403 con el mismo mensaje del login si la cuenta ya no puede operar: suspendida, Guardia deshabilitado,
      *       barrio inactivo u Operador sin barrio (US-42 CA-4, US-43 CA-3).</li>
      * </ul>
+     * El estado de la cuenta se mira primero: cuando el Administrador reemplaza a un Operador (o lo suspende), además
+     * de quitarle el acceso le cierra la sesión. Si se mirara primero la versión, el usuario vería "Tu sesión expiró"
+     * en vez del motivo real ("No tenés un barrio asignado"). Las dos respuestas rechazan el pedido; cambia el mensaje.
      */
     public void validarSesion() {
+        EstadoAcceso.valueOf(datos().getEstado()).exigirHabilitado();
         Object versionDelToken = token().getClaim(TokenService.CLAIM_VERSION);
         boolean mismaVersion = versionDelToken instanceof Number numero
             && numero.intValue() == datos().getVersionSesion();
@@ -95,7 +99,6 @@ public class UsuarioActual {
             throw new BusinessException("SESION_CERRADA", "Tu sesión expiró. Iniciá sesión de nuevo.",
                 HttpStatus.UNAUTHORIZED);
         }
-        EstadoAcceso.valueOf(datos().getEstado()).exigirHabilitado();
     }
 
     /**
