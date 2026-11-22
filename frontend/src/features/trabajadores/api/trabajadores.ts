@@ -19,6 +19,17 @@ export interface DocumentoUploadPayload {
   fechaVencimiento: string;
 }
 
+/**
+ * Filtros para el listado paginado de trabajadores (US-26, US-29, RF-30).
+ */
+export interface TrabajadoresFiltros {
+  page: number;
+  size?: number;
+  q?: string;
+  estadoDocumental?: string;
+  incluirBajas?: boolean;
+}
+
 // ========================================================================================
 // Claves de caché de TanStack Query
 // ========================================================================================
@@ -32,12 +43,20 @@ const TRABAJADORES_KEY = ['trabajadores'] as const;
 // Funciones de fetch (llamadas HTTP puras)
 // ========================================================================================
 
-/** GET /api/trabajadores?page=X&size=Y&sort=Z — listado paginado */
-async function listarTrabajadores(page: number, size: number): Promise<PageResponse<TrabajadorResponse>> {
+/** GET /api/trabajadores?page=X&size=Y&sort=Z&q=...&estadoDocumental=...&incluirBajas=... — listado paginado con filtros (US-26, US-29, RF-30) */
+async function listarTrabajadores(filtros: TrabajadoresFiltros): Promise<PageResponse<TrabajadorResponse>> {
+  const { page, size = 10, q, estadoDocumental, incluirBajas } = filtros;
   // Ant Design numera las páginas desde 1, pero Spring las numera desde 0.
   // La conversión se hace acá para que las páginas no tengan que preocuparse por eso.
   const { data } = await httpClient.get<PageResponse<TrabajadorResponse>>('/trabajadores', {
-    params: { page: page - 1, size, sort: 'nombre,asc' },
+    params: {
+      page: page - 1,
+      size,
+      sort: 'nombre,asc',
+      ...(q?.trim() ? { q: q.trim() } : {}),
+      ...(estadoDocumental ? { estadoDocumental } : {}),
+      ...(incluirBajas !== undefined ? { incluirBajas } : {}),
+    },
   });
   return data;
 }
@@ -149,17 +168,18 @@ export async function descargarDocumento(trabajadorId: number, tipo: TipoDocumen
 // ========================================================================================
 
 /**
- * Listado paginado de trabajadores (US-26).
- * La tabla le pasa la página y el tamaño actual; el hook hace el fetch y cachea el resultado.
- * Cuando cambia la página, TanStack Query hace un nuevo fetch automáticamente (porque cambia la queryKey).
+ * Listado paginado de trabajadores con soporte para búsqueda y filtros (US-26, US-29, RF-30).
+ * TanStack Query re-ejecuta el fetch automáticamente cuando cambia cualquier filtro.
  *
- * keepPreviousData: mientras carga la página nueva, sigue mostrando la anterior (evita que
- * la tabla parpadee vacía al cambiar de página).
+ * placeholderData: mientras carga la página o filtros nuevos, sigue mostrando los datos
+ * anteriores para evitar parpadeos vacíos en la tabla.
  */
-export function useTrabajadores(page: number, size: number = 10) {
+export function useTrabajadores(filtros: TrabajadoresFiltros) {
+  const params: TrabajadoresFiltros = { size: 10, ...filtros };
+
   return useQuery({
-    queryKey: [...TRABAJADORES_KEY, { page, size }],
-    queryFn: () => listarTrabajadores(page, size),
+    queryKey: [...TRABAJADORES_KEY, params],
+    queryFn: () => listarTrabajadores(params),
     placeholderData: (prev) => prev, // equivalente a keepPreviousData en v5
   });
 }
