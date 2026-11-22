@@ -172,6 +172,7 @@ export function EmpresasBarrioPage() {
           pageSize={tamano}
           total={data?.totalElements ?? 0}
           showSizeChanger={false}
+          hideOnSinglePage
           onChange={(page) => url.cambiar({ pagina: page })}
         />
       </Flex>

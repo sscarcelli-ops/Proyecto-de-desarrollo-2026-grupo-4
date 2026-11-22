@@ -16,6 +16,18 @@ import java.util.Optional;
 @Repository
 public interface PerfilRepository extends JpaRepository<Perfil, Long> {
 
+    /**
+     * US-35: filtro común del listado del Operador y de su conteo, escrito una sola vez para que no se desfasen.
+     */
+    String FILTRO_APROBADOS_DEL_BARRIO = """
+        FROM perfil p
+        WHERE p.estado = 'APROBADO'
+          AND (CAST(:tipo AS VARCHAR) IS NULL OR p.tipo = CAST(:tipo AS VARCHAR))
+          AND (CAST(:condicion AS VARCHAR) IS NULL
+               OR (CAST(:condicion AS VARCHAR) = 'HABILITADO') = EXISTS (
+                   SELECT 1 FROM habilitacion_barrio hb WHERE hb.perfil_id = p.id AND hb.barrio_id = :barrioId))
+        """;
+
     Optional<Perfil> findByUsuarioId(Long usuarioId);
 
     boolean existsByUsuarioId(Long usuarioId);
@@ -56,23 +68,10 @@ public interface PerfilRepository extends JpaRepository<Perfil, Long> {
      * barrio (null = todos). Mismo orden alfabético que el listado del Administrador, con el id como desempate.
      * Nativa porque la habilitación por barrio es una tabla sin entidad.
      */
-    @Query(value = """
-        SELECT p.* FROM perfil p
-        WHERE p.estado = 'APROBADO'
-          AND (CAST(:tipo AS VARCHAR) IS NULL OR p.tipo = CAST(:tipo AS VARCHAR))
-          AND (CAST(:condicion AS VARCHAR) IS NULL
-               OR (CAST(:condicion AS VARCHAR) = 'HABILITADO') = EXISTS (
-                   SELECT 1 FROM habilitacion_barrio hb WHERE hb.perfil_id = p.id AND hb.barrio_id = :barrioId))
+    @Query(value = "SELECT p.* " + FILTRO_APROBADOS_DEL_BARRIO + """
         ORDER BY LOWER(COALESCE(p.razon_social, p.nombre)) ASC, LOWER(COALESCE(p.apellido, '')) ASC, p.id ASC
         """,
-        countQuery = """
-        SELECT COUNT(*) FROM perfil p
-        WHERE p.estado = 'APROBADO'
-          AND (CAST(:tipo AS VARCHAR) IS NULL OR p.tipo = CAST(:tipo AS VARCHAR))
-          AND (CAST(:condicion AS VARCHAR) IS NULL
-               OR (CAST(:condicion AS VARCHAR) = 'HABILITADO') = EXISTS (
-                   SELECT 1 FROM habilitacion_barrio hb WHERE hb.perfil_id = p.id AND hb.barrio_id = :barrioId))
-        """,
+        countQuery = "SELECT COUNT(*) " + FILTRO_APROBADOS_DEL_BARRIO,
         nativeQuery = true)
     Page<Perfil> listarAprobadosParaBarrio(
         @Param("barrioId") Long barrioId,
