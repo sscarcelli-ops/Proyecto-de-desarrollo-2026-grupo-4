@@ -125,6 +125,7 @@ class UsuarioActualTest {
 
     @Test
     void cuentaSuspendidaConSesionCerradaVeElMotivoReal() {
+        // Al suspenderla (US-21) también se cierra la sesión: tiene que ver "suspendida", no "Tu sesión expiró"
         conToken(0L);
         enLaBase(1, "SUSPENDIDO", null, 5L);
 

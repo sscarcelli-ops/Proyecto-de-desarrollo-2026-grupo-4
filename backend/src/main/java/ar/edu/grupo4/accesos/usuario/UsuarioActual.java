@@ -78,20 +78,26 @@ public class UsuarioActual {
     }
 
     /**
-     * Lo llama SesionVigenteFilter en cada petición con token, antes de llegar al Controller:
-     * <ul>
+     * Lo llama SesionVigenteFilter en cada petición con token, antes de llegar al Controller. Hace dos controles, en
+     * este orden:
+     * <ol>
+     *   <li>403 con el mismo mensaje del login si la cuenta ya no puede operar: suspendida, Guardia deshabilitado,
+     *       barrio inactivo u Operador sin barrio (US-42 CA-4, US-43 CA-3).</li>
      *   <li>401 si la sesión se cerró después de emitir el token (US-05): la versión del token no coincide con la de
      *       la base, porque al cerrar sesión la base sumó 1. También si el token no trae versión (emitido antes de
      *       que existiera).</li>
-     *   <li>403 con el mismo mensaje del login si la cuenta ya no puede operar: suspendida, Guardia deshabilitado,
-     *       barrio inactivo u Operador sin barrio (US-42 CA-4, US-43 CA-3).</li>
-     * </ul>
-     * El estado de la cuenta se mira primero: cuando el Administrador reemplaza a un Operador (o lo suspende), además
-     * de quitarle el acceso le cierra la sesión. Si se mirara primero la versión, el usuario vería "Tu sesión expiró"
-     * en vez del motivo real ("No tenés un barrio asignado"). Las dos respuestas rechazan el pedido; cambia el mensaje.
+     * </ol>
+     * Por qué en ese orden: cuando el Administrador reemplaza a un Operador (o suspende una cuenta), además de quitarle
+     * el acceso le cierra la sesión, así que fallan los dos controles. Mirando primero el estado, el usuario ve el
+     * motivo real ("No tenés un barrio asignado") y no un "Tu sesión expiró" que no le explica nada. Si la cuenta está
+     * bien y solo se cerró la sesión (cerró sesión en otra pestaña, cambió la contraseña), sigue viendo "Tu sesión
+     * expiró". En cualquier caso el pedido se rechaza: el orden cambia el mensaje, no la seguridad.
      */
     public void validarSesion() {
+        // 1. ¿La cuenta todavía puede operar? Si no, 403 con el motivo (el mismo que mostraría el login)
         EstadoAcceso.valueOf(datos().getEstado()).exigirHabilitado();
+
+        // 2. ¿El token es de la sesión vigente? Si se cerró sesión después de emitirlo, 401
         Object versionDelToken = token().getClaim(TokenService.CLAIM_VERSION);
         boolean mismaVersion = versionDelToken instanceof Number numero
             && numero.intValue() == datos().getVersionSesion();
