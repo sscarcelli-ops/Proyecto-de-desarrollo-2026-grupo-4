@@ -33,6 +33,8 @@ export function LoginPage() {
     login.mutate(values, {
       onSuccess: async (data) => {
         const user = toCurrentUser(data);
+        // Sin rol todavía (Empresa o Monotributista sin aprobar): si ya mandó la solicitud va a ver su estado, si no
+        // (o si la consulta falla) va a solicitar el perfil. Por eso se consulta antes de navegar.
         if (user.roles.length === 0) {
           try {
             const perfilRes = await httpClient.get<ApiSchema<'PerfilResponse'>>('/perfil/mi-solicitud');

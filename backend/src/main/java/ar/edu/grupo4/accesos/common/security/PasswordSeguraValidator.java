@@ -3,6 +3,10 @@ package ar.edu.grupo4.accesos.common.security;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+/**
+ * Lo que hace cumplir la anotación @PasswordSegura (US-44) en los DTO que definen una contraseña. Las reglas y los
+ * mensajes están en PoliticaPassword, para que este validador y los Services usen exactamente los mismos.
+ */
 public class PasswordSeguraValidator implements ConstraintValidator<PasswordSegura, String> {
 
     @Override
