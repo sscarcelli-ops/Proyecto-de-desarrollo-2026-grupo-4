@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Configuración del JWT, que llega del .env (JWT_SECRET, JWT_EXPIRATION_SECONDS) por application.yml.
+ * Si la clave es corta, la aplicación no arranca: mejor fallar al inicio que firmar tokens débiles.
+ */
 @Component
 @ConfigurationProperties(prefix = "app.security.jwt")
 @Getter

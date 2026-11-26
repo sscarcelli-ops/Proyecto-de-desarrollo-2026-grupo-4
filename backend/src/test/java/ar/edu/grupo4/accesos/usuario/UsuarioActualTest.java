@@ -115,6 +115,24 @@ class UsuarioActualTest {
     }
 
     @Test
+    void operadorReemplazadoConSesionCerradaVeElMotivoReal() {
+        // Al reemplazarlo, el Administrador también le cierra la sesión (la base sumó 1 a la versión)
+        conToken(0L);
+        enLaBase(1, "OPERADOR_SIN_BARRIO", null, null);
+
+        rechazaCon(usuarioActual::validarSesion, "OPERADOR_SIN_BARRIO", HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void cuentaSuspendidaConSesionCerradaVeElMotivoReal() {
+        // Al suspenderla (US-21) también se cierra la sesión: tiene que ver "suspendida", no "Tu sesión expiró"
+        conToken(0L);
+        enLaBase(1, "SUSPENDIDO", null, 5L);
+
+        rechazaCon(usuarioActual::validarSesion, "CUENTA_SUSPENDIDA", HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void cuentaQueYaNoExisteSeRechazaComoSinSesion() {
         conToken(0L);
         when(usuarioService.datosDeSesion(USUARIO_ID)).thenReturn(Optional.empty());
