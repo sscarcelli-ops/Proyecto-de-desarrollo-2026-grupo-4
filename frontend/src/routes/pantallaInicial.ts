@@ -32,6 +32,8 @@ export function pantallaInicial(roles: Rol[], perfil?: PerfilInfo | null): strin
   if (roles.includes('OPERADOR')) {
     return PATHS.empresasBarrio;
   }
-  // Monotributista irá a su pantalla de datos personales cuando se implemente en S2
+  if (roles.includes('MONOTRIBUTISTA')) {
+    return PATHS.datosPersonales;
+  }
   return PATHS.inicio;
 }

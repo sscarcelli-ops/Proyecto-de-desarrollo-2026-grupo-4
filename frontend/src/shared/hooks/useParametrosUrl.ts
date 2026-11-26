@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 
-type Valor = string | number | null | undefined;
+type Valor = string | number | boolean | null | undefined;
 
 /**
  * Página, búsqueda y filtros de un listado guardados en la dirección (ej. /empresas?pagina=3&estado=PENDIENTE)
@@ -28,6 +28,13 @@ export function useParametrosUrl() {
     return Number.isInteger(n) && n > 0 ? n : porDefecto;
   };
 
+  /** Booleano del parámetro ('true' / 'false'); si no está, el valor por defecto. */
+  const booleano = (nombre: string, porDefecto: boolean = false): boolean => {
+    const val = params.get(nombre);
+    if (val === null || val === undefined || val === '') return porDefecto;
+    return val === 'true';
+  };
+
   const cambiar = (cambios: Record<string, Valor>) => {
     const nuevos = new URLSearchParams(params);
     for (const [nombre, valor] of Object.entries(cambios)) {
@@ -38,8 +45,10 @@ export function useParametrosUrl() {
     setParams(nuevos, { replace: true });
   };
 
-  return { texto, numero, cambiar };
+  return { texto, numero, booleano, cambiar };
 }
+
+export type ParametrosUrl = ReturnType<typeof useParametrosUrl>;
 
 /**
  * Corrige la página de la dirección:

@@ -1,4 +1,15 @@
 /* Estilos globales mínimos: el resto lo resuelve Ant Design con app/theme.ts */
+html {
+  /* Reserva el espacio de la barra de desplazamiento para evitar saltos horizontales al filtrar */
+  scrollbar-gutter: stable;
+}
+
+html body {
+  /* Evita que rc-util / Ant Design encoja el body (width: calc(100% - 17px)) al abrir un modal,
+     lo que provocaba que la pantalla se corriera a la izquierda al existir scrollbar-gutter: stable */
+  width: 100% !important;
+}
+
 body {
   margin: 0;
   /* Misma fuente que app/theme.ts, para el texto fuera de los componentes de Ant Design */

@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * Arma y firma el JWT de la sesión (HS256 con JWT_SECRET). Solo emite: la firma y el vencimiento los valida
+ * Spring Security (JwtConfig) y la versión de sesión, UsuarioActual en cada pedido.
+ */
 @Service
 @RequiredArgsConstructor
 public class TokenService {

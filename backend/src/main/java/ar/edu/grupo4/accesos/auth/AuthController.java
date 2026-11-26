@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Endpoints de sesión (/api/auth). Solo recibe el pedido y delega en AuthService. Login y registro son públicos;
+ * el resto necesita token, y el id del usuario sale siempre del token, nunca del body.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

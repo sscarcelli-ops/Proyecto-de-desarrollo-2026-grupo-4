@@ -19,6 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+/**
+ * Sesión del usuario: login (US-04), registro (US-02), cierre de sesión (US-05) y cambio de contraseña (US-07).
+ * Emite el token con TokenService; el control de cada pedido posterior lo hace SesionVigenteFilter.
+ */
 @Service
 public class AuthService {
 

@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/guardias/{id}": {
+    "/api/operadores/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,6 +29,40 @@ export interface paths {
         };
         get: operations["obtener_1"];
         put: operations["modificar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monotributista/perfil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener perfil propio del Monotributista */
+        get: operations["obtener_2"];
+        /** Modificar nombre y apellido del Monotributista */
+        put: operations["modificar_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/guardias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_3"];
+        put: operations["modificar_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -59,8 +93,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_2"];
-        put: operations["modificar_1"];
+        get: operations["obtener_4"];
+        put: operations["modificar_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -77,6 +111,22 @@ export interface paths {
         };
         get?: never;
         put: operations["asignarOperador"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/barrios/{id}/operador/reemplazo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reemplazarOperador"];
         post?: never;
         delete?: never;
         options?: never;
@@ -235,9 +285,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["listar_1"];
         put?: never;
         post: operations["crear_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monotributista/perfil/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar o visualizar foto de perfil */
+        get: operations["descargarFoto_1"];
+        put?: never;
+        /** Cargar o reemplazar foto de perfil */
+        post: operations["cargarFoto_1"];
+        /** Eliminar foto de perfil */
+        delete: operations["eliminarFoto_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monotributista/perfil/documentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cargar o renovar póliza de ART o Seguro de Vida */
+        post: operations["cargarDocumento_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -251,7 +337,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_1"];
+        get: operations["listar_2"];
         put?: never;
         post: operations["crear_2"];
         delete?: never;
@@ -315,7 +401,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_2"];
+        get: operations["listar_3"];
         put?: never;
         post: operations["crear_3"];
         delete?: never;
@@ -571,7 +657,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -644,6 +730,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/monotributista/perfil/documentos/{tipo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar PDF de póliza de ART o Seguro de Vida */
+        get: operations["descargarDocumento_1"];
+        put?: never;
+        post?: never;
+        /** Eliminar póliza de ART o Seguro de Vida */
+        delete: operations["eliminarDocumento"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/garita/buscar": {
         parameters: {
             query?: never;
@@ -667,7 +771,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_3"];
+        get: operations["obtener_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -683,7 +787,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -718,7 +822,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminarDocumento"];
+        delete: operations["eliminarDocumento_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -753,6 +857,38 @@ export interface components {
             dadoDeBaja: boolean;
             documentos: components["schemas"]["DocumentoResponse"][];
             fotoUrl: string | null;
+        };
+        OperadorModificarRequest: {
+            nombre: string;
+            apellido: string;
+            telefono: string;
+        };
+        OperadorResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            apellido: string;
+            email: string;
+            telefono: string;
+        };
+        MonotributistaPerfilModificarRequest: {
+            nombre: string;
+            apellido: string;
+        };
+        MonotributistaPerfilResponse: {
+            /** Format: int64 */
+            perfilId: number;
+            /** Format: int64 */
+            trabajadorId: number;
+            nombre: string;
+            apellido: string;
+            dni: string;
+            cuil: string;
+            telefono: string | null;
+            estadoDocumental: string;
+            tieneFoto: boolean;
+            fotoUrl: string | null;
+            documentos: components["schemas"]["DocumentoResponse"][];
         };
         GuardiaModificarRequest: {
             nombre: string;
@@ -856,14 +992,6 @@ export interface components {
             telefono?: string;
             /** Format: binary */
             constancia?: string;
-        };
-        OperadorResponse: {
-            /** Format: int64 */
-            id: number;
-            nombre: string;
-            apellido: string;
-            email: string;
-            telefono: string;
         };
         GuardiaRequest: {
             nombre: string;
@@ -982,6 +1110,40 @@ export interface components {
         };
         PageResponsePerfilResponse: {
             content: components["schemas"]["PerfilResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        OperadorListadoResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            apellido: string;
+            email: string;
+            telefono: string;
+            /** Format: int64 */
+            barrioId: number | null;
+            barrioNombre: string | null;
+            estado: string;
+        };
+        PageResponseOperadorListadoResponse: {
+            content: components["schemas"]["OperadorListadoResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        PageResponseGuardiaResponse: {
+            content: components["schemas"]["GuardiaResponse"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -1110,12 +1272,104 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["GuardiaResponse"];
+                    "*/*": components["schemas"]["OperadorResponse"];
                 };
             };
         };
     };
     modificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OperadorModificarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OperadorResponse"];
+                };
+            };
+        };
+    };
+    obtener_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonotributistaPerfilResponse"];
+                };
+            };
+        };
+    };
+    modificar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonotributistaPerfilModificarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonotributistaPerfilResponse"];
+                };
+            };
+        };
+    };
+    obtener_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuardiaResponse"];
+                };
+            };
+        };
+    };
+    modificar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1167,7 +1421,7 @@ export interface operations {
             };
         };
     };
-    obtener_2: {
+    obtener_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1189,7 +1443,7 @@ export interface operations {
             };
         };
     };
-    modificar_1: {
+    modificar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1216,6 +1470,32 @@ export interface operations {
         };
     };
     asignarOperador: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AsignarOperadorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BarrioResponse"];
+                };
+            };
+        };
+    };
+    reemplazarOperador: {
         parameters: {
             query?: never;
             header?: never;
@@ -1270,6 +1550,9 @@ export interface operations {
     listar: {
         parameters: {
             query: {
+                q?: string;
+                estadoDocumental?: "VIGENTE" | "VENCIDO" | "PENDIENTE_CARGA";
+                incluirBajas?: boolean;
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -1528,6 +1811,30 @@ export interface operations {
             };
         };
     };
+    listar_1: {
+        parameters: {
+            query: {
+                estado?: "DISPONIBLE" | "OCUPADO";
+                q?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseOperadorListadoResponse"];
+                };
+            };
+        };
+    };
     crear_1: {
         parameters: {
             query?: never;
@@ -1552,7 +1859,7 @@ export interface operations {
             };
         };
     };
-    listar_1: {
+    descargarFoto_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1567,7 +1874,100 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["GuardiaResponse"][];
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    cargarFoto_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    foto: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    eliminarFoto_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    cargarDocumento_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["DocumentoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
+    listar_2: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseGuardiaResponse"];
                 };
             };
         };
@@ -1668,7 +2068,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2059,7 +2459,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query: {
                 estado?: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "SUSPENDIDO";
@@ -2167,6 +2567,50 @@ export interface operations {
             };
         };
     };
+    descargarDocumento_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tipo: "ART" | "SEGURO_VIDA";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    eliminarDocumento: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tipo: "ART" | "SEGURO_VIDA";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrabajadorResponse"];
+                };
+            };
+        };
+    };
     buscar: {
         parameters: {
             query: {
@@ -2189,7 +2633,7 @@ export interface operations {
             };
         };
     };
-    obtener_3: {
+    obtener_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2209,9 +2653,11 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query: {
+                tipo?: "EMPRESA" | "MONOTRIBUTISTA";
+                condicion?: "HABILITADO" | "DESHABILITADO";
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -2251,7 +2697,7 @@ export interface operations {
             };
         };
     };
-    eliminarDocumento: {
+    eliminarDocumento_1: {
         parameters: {
             query?: never;
             header?: never;

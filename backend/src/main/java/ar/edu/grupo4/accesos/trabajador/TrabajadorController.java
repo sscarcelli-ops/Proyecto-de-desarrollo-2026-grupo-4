@@ -7,6 +7,7 @@ import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorEditarRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorRequest;
 import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
@@ -72,7 +73,12 @@ public class TrabajadorController {
     // ========================================================================================
 
     /**
-     * Lista paginada de trabajadores del perfil del usuario autenticado.
+     * Lista paginada de trabajadores del perfil del usuario autenticado (US-26, US-29, RF-30).
+     * Permite filtrar por:
+     * - q: texto de búsqueda (nombre, apellido, DNI)
+     * - estadoDocumental: VIGENTE, VENCIDO, PENDIENTE_CARGA
+     * - incluirBajas: boolean (por defecto false)
+     *
      * Spring traduce automáticamente los query params (?page, ?size, ?sort) al objeto Pageable.
      *
      * @PageableDefault define los valores si el frontend no envía ninguno:
@@ -81,9 +87,17 @@ public class TrabajadorController {
      */
     @GetMapping
     public PageResponse<TrabajadorResponse> listar(
+            @RequestParam(required = false) @Size(max = 100, message = "La búsqueda no puede superar los 100 caracteres") String q,
+            @RequestParam(required = false) EstadoDocumental estadoDocumental,
+            @RequestParam(required = false) Boolean incluirBajas,
             @PageableDefault(size = 10, sort = {"nombre", "apellido"}) Pageable pageable) {
 
-        return trabajadorService.listar(OrdenPermitido.validar(pageable, ORDEN_PERMITIDO));
+        return trabajadorService.listar(
+            q,
+            estadoDocumental,
+            incluirBajas,
+            OrdenPermitido.validar(pageable, ORDEN_PERMITIDO)
+        );
     }
 
     /**
