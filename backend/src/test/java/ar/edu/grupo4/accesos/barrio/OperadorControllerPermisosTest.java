@@ -95,13 +95,15 @@ class OperadorControllerPermisosTest {
 
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"OPERADOR", "GUARDIA", "EMPRESA", "MONOTRIBUTISTA"})
-    @DisplayName("US-15: otro rol recibe 403 al listar, crear o pedir los disponibles, y no llega al Service")
+    @DisplayName("US-15 y US-16: otro rol recibe 403 al listar, crear, ver o modificar un Operador, y no llega al Service")
     void otroRolRecibe403(String rol) {
         sesionCon(rol);
 
         assertThatThrownBy(() -> controller.listar(null, null, PageRequest.of(0, 10))).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> controller.crear(null)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> controller.disponibles()).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> controller.obtener(1L)).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> controller.modificar(1L, null)).isInstanceOf(AccessDeniedException.class);
         verifyNoInteractions(service);
     }
 }

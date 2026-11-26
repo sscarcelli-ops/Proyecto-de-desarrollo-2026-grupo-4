@@ -1,6 +1,7 @@
 package ar.edu.grupo4.accesos.barrio;
 
 import ar.edu.grupo4.accesos.barrio.dto.OperadorListadoResponse;
+import ar.edu.grupo4.accesos.barrio.dto.OperadorModificarRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorResponse;
 import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
@@ -13,7 +14,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,5 +56,17 @@ public class OperadorController {
         @PageableDefault(size = 10) Pageable pageable
     ) {
         return operadorService.listar(estado, q, OrdenPermitido.validar(pageable, Set.of()));
+    }
+
+    // US-16: datos de un Operador, para abrir el formulario de edición (el email se muestra y no se edita)
+    @GetMapping("/{id}")
+    public OperadorResponse obtener(@PathVariable Long id) {
+        return operadorService.obtener(id);
+    }
+
+    // US-16: modifica nombre, apellido y teléfono (RF-32). El email no se puede cambiar.
+    @PutMapping("/{id}")
+    public OperadorResponse modificar(@PathVariable Long id, @Valid @RequestBody OperadorModificarRequest request) {
+        return operadorService.modificar(id, request);
     }
 }
