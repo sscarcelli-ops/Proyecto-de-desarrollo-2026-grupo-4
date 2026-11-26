@@ -1,4 +1,4 @@
-# Se instalan y compilan adentro; la dirección de la API llega como argumento (VITE_API_URL)
+# Se instalan y compilan adentro. La imagen no lleva la dirección del backend: nginx la recibe al arrancar (BACKEND_URL)
 node_modules/
 dist/
 .env

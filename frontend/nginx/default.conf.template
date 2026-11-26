@@ -6,6 +6,9 @@ server {
     listen 80;
     root /usr/share/nginx/html;
     index index.html;
+    # No muestra la versión de nginx en los errores ni en los headers
+    server_tokens off;
+    include /etc/nginx/snippets/seguridad.conf;
 
     # El frontend llama a /api en su misma dirección (shared/lib/httpClient.ts): no sabe dónde está el backend.
     # Sin barra al final de proxy_pass, el pedido llega al backend con la misma ruta (/api/...).
@@ -22,6 +25,9 @@ server {
         # Mismo límite que el backend para el alta de un trabajador con ART + Seguro + foto (application.yml).
         # Sin esto nginx corta en 1 MB y los PDF no llegan al backend.
         client_max_body_size 20m;
+        # Spring Security ya manda estos dos: se sacan los del backend para que no lleguen repetidos
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header X-Content-Type-Options;
     }
 
     # Cualquier dirección que no sea un archivo devuelve index.html: así funcionan las rutas de React (/barrios,
@@ -34,5 +40,7 @@ server {
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        # Con un add_header propio esta location ya no hereda los del server: se vuelven a incluir
+        include /etc/nginx/snippets/seguridad.conf;
     }
 }

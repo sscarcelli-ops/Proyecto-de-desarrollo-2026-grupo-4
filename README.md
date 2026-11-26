@@ -11,7 +11,9 @@ Plataforma de control de accesos para barrios privados.
 
 - JDK 17 o superior
 - Node.js 20 o superior
-- Docker (para PostgreSQL). Alternativa: PostgreSQL 15+ instalado, con una base vacía `accesos_db`
+- Docker con Docker Compose 2.24 o más nuevo (`docker compose version`; el `docker-compose` antiguo con guion no
+  sirve). Para el desarrollo alcanza con la base en Docker. Alternativa: PostgreSQL 15+ instalado, con una base vacía
+  `accesos_db`
 - Solo para usar la app sin desarrollar: alcanza con Docker (ver "Ambientes")
 
 ## Ramas (gitflow)
@@ -44,7 +46,8 @@ Qué tiene cada uno:
 | Credenciales (base, JWT) | Las de ejemplo | Las de ejemplo | Las de ejemplo | Propias: **no arranca con las de ejemplo** |
 | Swagger | ✅ | ✅ | ✅ | — |
 | SQL en el log | ✅ | — | — | — |
-| Log en archivo | Opcional (`LOG_FILE`) | Volumen `logs` | Volumen `logs` | Volumen `logs` |
+| Archivos subidos | `STORAGE_PATH` (`./uploads`) | Volumen `archivos` | Volumen `archivos` | Volumen `archivos` o la carpeta de `ARCHIVOS_DIR` |
+| Log en archivo | Opcional (`LOG_FILE`) | Volumen `logs` | Volumen `logs` | Volumen `logs` o la carpeta de `LOGS_DIR` |
 | Correo (T-04) | `MAIL_HOST` o, vacío, al log | Mailpit | Mailpit | SMTP real (`MAIL_HOST`) |
 
 - **Sin `--env-file`**, `docker compose up -d --build` levanta Prueba con datos.
@@ -64,12 +67,36 @@ Qué tiene cada uno:
   puertos de la base y del backend.
 - Otros comandos: `docker compose ps` (estado), `docker compose logs -f backend` (logs en vivo), `docker compose
   down` (apagar), `docker compose rm -sf backend frontend` (apagar la app y dejar la base para el IDE).
-- Los archivos subidos quedan en el volumen `archivos` y los logs en el volumen `logs` (`/data/logs/accesos.log`).
+- Los archivos subidos quedan en el volumen `archivos` y los logs en el volumen `logs` (`/data/logs/accesos.log`),
+  salvo que se elija otra carpeta (ver "Archivos y logs en otra carpeta").
 - **Cómo llega el frontend al backend:** el frontend no tiene la dirección del backend. Llama a `/api` en su misma
   dirección y nginx reenvía esos pedidos al contenedor del backend (`BACKEND_URL` en `docker-compose.yml`). En
   desarrollo hace lo mismo Vite (`frontend/vite.config.ts`). Así la misma compilación sirve en cualquier máquina.
 - La primera vez tarda varios minutos (descarga las imágenes y las dependencias); después, `--build` solo
   recompila lo que cambió.
+
+### Archivos y logs en otra carpeta (file server)
+
+Dónde se guardan los archivos subidos (constancias, pólizas y fotos) es configuración de la instalación (RNF-12): no
+hace falta tocar el código ni el `docker-compose.yml`.
+
+- **Con Docker:** en el archivo del ambiente (por ejemplo `docker/produccion.env`) poner `ARCHIVOS_DIR` con la carpeta
+  de la máquina donde se guardan. Para un file server, montar antes su carpeta compartida en el servidor y poner esa
+  ruta. Lo mismo con `LOGS_DIR` para los logs. Vacías, se usan los volúmenes `archivos` y `logs`.
+  ```bash
+  # docker/produccion.env
+  ARCHIVOS_DIR=/mnt/fileserver/accesos/archivos     # Linux
+  ARCHIVOS_DIR=Z:/accesos/archivos                  # Windows: la unidad tiene que estar compartida en Docker Desktop
+  ```
+  Después, `docker compose --env-file docker/produccion.env up -d`. La carpeta se crea si no existe.
+- **Desde el IDE:** `STORAGE_PATH` en `backend/.env` (por defecto `./uploads`).
+- En la base solo se guarda la ruta **relativa** de cada archivo (por ejemplo `trabajadores/42/documentos/<id>.pdf`).
+  Para mudar los archivos existentes alcanza con copiar la carpeta entera a la nueva ubicación, respetando las
+  subcarpetas, y cambiar la variable.
+- `docker compose down -v` no borra una carpeta elegida con `ARCHIVOS_DIR`: solo los volúmenes de Docker.
+- El backend guarda y lee los archivos a través de `FileStorageService` (implementado en disco por
+  `DiscoFileStorageService`). Para un almacenamiento que no sea una carpeta (por ejemplo S3), se agrega otra
+  implementación de esa interfaz sin cambiar el resto del sistema.
 
 ### Desarrollo
 
@@ -150,7 +177,7 @@ Para agregar datos: un archivo nuevo y fechado por US (`V<fecha>__seed_<tema>.sq
 
 **Usuario Guardia de prueba:**
 - **Email:** `guardia@seed.test`
-- **Contraseña:** `Password1!`
+- **Contraseña:** `Prueba123` (la misma de todos los usuarios de prueba)
 - **Barrio:** Barrio Los Álamos (ID: 1)
 
 | DNI | Nombre y Apellido | Vínculo / Empresa | Documentación | Estado Inicial | Caso de prueba que cubre |
@@ -173,6 +200,14 @@ Para agregar datos: un archivo nuevo y fechado por US (`V<fecha>__seed_<tema>.sq
 - El token sobrevive al cierre del navegador: cerrar sesión (RF-25) siempre borra el token. En dispositivos
   compartidos (garita), cada Guardia debe cerrar sesión al terminar su turno.
 - Nunca usar `dangerouslySetInnerHTML` con datos del usuario: un XSS podría leer el token.
+- **Headers de seguridad** (`frontend/nginx/seguridad.conf`): en Docker, nginx manda una Content-Security-Policy
+  que solo deja cargar scripts, estilos, imágenes y llamadas de la propia app (si algo inyectara un script, el
+  navegador no lo ejecuta), prohíbe meter la app en un iframe de otro sitio (clickjacking) y no muestra la versión de
+  nginx. Si se agrega algo que cargue de otro dominio (una fuente, un mapa), hay que sumarlo a la CSP o el navegador
+  lo bloquea: se ve en la consola como "Content Security Policy".
+- Sin cookies no hay CSRF (por eso está deshabilitado en `SecurityConfig`), y CORS solo acepta los orígenes de
+  `CORS_ALLOWED_ORIGINS`. La API igual se puede llamar sin el frontend (Postman, scripts): por eso sesión, rol,
+  pertenencia de los datos, validaciones y reglas se controlan siempre en el backend.
 - **Política de contraseñas (US-44):** todo DTO que **define** una contraseña (registro, alta de Operador y Guardia,
   cambio, recupero, activación) la marca con `@PasswordSegura` (`common/security`): mínimo 8 caracteres, una
   mayúscula, una minúscula y un número, y como máximo 72 bytes (límite de bcrypt). El login no la usa.
@@ -270,6 +305,30 @@ npm run api:types      # regenera src/shared/api/schema.d.ts
 - Los `XxxResponse` tienen todos sus campos obligatorios (`OpenApiConfig`). Si un campo puede venir `null`,
   declararlo en el record con `@Schema(types = {"string", "null"})`. En los `XxxRequest`, lo obligatorio sale de
   Bean Validation (`@NotNull`, `@NotBlank`...).
+
+## Pruebas de la API con Postman (T-08)
+
+La carpeta `postman/` tiene la colección `accesos.postman_collection.json`, el environment
+`local.postman_environment.json` y los archivos que se suben en las pruebas (`archivos/`).
+
+1. Levantar la app con los datos de prueba (`docker compose --env-file docker/prueba.env up -d`).
+2. En Postman: **Import** → elegir los dos `.json` de `postman/` → arriba a la derecha elegir el environment
+   **Local (Docker)**.
+3. Para que encuentre los archivos que se suben: **Settings → General → Working directory** = la carpeta `postman/`
+   del repo (si no, en esos pedidos hay que volver a elegir el archivo en la pestaña Body).
+4. Correr la colección entera con **Run collection**, en orden. La carpeta "1. Inicio de sesión" guarda el token de
+   cada rol y las siguientes lo usan.
+
+- Son 99 pedidos con sus tests: camino feliz de cada rol (Administrador, Operador, Guardia, Empresa, Monotributista),
+  listados con búsqueda y filtros, y los errores
+  esperados: sin sesión (401), rol equivocado (403), datos inválidos (400), reglas de negocio (422 con su `code`)
+  y token usado después de cerrar sesión.
+- Cada corrida crea datos nuevos con un sufijo, así que se puede repetir sin reiniciar la base.
+- Si el backend está en otra dirección, cambiar `baseUrl` en el environment.
+- Desde la terminal (sin abrir Postman), con Node instalado:
+  `npx newman run postman/accesos.postman_collection.json -e postman/local.postman_environment.json --working-dir postman`
+- Si se agrega o cambia un endpoint, sumar el pedido en la carpeta del rol que lo usa, con al menos un test del
+  código de respuesta.
 
 ## Frontend
 
