@@ -1,9 +1,11 @@
 package ar.edu.grupo4.accesos.barrio;
 
 import ar.edu.grupo4.accesos.barrio.dto.OperadorListadoResponse;
+import ar.edu.grupo4.accesos.barrio.dto.OperadorModificarRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.OperadorResponse;
 import ar.edu.grupo4.accesos.common.exception.BusinessException;
+import ar.edu.grupo4.accesos.common.exception.NotFoundException;
 import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.usuario.Usuario;
 import ar.edu.grupo4.accesos.usuario.UsuarioService;
@@ -41,6 +43,33 @@ public class OperadorService {
             request.apellido().trim(), request.telefono().trim()));
         log.info("Operador {} creado", operador.getUsuarioId());
         return OperadorResponse.from(operador, usuario.getEmail());
+    }
+
+    /** US-16: datos de un Operador con su email (solo lectura), para el formulario de edición. */
+    @Transactional(readOnly = true)
+    public OperadorResponse obtener(Long id) {
+        Operador operador = operadorRepository.findById(id).orElseThrow(NotFoundException::new);
+        return OperadorResponse.from(operador, emailDe(id));
+    }
+
+    /**
+     * US-16 (RF-32): modifica nombre, apellido y teléfono de un Operador. El email no se toca: es su usuario de
+     * acceso y la petición ni siquiera lo trae. No cambia su barrio ni su sesión.
+     */
+    @Transactional
+    public OperadorResponse modificar(Long id, OperadorModificarRequest request) {
+        Operador operador = operadorRepository.findById(id).orElseThrow(NotFoundException::new);
+        operador.setNombre(request.nombre().trim());
+        operador.setApellido(request.apellido().trim());
+        operador.setTelefono(request.telefono().trim());
+        Operador guardado = operadorRepository.save(operador);
+        log.info("Operador {} modificado", id);
+        return OperadorResponse.from(guardado, emailDe(id));
+    }
+
+    // El id del Operador es el de su cuenta (usuario): de ahí sale el email
+    private String emailDe(Long id) {
+        return usuarioService.buscarPorId(id).map(Usuario::getEmail).orElseThrow(NotFoundException::new);
     }
 
     /** US-45: Operadores sin barrio asignado, ordenados por apellido y nombre. */

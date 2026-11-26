@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/operadores/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["obtener_1"];
+        put: operations["modificar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/monotributista/perfil": {
         parameters: {
             query?: never;
@@ -28,9 +44,9 @@ export interface paths {
             cookie?: never;
         };
         /** Obtener perfil propio del Monotributista */
-        get: operations["obtener_1"];
+        get: operations["obtener_2"];
         /** Modificar nombre y apellido del Monotributista */
-        put: operations["modificar"];
+        put: operations["modificar_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -45,8 +61,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_2"];
-        put: operations["modificar_1"];
+        get: operations["obtener_3"];
+        put: operations["modificar_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -77,8 +93,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_3"];
-        put: operations["modificar_2"];
+        get: operations["obtener_4"];
+        put: operations["modificar_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -755,7 +771,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["obtener_4"];
+        get: operations["obtener_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -841,6 +857,19 @@ export interface components {
             dadoDeBaja: boolean;
             documentos: components["schemas"]["DocumentoResponse"][];
             fotoUrl: string | null;
+        };
+        OperadorModificarRequest: {
+            nombre: string;
+            apellido: string;
+            telefono: string;
+        };
+        OperadorResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            apellido: string;
+            email: string;
+            telefono: string;
         };
         MonotributistaPerfilModificarRequest: {
             nombre: string;
@@ -963,14 +992,6 @@ export interface components {
             telefono?: string;
             /** Format: binary */
             constancia?: string;
-        };
-        OperadorResponse: {
-            /** Format: int64 */
-            id: number;
-            nombre: string;
-            apellido: string;
-            email: string;
-            telefono: string;
         };
         GuardiaRequest: {
             nombre: string;
@@ -1238,6 +1259,54 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OperadorResponse"];
+                };
+            };
+        };
+    };
+    modificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OperadorModificarRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OperadorResponse"];
+                };
+            };
+        };
+    };
+    obtener_2: {
+        parameters: {
+            query?: never;
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -1254,7 +1323,7 @@ export interface operations {
             };
         };
     };
-    modificar: {
+    modificar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1278,7 +1347,7 @@ export interface operations {
             };
         };
     };
-    obtener_2: {
+    obtener_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1300,7 +1369,7 @@ export interface operations {
             };
         };
     };
-    modificar_1: {
+    modificar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1352,7 +1421,7 @@ export interface operations {
             };
         };
     };
-    obtener_3: {
+    obtener_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1374,7 +1443,7 @@ export interface operations {
             };
         };
     };
-    modificar_2: {
+    modificar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2564,7 +2633,7 @@ export interface operations {
             };
         };
     };
-    obtener_4: {
+    obtener_5: {
         parameters: {
             query?: never;
             header?: never;

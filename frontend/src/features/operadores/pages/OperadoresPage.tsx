@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Flex, Input, Pagination, Select } from 'antd';
-import type { TableColumnsType } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router';
+import { Button, Dropdown, Flex, Input, Pagination, Select } from 'antd';
+import type { MenuProps, TableColumnsType } from 'antd';
+import { MoreOutlined, SearchOutlined } from '@ant-design/icons';
+import { generatePath, useNavigate } from 'react-router';
 import { palette } from '../../../app/theme';
 import { ANCHO_COLUMNA_ESTADO, EstadoTag } from '../../../shared/components/EstadoTag';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
@@ -26,7 +26,7 @@ const OPCIONES_ESTADO: { value: EstadoOperador | 'TODOS'; label: string }[] = [
 // Página, búsqueda y estado van en la dirección (?pagina=2&q=olga&estado=OCUPADO): al recargar el listado sigue igual.
 // El buscador busca solo, 300 ms después de la última tecla (o al instante con Enter), igual que los demás listados;
 // el filtro por estado cambia al instante.
-// Las acciones por fila (editar datos y cambiar contraseña, US-16 y US-17) se suman al menú "⋯" cuando existan.
+// Las acciones por fila van en el menú "⋯": "Editar" (US-16). "Cambiar contraseña" (US-17) se suma cuando exista.
 export function OperadoresPage() {
   const navigate = useNavigate();
   const url = useParametrosUrl();
@@ -47,6 +47,14 @@ export function OperadoresPage() {
   usePaginaValida(url, pagina, data?.totalPages);
 
   const hayFiltros = busqueda !== '' || estado !== undefined;
+
+  // US-16: menú "⋯" de cada fila
+  const menu = (operador: OperadorListado): MenuProps => ({
+    items: [{ key: 'editar', label: 'Editar' }],
+    onClick: ({ key }) => {
+      if (key === 'editar') navigate(generatePath(PATHS.operadorEditar, { id: String(operador.id) }));
+    },
+  });
 
   const columnas: TableColumnsType<OperadorListado> = [
     {
@@ -69,6 +77,17 @@ export function OperadoresPage() {
       width: ANCHO_COLUMNA_ESTADO,
       align: 'center',
       render: (valor: EstadoOperador) => <EstadoTag estado={valor} />,
+    },
+    {
+      title: 'Acciones',
+      key: 'acciones',
+      width: 110,
+      align: 'center',
+      render: (_, o) => (
+        <Dropdown menu={menu(o)} trigger={['click']}>
+          <Button type="text" icon={<MoreOutlined />} aria-label="Acciones" />
+        </Dropdown>
+      ),
     },
   ];
 
@@ -113,6 +132,7 @@ export function OperadoresPage() {
       <div style={{ backgroundColor: palette.surface, borderRadius: 8 }}>
         <TablaResponsiva<OperadorListado>
           columnaTitulo="nombre"
+          columnaAcciones="acciones"
           bordered
           className="tabla-redondeada"
           rowKey="id"
