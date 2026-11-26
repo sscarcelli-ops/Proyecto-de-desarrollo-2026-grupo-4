@@ -8,10 +8,12 @@ import type { PageResponse } from '../../../shared/types/page';
 // Tipos generados desde los DTO del backend (npm run api:types)
 export type Operador = ApiSchema<'OperadorResponse'>;
 export type OperadorRequest = ApiSchema<'OperadorRequest'>;
+export type OperadorModificarRequest = ApiSchema<'OperadorModificarRequest'>;
 
 export const operadoresKeys = {
   all: ['operadores'] as const,
   disponibles: ['operadores', 'disponibles'] as const,
+  detalle: (id: string) => ['operadores', 'detalle', id] as const,
 };
 
 // US-13: crea el Operador. Queda "Disponible" (sin barrio) hasta que se lo asigne (US-45).
@@ -25,6 +27,25 @@ export function useCrearOperador() {
   return useMutation({
     mutationFn: crearOperador,
     // Para que los listados de Operadores (US-15) y de disponibles (US-45) vuelvan a pedirse
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: operadoresKeys.all }),
+  });
+}
+
+// US-16: datos de un Operador para el formulario de edición (el email se muestra y no se edita)
+export function useOperador(id: string | undefined) {
+  return useQuery({
+    queryKey: operadoresKeys.detalle(id ?? ''),
+    queryFn: async () => (await httpClient.get<Operador>(`/operadores/${id}`)).data,
+    enabled: id !== undefined,
+  });
+}
+
+// US-16: modifica nombre, apellido y teléfono (RF-32). El email no viaja: no se puede cambiar.
+export function useModificarOperador(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: OperadorModificarRequest) => (await httpClient.put<Operador>(`/operadores/${id}`, body)).data,
+    // operadoresKeys.all es prefijo: refresca el listado (US-15), los disponibles (US-45) y este detalle
     onSuccess: () => queryClient.invalidateQueries({ queryKey: operadoresKeys.all }),
   });
 }
