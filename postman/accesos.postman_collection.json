@@ -722,12 +722,52 @@
               ]
             }
           }
+        },
+        {
+          "name": "Empresa usa el perfil del Monotributista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil"
+              ]
+            },
+            "description": "El perfil propio es solo del Monotributista (US-24): otro rol recibe 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEmpresa}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
         }
       ]
     },
     {
       "name": "3. Administrador - Barrios y Operadores",
-      "description": "RF de barrios: alta, consulta, modificación, estado y asignación de Operador.",
+      "description": "RF de barrios: alta, consulta, modificación, estado, asignación y reemplazo de Operador. Operadores: listado con búsqueda y filtro, consulta y modificación de datos.",
       "auth": {
         "type": "bearer",
         "bearer": [
@@ -1293,6 +1333,381 @@
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "Listar Operadores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Viene paginado\", () => pm.expect(pm.response.json()).to.have.property(\"totalElements\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "US-15: listado paginado, ordenado por apellido."
+          }
+        },
+        {
+          "name": "Buscar Operador por email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const lista = pm.response.json().content;",
+                  "pm.test(\"Encuentra al Operador creado, ocupado\", () => {",
+                  "    pm.expect(lista).to.have.lengthOf(1);",
+                  "    pm.expect(lista[0].estado).to.eql(\"OCUPADO\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores?q=operador.postman{{sufijo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "operador.postman{{sufijo}}"
+                }
+              ]
+            },
+            "description": "US-15: la búsqueda es por nombre o email, sin importar mayúsculas."
+          }
+        },
+        {
+          "name": "Filtrar Operadores disponibles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Todos sin barrio\", () => pm.response.json().content.forEach(o => pm.expect(o.estado).to.eql(\"DISPONIBLE\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores?estado=DISPONIBLE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "DISPONIBLE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver Operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Trae el email\", () => pm.expect(pm.response.json().email).to.include(\"operador.postman\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores/{{operadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores",
+                "{{operadorId}}"
+              ]
+            },
+            "description": "US-16: datos para el formulario de edición."
+          }
+        },
+        {
+          "name": "Modificar Operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Guarda los datos sin espacios sobrantes\", () => {",
+                  "    pm.expect(r.nombre).to.eql(\"Olivia\");",
+                  "    pm.expect(r.telefono).to.eql(\"1145559999\");",
+                  "});",
+                  "pm.test(\"El email no cambia\", () => pm.expect(r.email).to.include(\"operador.postman\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores/{{operadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores",
+                "{{operadorId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"  Olivia \",\n  \"apellido\": \"Postman\",\n  \"telefono\": \" 1145559999 \",\n  \"email\": \"otro@prueba.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "US-16: cambia nombre, apellido y teléfono. El email que venga en el pedido se ignora."
+          }
+        },
+        {
+          "name": "Modificar Operador sin nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().code).to.eql(\"VALIDATION_ERROR\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores/{{operadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores",
+                "{{operadorId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \" \",\n  \"apellido\": \"Postman\",\n  \"telefono\": \"1145559999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear segundo Operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "",
+                  "pm.collectionVariables.set(\"operador2Id\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Oscar\",\n  \"apellido\": \"Postman\",\n  \"email\": \"operador2.postman{{sufijo}}@prueba.test\",\n  \"telefono\": \"1145550001\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Queda disponible, para reemplazar al primero."
+          }
+        },
+        {
+          "name": "Reemplazar Operador del barrio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Quedó el nuevo Operador\", () => pm.expect(pm.response.json().operadorId).to.eql(Number(pm.collectionVariables.get(\"operador2Id\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrios/{{barrioId}}/operador/reemplazo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrios",
+                "{{barrioId}}",
+                "operador",
+                "reemplazo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operadorId\": \"{{operador2Id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "US-14: el anterior queda disponible y sin sesión; el barrio nunca queda sin Operador."
+          }
+        },
+        {
+          "name": "El Operador reemplazado queda disponible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Está disponible\", () => pm.expect(pm.response.json().content[0].estado).to.eql(\"DISPONIBLE\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores?q=operador.postman{{sufijo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "operador.postman{{sufijo}}"
+                }
+              ]
             }
           }
         },
@@ -1888,7 +2303,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Viene paginado\", () => pm.expect(pm.response.json()).to.have.property(\"totalElements\"));"
                 ]
               }
             }
@@ -2157,6 +2574,51 @@
           }
         },
         {
+          "name": "Filtrar Empresas habilitadas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Solo Empresas habilitadas\", () => pm.response.json().content.forEach(p => {",
+                  "    pm.expect(p.tipo).to.eql(\"EMPRESA\");",
+                  "    pm.expect(p.habilitado).to.eql(true);",
+                  "}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrio/perfiles?tipo=EMPRESA&condicion=HABILITADO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrio",
+                "perfiles"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "EMPRESA"
+                },
+                {
+                  "key": "condicion",
+                  "value": "HABILITADO"
+                }
+              ]
+            },
+            "description": "US-35: filtros por tipo (EMPRESA, MONOTRIBUTISTA) y condición (HABILITADO, DESHABILITADO)."
+          }
+        },
+        {
           "name": "Habilitar perfil en el barrio",
           "event": [
             {
@@ -2314,6 +2776,117 @@
                 }
               ]
             }
+          }
+        },
+        {
+          "name": "Buscar trabajador por DNI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Lo encuentra\", () => pm.expect(pm.response.json().content.map(t => t.dni)).to.include(\"30777888\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trabajadores?q=30777888",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trabajadores"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "30777888"
+                }
+              ]
+            },
+            "description": "US-29: búsqueda por nombre, apellido o DNI."
+          }
+        },
+        {
+          "name": "Filtrar por estado documental",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Solo vigentes\", () => pm.response.json().content.forEach(t => pm.expect(t.estadoDocumental).to.eql(\"VIGENTE\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trabajadores?estadoDocumental=VIGENTE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trabajadores"
+              ],
+              "query": [
+                {
+                  "key": "estadoDocumental",
+                  "value": "VIGENTE"
+                }
+              ]
+            },
+            "description": "US-29: VIGENTE, VENCIDO o PENDIENTE_CARGA."
+          }
+        },
+        {
+          "name": "Incluir dados de baja",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Aparece el dado de baja de los datos de prueba\", () => pm.expect(pm.response.json().content.some(t => t.dadoDeBaja)).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trabajadores?incluirBajas=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trabajadores"
+              ],
+              "query": [
+                {
+                  "key": "incluirBajas",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Sin incluirBajas=true el listado muestra solo los activos."
           }
         },
         {
@@ -2869,7 +3442,385 @@
       ]
     },
     {
-      "name": "8. Guardia - Garita",
+      "name": "8. Monotributista - Perfil propio",
+      "description": "US-24: el Monotributista aprobado ve y modifica su perfil, carga su foto y su documentación. Lo que se sube se borra al final, así los datos de prueba quedan como estaban.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{tokenMono}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Ver mi perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Trae DNI y CUIL\", () => {",
+                  "    pm.expect(pm.response.json().dni).to.eql(\"30111222\");",
+                  "    pm.expect(pm.response.json().cuil).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modificar nombre y apellido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Guarda sin espacios sobrantes\", () => pm.expect(r.nombre).to.eql(\"Juan\"));",
+                  "pm.test(\"El DNI no cambia\", () => pm.expect(r.dni).to.eql(\"30111222\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \" Juan \",\n  \"apellido\": \"Pérez\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "US-24 CA-6: se actualizan el perfil y su registro de trabajador. DNI y CUIL no se pueden modificar."
+          }
+        },
+        {
+          "name": "Modificar sin apellido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().code).to.eql(\"VALIDATION_ERROR\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cargar mi foto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Tiene foto\", () => pm.expect(pm.response.json().tieneFoto).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil/foto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil",
+                "foto"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": "archivos/foto.jpg"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver mi foto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Es una imagen\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"image\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil/foto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil",
+                "foto"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cargar mi seguro de vida",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Vence dentro de un año, para que quede vigente",
+                  "const d = new Date(); d.setFullYear(d.getFullYear() + 1);",
+                  "pm.collectionVariables.set(\"vencimiento\", d.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Tiene el seguro\", () => pm.expect(pm.response.json().documentos.map(d => d.tipo)).to.include(\"SEGURO_VIDA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil/documentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil",
+                "documentos"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tipo",
+                  "value": "SEGURO_VIDA",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "archivos/constancia.pdf"
+                },
+                {
+                  "key": "fechaVencimiento",
+                  "value": "{{vencimiento}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Descargar mi seguro de vida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Es un PDF\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"pdf\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil/documentos/SEGURO_VIDA",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil",
+                "documentos",
+                "SEGURO_VIDA"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar mi seguro de vida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Ya no lo tiene\", () => pm.expect(pm.response.json().documentos.map(d => d.tipo)).to.not.include(\"SEGURO_VIDA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil/documentos/SEGURO_VIDA",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil",
+                "documentos",
+                "SEGURO_VIDA"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar mi foto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Ya no tiene foto\", () => pm.expect(pm.response.json().tieneFoto).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/monotributista/perfil/foto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "monotributista",
+                "perfil",
+                "foto"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Guardia - Garita",
       "description": "Control de acceso en la garita: buscar por DNI, verificar, registrar ingreso y egreso.",
       "auth": {
         "type": "bearer",
@@ -3142,7 +4093,7 @@
       ]
     },
     {
-      "name": "9. Cierre de sesión",
+      "name": "10. Cierre de sesión",
       "description": "Al cerrar sesión el token deja de servir aunque no haya vencido (versión de sesión).",
       "auth": {
         "type": "bearer",
@@ -3269,6 +4220,10 @@
     },
     {
       "key": "operadorId",
+      "value": ""
+    },
+    {
+      "key": "operador2Id",
       "value": ""
     },
     {

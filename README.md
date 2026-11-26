@@ -319,7 +319,8 @@ La carpeta `postman/` tiene la colección `accesos.postman_collection.json`, el 
 4. Correr la colección entera con **Run collection**, en orden. La carpeta "1. Inicio de sesión" guarda el token de
    cada rol y las siguientes lo usan.
 
-- Son 76 pedidos con sus tests: camino feliz de cada rol (Administrador, Operador, Guardia, Empresa) y los errores
+- Son 99 pedidos con sus tests: camino feliz de cada rol (Administrador, Operador, Guardia, Empresa, Monotributista),
+  listados con búsqueda y filtros, y los errores
   esperados: sin sesión (401), rol equivocado (403), datos inválidos (400), reglas de negocio (422 con su `code`)
   y token usado después de cerrar sesión.
 - Cada corrida crea datos nuevos con un sufijo, así que se puede repetir sin reiniciar la base.
