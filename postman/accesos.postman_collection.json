@@ -762,6 +762,46 @@
               ]
             }
           }
+        },
+        {
+          "name": "Guardia pide el historial del barrio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrio/movimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrio",
+                "movimientos"
+              ]
+            },
+            "description": "El historial del barrio es solo del Operador (US-36): otro rol recibe 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuardia}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
         }
       ]
     },
@@ -2252,8 +2292,8 @@
       ]
     },
     {
-      "name": "6. Operador - Guardias y habilitaciones",
-      "description": "El Operador administra los Guardias de su barrio y qué perfiles pueden entrar.",
+      "name": "6. Operador - Guardias, habilitaciones e historial",
+      "description": "El Operador administra los Guardias de su barrio, qué perfiles pueden entrar y consulta el historial de accesos del barrio.",
       "auth": {
         "type": "bearer",
         "bearer": [
@@ -2680,6 +2720,159 @@
                 "deshabilitar"
               ]
             }
+          }
+        },
+        {
+          "name": "Historial del barrio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const lista = pm.response.json().content;",
+                  "pm.test(\"Viene paginado\", () => pm.expect(pm.response.json()).to.have.property(\"totalElements\"));",
+                  "pm.test(\"Del más reciente al más antiguo\", () => {",
+                  "    for (let i = 1; i < lista.length; i++) pm.expect(lista[i - 1].fechaHora >= lista[i].fechaHora).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrio/movimientos?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrio",
+                "movimientos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "US-36: ingresos y egresos del barrio del Operador, paginados y del más reciente al más antiguo."
+          }
+        },
+        {
+          "name": "Historial por DNI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Solo ese DNI\", () => pm.response.json().content.forEach(m => pm.expect(m.trabajadorDni).to.eql(\"30111222\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrio/movimientos?dni=30111222",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrio",
+                "movimientos"
+              ],
+              "query": [
+                {
+                  "key": "dni",
+                  "value": "30111222"
+                }
+              ]
+            },
+            "description": "US-36: el DNI es por coincidencia exacta. También filtra por desde, hasta (AAAA-MM-DD) y perfilId."
+          }
+        },
+        {
+          "name": "Historial con DNI inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrio/movimientos?dni=30a",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrio",
+                "movimientos"
+              ],
+              "query": [
+                {
+                  "key": "dni",
+                  "value": "30a"
+                }
+              ]
+            },
+            "description": "El DNI solo acepta números (hasta 10)."
+          }
+        },
+        {
+          "name": "Entidades para el filtro del historial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Es una lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrio/movimientos/entidades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrio",
+                "movimientos",
+                "entidades"
+              ]
+            },
+            "description": "US-36: Empresas y Monotributistas con algún movimiento en el barrio, para el filtro."
           }
         }
       ]
