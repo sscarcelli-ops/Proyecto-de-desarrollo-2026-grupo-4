@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { ApartmentOutlined, HomeOutlined, SafetyOutlined, ShopOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons';
+import {
+  ApartmentOutlined,
+  HistoryOutlined,
+  HomeOutlined,
+  SafetyOutlined,
+  ShopOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import type { Rol } from '../../shared/types/rol';
 import { PATHS } from '../../routes/paths';
 
@@ -24,6 +32,8 @@ export const MENU_ITEMS: AppMenuItem[] = [
   { path: PATHS.empresasBarrio, label: 'Empresas y Monotributistas', icon: <ShopOutlined />, roles: ['OPERADOR'] },
   // US-32: Guardias del barrio (Operador)
   { path: PATHS.guardias, label: 'Guardias', icon: <SafetyOutlined />, roles: ['OPERADOR'] },
+  // US-36: Historial de accesos del barrio (Operador)
+  { path: PATHS.historialAccesos, label: 'Historial de accesos', icon: <HistoryOutlined />, roles: ['OPERADOR'] },
   // US-25, US-26: Trabajadores de la Empresa
   { path: PATHS.trabajadores, label: 'Trabajadores', icon: <TeamOutlined />, roles: ['EMPRESA'] },
   // US-24: Datos personales del Monotributista (RF-09, RN-07)
