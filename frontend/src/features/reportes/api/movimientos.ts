@@ -1,31 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { httpClient } from '../../../shared/lib/httpClient';
+import type { ApiSchema } from '../../../shared/api/types';
 
-export interface MovimientoHistorial {
-  id: number;
-  fechaHora: string;
-  tipo: 'INGRESO' | 'EGRESO';
-  trabajadorNombre: string;
-  trabajadorApellido: string;
-  trabajadorDni: string;
-  entidadTipo: 'EMPRESA' | 'MONOTRIBUTISTA';
-  entidadNombre: string;
-  motivo?: string | null;
-}
-
-export interface EntidadFiltro {
-  id: number;
-  nombre: string;
-  tipo: 'EMPRESA' | 'MONOTRIBUTISTA';
-}
-
-export interface PaginaMovimientos {
-  content: MovimientoHistorial[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
+// Tipos generados desde los DTO del backend (npm run api:types, con el backend corriendo)
+export type MovimientoHistorial = ApiSchema<'MovimientoHistorialResponse'>;
+export type EntidadFiltro = ApiSchema<'EntidadFiltroResponse'>;
+export type PaginaMovimientos = ApiSchema<'PageResponseMovimientoHistorialResponse'>;
 
 export interface FiltrosHistorial {
   desde?: string;

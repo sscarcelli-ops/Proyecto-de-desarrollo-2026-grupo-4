@@ -796,6 +796,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/barrio/movimientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultarHistorial"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/barrio/movimientos/entidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarEntidadesFiltro"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -1192,6 +1224,36 @@ export interface components {
             totalElements: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        MovimientoHistorialResponse: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            fechaHora: string;
+            tipo: string;
+            trabajadorNombre: string;
+            trabajadorApellido: string;
+            trabajadorDni: string;
+            entidadTipo: string;
+            entidadNombre: string;
+            motivo: string;
+        };
+        PageResponseMovimientoHistorialResponse: {
+            content: components["schemas"]["MovimientoHistorialResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        EntidadFiltroResponse: {
+            /** Format: int64 */
+            id: number;
+            nombre: string;
+            tipo: string;
         };
         UsuarioActualResponse: {
             email: string;
@@ -2673,6 +2735,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponsePerfilBarrioResponse"];
+                };
+            };
+        };
+    };
+    consultarHistorial: {
+        parameters: {
+            query: {
+                desde?: string;
+                hasta?: string;
+                dni?: string;
+                perfilId?: number;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseMovimientoHistorialResponse"];
+                };
+            };
+        };
+    };
+    listarEntidadesFiltro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EntidadFiltroResponse"][];
                 };
             };
         };

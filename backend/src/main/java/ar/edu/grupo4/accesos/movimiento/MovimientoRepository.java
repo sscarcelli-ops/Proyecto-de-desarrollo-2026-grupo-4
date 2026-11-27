@@ -109,16 +109,19 @@ public class MovimientoRepository {
     }
 
     /**
-     * US-36: Entidades (Empresas y Monotributistas) habilitadas en el barrio para poblar el dropdown de filtro.
+     * US-36: Entidades (Empresas y Monotributistas) con movimientos en el barrio para poblar el dropdown de filtro.
+     * Incluye todas las entidades que registraron al menos un ingreso o egreso en el barrio, incluso si hoy
+     * están suspendidas o deshabilitadas.
      */
     public List<EntidadFiltroResponse> listarEntidadesDelBarrio(Long barrioId) {
         String sql = """
             SELECT DISTINCT p.id,
                    COALESCE(p.razon_social, p.nombre || ' ' || p.apellido) AS nombre,
                    p.tipo
-            FROM perfil p
-            JOIN habilitacion_barrio hb ON hb.perfil_id = p.id
-            WHERE hb.barrio_id = ? AND p.estado = 'APROBADO'
+            FROM movimiento m
+            JOIN trabajador t ON t.id = m.trabajador_id
+            JOIN perfil p ON p.id = t.perfil_id
+            WHERE m.barrio_id = ?
             ORDER BY nombre
             """;
         return jdbc.query(sql, (rs, rowNum) -> new EntidadFiltroResponse(

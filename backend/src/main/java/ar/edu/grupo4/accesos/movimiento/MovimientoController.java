@@ -1,10 +1,13 @@
 package ar.edu.grupo4.accesos.movimiento;
 
+import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
 import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import ar.edu.grupo4.accesos.movimiento.dto.EntidadFiltroResponse;
 import ar.edu.grupo4.accesos.movimiento.dto.MovimientoFiltros;
 import ar.edu.grupo4.accesos.movimiento.dto.MovimientoHistorialResponse;
 import ar.edu.grupo4.accesos.usuario.UsuarioActual;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 /**
  * US-36: Consultar el historial de accesos del barrio (Operador).
@@ -34,13 +38,16 @@ public class MovimientoController {
     public PageResponse<MovimientoHistorialResponse> consultarHistorial(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @RequestParam(required = false) String dni,
+            @RequestParam(required = false)
+            @Size(max = 10, message = "El DNI no puede superar los 10 caracteres")
+            @Pattern(regexp = "^\\d+$", message = "El DNI debe contener solo números")
+            String dni,
             @RequestParam(required = false) Long perfilId,
             @PageableDefault(size = 10) Pageable pageable
     ) {
         Long barrioId = usuarioActual.barrioId();
         MovimientoFiltros filtros = new MovimientoFiltros(desde, hasta, dni, perfilId);
-        return movimientoService.consultarHistorial(barrioId, filtros, pageable);
+        return movimientoService.consultarHistorial(barrioId, filtros, OrdenPermitido.validar(pageable, Set.of()));
     }
 
     @GetMapping("/entidades")

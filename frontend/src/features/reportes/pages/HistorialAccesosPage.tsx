@@ -94,9 +94,9 @@ export function HistorialAccesosPage() {
       dataIndex: 'tipo',
       width: 120,
       align: 'center',
-      render: (tipo: MovimientoHistorial['tipo']) => (
+      render: (tipo: string) => (
         <EstadoTag
-          estado={tipo}
+          estado={tipo as 'INGRESO' | 'EGRESO'}
           style={{
             minWidth: 80,
             height: 24,
