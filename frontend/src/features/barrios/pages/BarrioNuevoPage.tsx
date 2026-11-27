@@ -1,11 +1,10 @@
-import { Card, Flex, Form, Typography, App as AntdApp } from 'antd';
+import { Form, App as AntdApp } from 'antd';
 import { useNavigate } from 'react-router';
 import { marcarErroresDeBarrio, useCrearBarrio, type BarrioRequest } from '../api/barrios';
 import { BarrioForm } from '../components/BarrioForm';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { PATHS } from '../../../routes/paths';
-
-const { Title } = Typography;
+import { PaginaFormulario } from '../../../shared/components/PaginaFormulario';
 
 // US-10: alta de barrio (Administrador). Obligatorios: nombre, provincia y localidad (T-11) y dirección.
 export function BarrioNuevoPage() {
@@ -31,17 +30,14 @@ export function BarrioNuevoPage() {
   };
 
   return (
-    <Flex vertical gap={16}>
-      <Title level={3} style={{ margin: 0 }}>Nuevo Barrio</Title>
-      <Card style={{ maxWidth: 560 }}>
-        <BarrioForm
-          form={form}
-          loading={crear.isPending}
-          textoGuardar="Crear Barrio"
-          onFinish={onFinish}
-          onCancel={() => navigate(PATHS.barrios)}
-        />
-      </Card>
-    </Flex>
+    <PaginaFormulario titulo="Nuevo Barrio">
+      <BarrioForm
+        form={form}
+        loading={crear.isPending}
+        textoGuardar="Crear Barrio"
+        onFinish={onFinish}
+        onCancel={() => navigate(PATHS.barrios)}
+      />
+    </PaginaFormulario>
   );
 }

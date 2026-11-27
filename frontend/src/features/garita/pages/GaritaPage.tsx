@@ -493,7 +493,7 @@ export function GaritaPage() {
                 </Flex>
               </Radio.Group>
 
-              <Flex gap={12}>
+              <Flex gap={12} wrap>
                 <Button
                   type="primary"
                   onClick={() => vinculoSeleccionado && ejecutarVerificacion(vinculoSeleccionado)}
@@ -542,7 +542,7 @@ export function GaritaPage() {
                 REGISTRAR EGRESO
               </div>
 
-              <Flex gap={12}>
+              <Flex gap={12} wrap>
                 <Button
                   type="primary"
                   loading={egresoMutation.isPending}
@@ -602,7 +602,7 @@ export function GaritaPage() {
                 ACCESO HABILITADO
               </div>
 
-              <Flex gap={12}>
+              <Flex gap={12} wrap>
                 <Button
                   type="primary"
                   icon={<LoginOutlined />}
@@ -679,7 +679,7 @@ export function GaritaPage() {
                 </div>
               )}
 
-              <Flex gap={12}>
+              <Flex gap={12} wrap>
                 <Button
                   type="primary"
                   onClick={volverABusqueda}

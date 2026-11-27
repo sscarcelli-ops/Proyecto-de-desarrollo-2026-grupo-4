@@ -52,6 +52,12 @@ public class BarrioController {
         return responder(barrioService.asignarOperador(id, request));
     }
 
+    // US-14: reemplaza al Operador del barrio (activo o inactivo) por uno disponible o uno nuevo, en una sola operación
+    @PutMapping("/{id}/operador/reemplazo")
+    public BarrioResponse reemplazarOperador(@PathVariable Long id, @Valid @RequestBody AsignarOperadorRequest request) {
+        return responder(barrioService.reemplazarOperador(id, request));
+    }
+
     // US-12: activa o desactiva el barrio (baja lógica). Al desactivar registra el egreso de los ingresos abiertos
     @PutMapping("/{id}/estado")
     public BarrioResponse cambiarEstado(@PathVariable Long id, @Valid @RequestBody EstadoBarrioRequest request) {

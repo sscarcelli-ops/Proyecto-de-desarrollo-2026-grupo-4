@@ -1,0 +1,232 @@
+package ar.edu.grupo4.accesos.trabajador;
+
+import ar.edu.grupo4.accesos.common.exception.GlobalExceptionHandler;
+import ar.edu.grupo4.accesos.perfil.PerfilService;
+import ar.edu.grupo4.accesos.trabajador.dto.DocumentoResponse;
+import ar.edu.grupo4.accesos.trabajador.dto.MonotributistaPerfilModificarRequest;
+import ar.edu.grupo4.accesos.trabajador.dto.MonotributistaPerfilResponse;
+import ar.edu.grupo4.accesos.trabajador.dto.TrabajadorResponse;
+import ar.edu.grupo4.accesos.usuario.UsuarioActual;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
+class MonotributistaPerfilControllerTest {
+
+    private MockMvc mockMvc;
+
+    @Mock
+    private PerfilService perfilService;
+
+    @Mock
+    private TrabajadorService trabajadorService;
+
+    @Mock
+    private UsuarioActual usuarioActual;
+
+    @InjectMocks
+    private MonotributistaPerfilController controller;
+
+    private MonotributistaPerfilResponse responseMock;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .build();
+
+        responseMock = new MonotributistaPerfilResponse(
+            10L, 20L, "Paula", "Gómez", "33222111", "27-33222111-1",
+            "1133445566", "PENDIENTE_CARGA", false, null, List.of()
+        );
+    }
+
+    @Test
+    @DisplayName("US-24 CA-1/CA-5: GET /api/monotributista/perfil devuelve los datos del perfil y trabajador")
+    void obtenerPerfilDevuelveOk() throws Exception {
+        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
+        when(perfilService.obtenerPerfilMonotributista(10L)).thenReturn(responseMock);
+
+        mockMvc.perform(get("/api/monotributista/perfil"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.perfilId").value(10))
+            .andExpect(jsonPath("$.trabajadorId").value(20))
+            .andExpect(jsonPath("$.nombre").value("Paula"))
+            .andExpect(jsonPath("$.apellido").value("Gómez"))
+            .andExpect(jsonPath("$.dni").value("33222111"))
+            .andExpect(jsonPath("$.cuil").value("27-33222111-1"))
+            .andExpect(jsonPath("$.telefono").value("1133445566"))
+            .andExpect(jsonPath("$.estadoDocumental").value("PENDIENTE_CARGA"));
+
+        verify(usuarioActual).perfilIdAprobado();
+        verify(perfilService).obtenerPerfilMonotributista(10L);
+    }
+
+    @Test
+    @DisplayName("US-24 CA-6: PUT /api/monotributista/perfil actualiza nombre y apellido")
+    void modificarPerfilDevuelveOk() throws Exception {
+        when(usuarioActual.perfilIdAprobado()).thenReturn(10L);
+        MonotributistaPerfilResponse actualizada = new MonotributistaPerfilResponse(
+            10L, 20L, "Paula María", "Gómez Pérez", "33222111", "27-33222111-1",
+            "1133445566", "PENDIENTE_CARGA", false, null, List.of()
+        );
+        when(perfilService.modificarPerfilMonotributista(eq(10L), any(MonotributistaPerfilModificarRequest.class)))
+            .thenReturn(actualizada);
+
+        String json = """
+            {
+                "nombre": "Paula María",
+                "apellido": "Gómez Pérez"
+            }
+            """;
+
+        mockMvc.perform(put("/api/monotributista/perfil")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.nombre").value("Paula María"))
+            .andExpect(jsonPath("$.apellido").value("Gómez Pérez"));
+
+        verify(perfilService).modificarPerfilMonotributista(eq(10L), any(MonotributistaPerfilModificarRequest.class));
+    }
+
+    @Test
+    @DisplayName("US-24 CA-6: PUT rechaza nombre o apellido vacíos")
+    void modificarPerfilValidaCamposObligatorios() throws Exception {
+        String json = """
+            {
+                "nombre": "",
+                "apellido": ""
+            }
+            """;
+
+        mockMvc.perform(put("/api/monotributista/perfil")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @DisplayName("US-24 CA-2: POST /api/monotributista/perfil/foto sube foto de perfil delegando al trabajador")
+    void cargarFotoDevuelveOk() throws Exception {
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            20L, "Paula", "Gómez", "33222111", "PENDIENTE_CARGA",
+            true, false, List.of(), "/api/trabajadores/20/foto"
+        );
+        when(trabajadorService.cargarFotoPropia(any())).thenReturn(tResp);
+
+        MockMultipartFile file = new MockMultipartFile("foto", "foto.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/api/monotributista/perfil/foto").file(file))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.tieneFoto").value(true));
+
+        verify(trabajadorService).cargarFotoPropia(any());
+    }
+
+    @Test
+    @DisplayName("US-24 CA-2: DELETE /api/monotributista/perfil/foto elimina foto de perfil")
+    void eliminarFotoDevuelveOk() throws Exception {
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            20L, "Paula", "Gómez", "33222111", "PENDIENTE_CARGA",
+            false, false, List.of(), null
+        );
+        when(trabajadorService.eliminarFotoPropia()).thenReturn(tResp);
+
+        mockMvc.perform(delete("/api/monotributista/perfil/foto"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.tieneFoto").value(false));
+
+        verify(trabajadorService).eliminarFotoPropia();
+    }
+
+    @Test
+    @DisplayName("US-24 CA-5: GET /api/monotributista/perfil/foto descarga foto")
+    void descargarFotoDevuelveOk() throws Exception {
+        Resource res = new ByteArrayResource(new byte[]{1, 2, 3}) {
+            @Override
+            public String getFilename() {
+                return "foto.jpg";
+            }
+        };
+        when(trabajadorService.descargarFotoPropia()).thenReturn(res);
+
+        mockMvc.perform(get("/api/monotributista/perfil/foto"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Content-Type", "image/jpeg"));
+
+        verify(trabajadorService).descargarFotoPropia();
+    }
+
+    @Test
+    @DisplayName("US-24 CA-3: POST /api/monotributista/perfil/documentos carga póliza")
+    void cargarDocumentoDevuelveOk() throws Exception {
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            20L, "Paula", "Gómez", "33222111", "VIGENTE",
+            false, false, List.of(), null
+        );
+        when(trabajadorService.cargarDocumentoPropio(any())).thenReturn(tResp);
+
+        MockMultipartFile file = new MockMultipartFile("archivo", "art.pdf", "application/pdf", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/api/monotributista/perfil/documentos")
+                .file(file)
+                .param("tipo", "ART")
+                .param("fechaVencimiento", "2027-12-31"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.estadoDocumental").value("VIGENTE"));
+
+        verify(trabajadorService).cargarDocumentoPropio(any());
+    }
+
+    @Test
+    @DisplayName("US-24 CA-2: DELETE /api/monotributista/perfil/documentos/{tipo} elimina documento")
+    void eliminarDocumentoDevuelveOk() throws Exception {
+        TrabajadorResponse tResp = new TrabajadorResponse(
+            20L, "Paula", "Gómez", "33222111", "PENDIENTE_CARGA",
+            false, false, List.of(), null
+        );
+        when(trabajadorService.eliminarDocumentoPropio(TipoDocumento.ART)).thenReturn(tResp);
+
+        mockMvc.perform(delete("/api/monotributista/perfil/documentos/ART"))
+            .andExpect(status().isOk());
+
+        verify(trabajadorService).eliminarDocumentoPropio(TipoDocumento.ART);
+    }
+
+    @Test
+    @DisplayName("US-24 CA-5: GET /api/monotributista/perfil/documentos/{tipo} descarga PDF")
+    void descargarDocumentoDevuelvePdf() throws Exception {
+        Resource res = new ByteArrayResource(new byte[]{1, 2, 3});
+        when(trabajadorService.descargarDocumentoPropio(TipoDocumento.ART)).thenReturn(res);
+
+        mockMvc.perform(get("/api/monotributista/perfil/documentos/ART"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Content-Type", "application/pdf"))
+            .andExpect(header().string("Content-Disposition", "attachment; filename=\"ART.pdf\""));
+
+        verify(trabajadorService).descargarDocumentoPropio(TipoDocumento.ART);
+    }
+}

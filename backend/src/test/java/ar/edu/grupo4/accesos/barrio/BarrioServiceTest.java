@@ -325,6 +325,130 @@ class BarrioServiceTest {
             .hasMessage("El Operador no existe.");
     }
 
+    // ---- US-14
+
+    @Test
+    void reemplazarPorUnOperadorDisponibleCambiaElOperadorMantieneElEstadoYCierraLaSesionDelAnterior() {
+        Barrio barrio = barrioExistente(); // Activo, Operador 3
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrio));
+        when(operadorService.existe(5L)).thenReturn(true);
+        when(repository.existsByOperadorId(5L)).thenReturn(false);
+
+        Barrio reemplazado = service.reemplazarOperador(7L, new AsignarOperadorRequest(5L, null));
+
+        assertThat(reemplazado.getOperadorId()).isEqualTo(5L);
+        assertThat(reemplazado.getEstado()).isEqualTo(EstadoBarrio.ACTIVO);
+        verify(operadorService).cerrarSesiones(3L);
+    }
+
+    @Test
+    void reemplazarEnUnBarrioInactivoNoLoActiva() {
+        Barrio barrio = barrioExistente();
+        barrio.setEstado(EstadoBarrio.INACTIVO);
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrio));
+        when(operadorService.existe(5L)).thenReturn(true);
+        when(repository.existsByOperadorId(5L)).thenReturn(false);
+
+        Barrio reemplazado = service.reemplazarOperador(7L, new AsignarOperadorRequest(5L, null));
+
+        assertThat(reemplazado.getOperadorId()).isEqualTo(5L);
+        assertThat(reemplazado.getEstado()).isEqualTo(EstadoBarrio.INACTIVO);
+    }
+
+    @Test
+    void reemplazarConUnOperadorNuevoLoCreaYLoAsignaEnLaMismaOperacion() {
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrioExistente()));
+        when(operadorService.crear(operadorNuevo()))
+            .thenReturn(new OperadorResponse(11L, "Ana", "Pérez", "ana@test.com", "1145559999"));
+
+        Barrio reemplazado = service.reemplazarOperador(7L, new AsignarOperadorRequest(null, operadorNuevo()));
+
+        assertThat(reemplazado.getOperadorId()).isEqualTo(11L);
+        verify(operadorService).crear(operadorNuevo());
+        verify(operadorService).cerrarSesiones(3L);
+    }
+
+    @Test
+    void siElOperadorNuevoNoSePuedeCrearElAnteriorSigueAsignadoYNoSeCierraSuSesion() {
+        Barrio barrio = barrioExistente();
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrio));
+        when(operadorService.crear(operadorNuevo()))
+            .thenThrow(new BusinessException("EMAIL_DUPLICADO", "Este email ya se encuentra registrado"));
+
+        assertThatThrownBy(() -> service.reemplazarOperador(7L, new AsignarOperadorRequest(null, operadorNuevo())))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("EMAIL_DUPLICADO"));
+
+        assertThat(barrio.getOperadorId()).isEqualTo(3L);
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+        verify(operadorService, never()).cerrarSesiones(any());
+    }
+
+    @Test
+    void siLaBaseRechazaElCambioElAnteriorNoPierdeLaSesion() {
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrioExistente()));
+        when(operadorService.existe(5L)).thenReturn(true);
+        when(repository.existsByOperadorId(5L)).thenReturn(false);
+        when(repository.saveAndFlush(any(Barrio.class))).thenThrow(new DataIntegrityViolationException("uq"));
+
+        assertThatThrownBy(() -> service.reemplazarOperador(7L, new AsignarOperadorRequest(5L, null)))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("OPERADOR_OCUPADO"));
+        verify(operadorService, never()).cerrarSesiones(any());
+    }
+
+    @Test
+    void reemplazarPorUnOperadorQueYaTieneOtroBarrioFallaYNoCambiaNada() {
+        Barrio barrio = barrioExistente();
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrio));
+        when(operadorService.existe(5L)).thenReturn(true);
+        when(repository.existsByOperadorId(5L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.reemplazarOperador(7L, new AsignarOperadorRequest(5L, null)))
+            .isInstanceOfSatisfying(BusinessException.class, e -> {
+                assertThat(e.getCode()).isEqualTo("OPERADOR_OCUPADO");
+                assertThat(e.getMessage()).isEqualTo("El Operador ya está asignado a otro barrio");
+            });
+        assertThat(barrio.getOperadorId()).isEqualTo(3L);
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+        verify(operadorService, never()).cerrarSesiones(any());
+    }
+
+    @Test
+    void reemplazarPorElMismoOperadorFalla() {
+        when(repository.findByIdForUpdate(7L)).thenReturn(Optional.of(barrioExistente()));
+
+        assertThatThrownBy(() -> service.reemplazarOperador(7L, new AsignarOperadorRequest(3L, null)))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("OPERADOR_YA_ASIGNADO"));
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+        verify(operadorService, never()).cerrarSesiones(any());
+    }
+
+    @Test
+    void reemplazarEnUnBarrioSinOperadorFallaYNoCreaNada() {
+        when(repository.findByIdForUpdate(8L)).thenReturn(Optional.of(barrioSinOperador()));
+
+        assertThatThrownBy(() -> service.reemplazarOperador(8L, new AsignarOperadorRequest(null, operadorNuevo())))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("BARRIO_SIN_OPERADOR_ACTUAL"));
+        verify(operadorService, never()).crear(any());
+        verify(repository, never()).saveAndFlush(any(Barrio.class));
+    }
+
+    @Test
+    void reemplazarEnUnBarrioInexistenteDevuelveNotFound() {
+        when(repository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.reemplazarOperador(99L, new AsignarOperadorRequest(5L, null)))
+            .isInstanceOf(NotFoundException.class)
+            .hasMessage("El barrio no existe.");
+    }
+
+    @Test
+    void reemplazarSinIndicarOperadorOIndicandoDosFalla() {
+        assertThatThrownBy(() -> service.reemplazarOperador(7L, new AsignarOperadorRequest(null, null)))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("OPERADOR_REQUERIDO"));
+        assertThatThrownBy(() -> service.reemplazarOperador(7L, new AsignarOperadorRequest(5L, operadorNuevo())))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getCode()).isEqualTo("OPERADOR_AMBIGUO"));
+    }
+
     // ---- US-12
 
     @Test

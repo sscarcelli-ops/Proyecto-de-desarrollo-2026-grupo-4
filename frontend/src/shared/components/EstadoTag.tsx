@@ -20,12 +20,21 @@ const ESTADOS = {
   // Barrio (RF-02)
   ACTIVO: { label: 'Activo', tono: 'exito' },
   INACTIVO: { label: 'Inactivo', tono: 'neutro' },
+  // Operador del listado del Administrador (RF-31): sin barrio / con barrio a cargo
+  DISPONIBLE: { label: 'Disponible', tono: 'exito' },
+  OCUPADO: { label: 'Ocupado', tono: 'marca' },
   // Tipo de movimiento (RN-06)
   INGRESO: { label: 'Ingreso', tono: 'marca' },
   EGRESO: { label: 'Egreso', tono: 'neutro' },
 } satisfies Record<string, { label: string; tono: EstadoTono }>;
 
 export type Estado = keyof typeof ESTADOS;
+
+/**
+ * Ancho mínimo de una columna de tabla que muestra un EstadoTag: el tag mide al menos 135 (para que todos los
+ * estados midan lo mismo) + 16 de margen de la celda a cada lado + el borde. Con menos, el tag toca el borde.
+ */
+export const ANCHO_COLUMNA_ESTADO = 168;
 
 /** Etiqueta de estado con el color que le corresponde según el mapa de estados del theme. */
 export function EstadoTag({ estado, style }: { estado: Estado; style?: React.CSSProperties }) {

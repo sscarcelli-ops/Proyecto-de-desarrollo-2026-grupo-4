@@ -51,11 +51,12 @@ class TrabajadorAislamientoTest {
     void listarConsultaSoloElPerfilDeLaSesion() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Trabajador> vacia = new PageImpl<>(List.of(), pageable, 0);
-        when(trabajadorRepository.findByPerfilId(PERFIL_ID, pageable)).thenReturn(vacia);
+        when(trabajadorRepository.listarConFiltros(eq(PERFIL_ID), isNull(), isNull(), eq(false), any(LocalDate.class), eq(pageable)))
+            .thenReturn(vacia);
 
-        service.listar(pageable);
+        service.listar(null, null, false, pageable);
 
-        verify(trabajadorRepository).findByPerfilId(PERFIL_ID, pageable);
+        verify(trabajadorRepository).listarConFiltros(eq(PERFIL_ID), isNull(), isNull(), eq(false), any(LocalDate.class), eq(pageable));
         verify(trabajadorRepository, never()).findAll(any(Pageable.class));
     }
 
@@ -115,7 +116,7 @@ class TrabajadorAislamientoTest {
         when(usuarioActual.perfilIdAprobado()).thenThrow(new BusinessException(
             "PERFIL_NO_APROBADO", "Tu perfil no está aprobado.", HttpStatus.FORBIDDEN));
 
-        assertThatThrownBy(() -> service.listar(PageRequest.of(0, 10))).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> service.listar(null, null, false, PageRequest.of(0, 10))).isInstanceOf(BusinessException.class);
         assertThatThrownBy(() -> service.obtener(1L)).isInstanceOf(BusinessException.class);
         assertThatThrownBy(() -> service.editar(1L, new TrabajadorEditarRequest("A", "B")))
             .isInstanceOf(BusinessException.class);

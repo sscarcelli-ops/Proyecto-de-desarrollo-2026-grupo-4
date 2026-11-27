@@ -3,6 +3,7 @@ import type { FormInstance } from 'antd';
 import { httpClient } from '../../../shared/lib/httpClient';
 import { getApiProblem, getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
 import type { ApiSchema } from '../../../shared/api/types';
+import type { PageResponse } from '../../../shared/types/page';
 
 // Tipos generados desde los DTO del backend (npm run api:types, con el backend corriendo)
 export type Guardia = ApiSchema<'GuardiaResponse'>;
@@ -14,14 +15,20 @@ export const guardiasKeys = {
   detalle: (id: string) => ['guardias', id] as const,
 };
 
-// US-32: Guardias del barrio del Operador. Sin paginar (bajo volumen por barrio, RNF-08).
-async function getGuardias(): Promise<Guardia[]> {
-  const { data } = await httpClient.get<Guardia[]>('/guardias');
+// US-32: Guardias del barrio del Operador, paginados (RNF-08). El orden (apellido y nombre) lo fija el backend.
+async function getGuardias(page: number, size: number): Promise<PageResponse<Guardia>> {
+  // page desde 1, como la Pagination; el backend cuenta desde 0
+  const { data } = await httpClient.get<PageResponse<Guardia>>('/guardias', { params: { page: page - 1, size } });
   return data;
 }
 
-export function useGuardias() {
-  return useQuery({ queryKey: guardiasKeys.all, queryFn: getGuardias });
+export function useGuardias(page: number, size = 10) {
+  return useQuery({
+    // guardiasKeys.all es prefijo: crear, modificar o cambiar el estado de un Guardia vuelve a pedir el listado
+    queryKey: [...guardiasKeys.all, 'listado', page, size],
+    queryFn: () => getGuardias(page, size),
+    placeholderData: (prev) => prev,
+  });
 }
 
 export function useGuardia(id: string | undefined) {

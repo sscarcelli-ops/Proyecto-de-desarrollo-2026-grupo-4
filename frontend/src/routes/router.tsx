@@ -16,6 +16,8 @@ import { RegistroPage } from '../features/auth/pages/RegistroPage';
 import { ActivacionPage } from '../features/auth/pages/ActivacionPage';
 import { InicioPage } from '../features/auth/pages/InicioPage';
 import { CambiarPasswordPage } from '../features/auth/pages/CambiarPasswordPage';
+import { RecuperarPasswordPage } from '../features/auth/pages/RecuperarPasswordPage';
+import { RestablecerPasswordPage } from '../features/auth/pages/RestablecerPasswordPage';
 import { SolicitarPerfilPage } from '../features/perfiles/pages/SolicitarPerfilPage';
 import { EstadoSolicitudPage } from '../features/perfiles/pages/EstadoSolicitudPage';
 import { PingPage } from '../features/health/pages/PingPage';
@@ -30,9 +32,12 @@ import { TrabajadoresPage } from '../features/trabajadores/pages/TrabajadoresPag
 import { TrabajadorNuevoPage } from '../features/trabajadores/pages/TrabajadorNuevoPage';
 import { TrabajadorEditarPage } from '../features/trabajadores/pages/TrabajadorEditarPage';
 import { OperadorNuevoPage } from '../features/operadores/pages/OperadorNuevoPage';
+import { OperadoresPage } from '../features/operadores/pages/OperadoresPage';
+import { OperadorEditarPage } from '../features/operadores/pages/OperadorEditarPage';
 import { GuardiasPage } from '../features/guardias/pages/GuardiasPage';
 import { GuardiaNuevoPage } from '../features/guardias/pages/GuardiaNuevoPage';
 import { GuardiaEditarPage } from '../features/guardias/pages/GuardiaEditarPage';
+import { DatosPersonalesPage } from '../features/monotributista/pages/DatosPersonalesPage';
 
 export const router = createBrowserRouter([
   // Pantallas sin sesión: login (US-04), activación del Administrador (US-01), registro (US-02)
@@ -46,8 +51,12 @@ export const router = createBrowserRouter([
           { path: PATHS.login, element: <LoginPage /> },
           { path: PATHS.registro, element: <RegistroPage /> },
           { path: PATHS.activar, element: <ActivacionPage /> },
+          { path: PATHS.recuperarPassword, element: <RecuperarPasswordPage /> },
         ],
       },
+      // US-06: el enlace del correo se abre aunque haya una sesión abierta en el navegador (por ejemplo, de otra
+      // cuenta): no redirige. Al guardar, el backend cierra las sesiones de la cuenta del enlace.
+      { path: PATHS.restablecerPassword, element: <RestablecerPasswordPage /> },
       { path: PATHS.ping, element: <PingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
@@ -87,10 +96,15 @@ export const router = createBrowserRouter([
           {
             element: <AppLayout />,
             children: [
-              // Inicio: Admin y Monotributista (hasta que tenga su pantalla, US-24). El resto va a su pantalla inicial.
+              // Inicio: exclusivo del Administrador (US-10, US-11, US-18, US-20). El resto va a su pantalla inicial.
               {
-                element: <RequireRole roles={['ADMIN', 'MONOTRIBUTISTA']} />,
+                element: <RequireRole roles={['ADMIN']} />,
                 children: [{ path: PATHS.inicio, element: <InicioPage /> }],
+              },
+              // Monotributista: Datos personales y documentación legal (US-24)
+              {
+                element: <RequireRole roles={['MONOTRIBUTISTA']} />,
+                children: [{ path: PATHS.datosPersonales, element: <DatosPersonalesPage /> }],
               },
               // Administración: exclusivo del Administrador (US-10, US-11, US-18, US-20)
               {
@@ -100,7 +114,9 @@ export const router = createBrowserRouter([
                   { path: PATHS.barrioNuevo, element: <BarrioNuevoPage /> },
                   { path: PATHS.barrioEditar, element: <BarrioEditarPage /> },
                   { path: PATHS.empresas, element: <EmpresasPage /> },
+                  { path: PATHS.operadores, element: <OperadoresPage /> },
                   { path: PATHS.operadorNuevo, element: <OperadorNuevoPage /> },
+                  { path: PATHS.operadorEditar, element: <OperadorEditarPage /> },
                 ],
               },
               // Trabajadores: exclusivo para rol EMPRESA (US-25, US-26)

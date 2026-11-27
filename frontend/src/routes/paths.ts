@@ -5,7 +5,8 @@ export const PATHS = {
   activar: '/activar', // US-01 (dirección del manual de instalación: no hay link desde el login)
   registro: '/registro', // US-02
   solicitarPerfil: '/solicitar-perfil', // US-03
-  recuperarPassword: '/recuperar-contrasena', // US-06
+  recuperarPassword: '/recuperar-contrasena', // US-06: pedir el enlace
+  restablecerPassword: '/restablecer-contrasena', // US-06: el enlace del correo (?token=...). El backend arma esta dirección
   ping: '/ping', // prueba de conexión con el backend (T-02)
   // Con sesión
   inicio: '/inicio',
@@ -16,7 +17,9 @@ export const PATHS = {
   barrioNuevo: '/barrios/nuevo', // US-10
   barrioEditar: '/barrios/:id/editar', // US-11
   empresas: '/empresas', // US-18 (Admin: Empresas y Monotributistas)
+  operadores: '/operadores', // US-15 (Admin: listado de Operadores)
   operadorNuevo: '/operadores/nuevo', // US-13
+  operadorEditar: '/operadores/:id/editar', // US-16
   empresasBarrio: '/barrio/empresas', // US-33, US-34 (Operador: Empresas y Monotributistas del barrio)
   guardias: '/guardias', // US-32 (Operador)
   guardiaNuevo: '/guardias/nuevo', // US-32
@@ -25,4 +28,5 @@ export const PATHS = {
   trabajadores: '/trabajadores', // US-26
   trabajadorNuevo: '/trabajadores/nuevo', // US-25
   trabajadorEditar: '/trabajadores/:id/editar', // US-26
+  datosPersonales: '/datos-personales', // US-24: Datos personales del Monotributista (RF-09, RN-07)
 } as const;

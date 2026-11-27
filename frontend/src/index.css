@@ -1,4 +1,15 @@
 /* Estilos globales mínimos: el resto lo resuelve Ant Design con app/theme.ts */
+html {
+  /* Reserva el espacio de la barra de desplazamiento para evitar saltos horizontales al filtrar */
+  scrollbar-gutter: stable;
+}
+
+html body {
+  /* Evita que rc-util / Ant Design encoja el body (width: calc(100% - 17px)) al abrir un modal,
+     lo que provocaba que la pantalla se corriera a la izquierda al existir scrollbar-gutter: stable */
+  width: 100% !important;
+}
+
 body {
   margin: 0;
   /* Misma fuente que app/theme.ts, para el texto fuera de los componentes de Ant Design */
@@ -54,4 +65,25 @@ body {
 /* RangePicker con texto de fechas centrado para mejor lectura */
 .range-picker-centrado input {
   text-align: center !important;
+}
+
+/* T-07: etiquetas de las tarjetas de TablaResponsiva. Pisa el estilo propio que algunas pantallas le dan al
+   título de la columna (pensado para el encabezado de la tabla) */
+.tarjeta-etiqueta * {
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* T-07: en el celular la acción principal del encabezado (EncabezadoPagina) ocupa todo el ancho */
+.encabezado-accion-celular > .ant-btn {
+  width: 100%;
+}
+
+/* T-07: en las tarjetas de TablaResponsiva (celular) los botones miden al menos 40 px de alto y de ancho:
+   los de la tabla son chicos (size="small", 24 px), pensados para el mouse, y con el dedo cuesta acertarles */
+.tarjeta-responsiva .ant-btn {
+  /* !important: los botones redondos (shape="circle") traen su tamaño con un selector más específico */
+  min-height: 40px !important;
+  min-width: 40px !important;
+}
 }

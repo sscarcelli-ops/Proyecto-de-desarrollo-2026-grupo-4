@@ -30,11 +30,16 @@ public class HabilitacionBarrioService {
     /**
      * US-33: solo perfiles Aprobados, en orden alfabético por razón social o nombre y paginados (RF-15, RNF-08).
      * Pendientes, rechazados y suspendidos no aparecen.
+     * US-35: se puede filtrar por tipo y por condición en el barrio, combinados (RF-29). null = todos.
      */
     @Transactional(readOnly = true)
-    public PageResponse<PerfilBarrioResponse> listar(Pageable pageable) {
+    public PageResponse<PerfilBarrioResponse> listar(TipoPerfil tipo, CondicionBarrio condicion, Pageable pageable) {
         Long barrioId = usuarioActual.barrioId();
-        Page<Perfil> pagina = perfilRepository.listarConFiltros(EstadoPerfil.APROBADO, null, pageable);
+        Page<Perfil> pagina = perfilRepository.listarAprobadosParaBarrio(
+            barrioId,
+            tipo == null ? null : tipo.name(),
+            condicion == null ? null : condicion.name(),
+            pageable);
 
         List<Long> ids = pagina.getContent().stream().map(Perfil::getId).toList();
         Set<Long> habilitados = ids.isEmpty()
