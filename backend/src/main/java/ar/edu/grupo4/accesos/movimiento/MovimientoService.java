@@ -38,7 +38,8 @@ public class MovimientoService {
     }
 
     /**
-     * US-36: Lista las empresas y monotributistas habilitados en el barrio para el filtro.
+     * US-36: Empresas y Monotributistas con al menos un movimiento en el barrio, para el filtro. Incluye a los que
+     * hoy están deshabilitados o suspendidos: su historial se sigue pudiendo consultar.
      */
     @Transactional(readOnly = true)
     public List<EntidadFiltroResponse> listarEntidadesFiltro(Long barrioId) {

@@ -4,7 +4,7 @@ import type { TableColumnsType } from 'antd';
 import { PlusOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import { EstadoTag } from '../../../shared/components/EstadoTag';
+import { ANCHO_COLUMNA_ESTADO, EstadoTag } from '../../../shared/components/EstadoTag';
 import { getErrorMessage } from '../../../shared/lib/apiError';
 import { useMiBarrio } from '../../barrios/api/barrios';
 import { useEntidadesFiltro, useHistorialAccesos, type FiltrosHistorial, type MovimientoHistorial } from '../api/movimientos';
@@ -14,6 +14,10 @@ import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 import { useParametrosUrl, usePaginaValida } from '../../../shared/hooks/useParametrosUrl';
 
 const { RangePicker } = DatePicker;
+
+// Fecha AAAA-MM-DD de la dirección; cualquier otra cosa se toma como "sin filtro"
+const fechaValida = (valor: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(valor) && dayjs(valor).format('YYYY-MM-DD') === valor ? valor : undefined;
 
 /**
  * US-36: Consultar el historial de accesos del barrio (Operador).
@@ -27,12 +31,13 @@ export function HistorialAccesosPage() {
   const tamano = 10;
   const { data: barrio } = useMiBarrio();
 
-  // Filtros desde la URL para persistencia al recargar o volver
-  const desdeUrl = url.texto('desde') || undefined;
-  const hastaUrl = url.texto('hasta') || undefined;
-  const dniUrl = url.texto('dni') || undefined;
-  const perfilIdParam = url.texto('perfilId');
-  const perfilIdUrl = perfilIdParam ? Number(perfilIdParam) : undefined;
+  // Filtros desde la URL para persistencia al recargar o volver. Un valor escrito a mano que no es válido
+  // (fecha mal formada, DNI con letras, entidad que no es un número) se ignora, como en los demás listados.
+  const desdeUrl = fechaValida(url.texto('desde'));
+  const hastaUrl = fechaValida(url.texto('hasta'));
+  const dniUrl = /^\d{1,10}$/.test(url.texto('dni')) ? url.texto('dni') : undefined;
+  const perfilIdNumero = url.numero('perfilId', 0);
+  const perfilIdUrl = perfilIdNumero > 0 ? perfilIdNumero : undefined;
 
   // Estados locales para los inputs antes de hacer clic en "Filtrar"
   const [rangoFechas, setRangoFechas] = useState<[Dayjs | null, Dayjs | null] | null>(
@@ -87,51 +92,41 @@ export function HistorialAccesosPage() {
       dataIndex: 'fechaHora',
       width: 170,
       align: 'center',
-      render: (fecha: string) => dayjs(fecha).format('DD/MM/YYYY HH:mm'),
+      // En una sola línea: fecha y hora se leen juntas
+      render: (fecha: string) => <span style={{ whiteSpace: 'nowrap' }}>{dayjs(fecha).format('DD/MM/YYYY HH:mm')}</span>,
     },
     {
       title: 'Tipo',
       dataIndex: 'tipo',
-      width: 120,
+      // El mismo tag que el resto de los listados (mismo tamaño en todas las tablas)
+      width: ANCHO_COLUMNA_ESTADO,
       align: 'center',
-      render: (tipo: string) => (
-        <EstadoTag
-          estado={tipo as 'INGRESO' | 'EGRESO'}
-          style={{
-            minWidth: 80,
-            height: 24,
-            lineHeight: '22px',
-            fontSize: 12,
-            paddingInline: 12,
-          }}
-        />
-      ),
+      render: (tipo: string) => <EstadoTag estado={tipo as 'INGRESO' | 'EGRESO'} />,
     },
     {
       title: 'Trabajador',
       key: 'trabajador',
-      align: 'center',
       render: (_, m) => `${m.trabajadorNombre} ${m.trabajadorApellido}`,
     },
     {
       title: 'DNI',
       dataIndex: 'trabajadorDni',
-      width: 140,
+      width: 110,
       align: 'center',
     },
     {
-      title: 'Nombre de la Entidad',
+      // Nombre de la columna como en la US
+      title: 'Empresa/Monotributista',
       dataIndex: 'entidadNombre',
-      align: 'center',
-      ellipsis: true,
     },
     {
       title: 'Motivo',
       key: 'motivo',
-      width: 90,
+      width: 80,
       align: 'center',
       render: (_, m) => {
-        if (!m.motivo) return <span style={{ color: palette.textSecondary }}>—</span>;
+        // Solo los egresos automáticos tienen motivo; el resto queda vacío (en el celular no muestra nada suelto)
+        if (!m.motivo) return null;
         return (
           <Button
             size="small"
@@ -139,6 +134,7 @@ export function HistorialAccesosPage() {
             icon={<PlusOutlined />}
             onClick={() => setMotivoModal(m.motivo || '')}
             title="Ver motivo del egreso automático"
+            aria-label="Ver motivo del egreso automático"
           />
         );
       },
@@ -146,7 +142,8 @@ export function HistorialAccesosPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
+    // Mismo ancho que los demás listados (sin un máximo propio)
+    <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
       <EncabezadoPagina
         titulo={barrio?.nombre ? `Historial de accesos - ${barrio.nombre}` : 'Historial de accesos'}
         descripcion="Registro cronológico de ingresos y egresos de trabajadores en el barrio"
@@ -166,7 +163,6 @@ export function HistorialAccesosPage() {
                   format="DD/MM/YYYY"
                   placeholder={['Desde', 'Hasta']}
                   style={{ width: 260 }}
-                  className="range-picker-centrado"
                 />
               </Flex>
 
@@ -188,14 +184,13 @@ export function HistorialAccesosPage() {
                 <Typography.Text style={{ fontSize: 13, color: palette.textSecondary, fontWeight: 500 }}>
                   Empresa / Monotributista
                 </Typography.Text>
-                <Select
-                  placeholder="Todos"
-                  allowClear
-                  value={perfilIdInput}
-                  onChange={(val) => setPerfilIdInput(val)}
+                {/* "Todos" es una opción más, como en los otros filtros (no un valor vacío) */}
+                <Select<number | 'TODOS'>
+                  value={perfilIdInput ?? 'TODOS'}
+                  onChange={(val) => setPerfilIdInput(val === 'TODOS' ? undefined : val)}
                   style={{ minWidth: 220 }}
                   options={[
-                    { value: undefined, label: 'Todos' },
+                    { value: 'TODOS', label: 'Todos' },
                     ...(entidades?.map((e) => ({
                       value: e.id,
                       label: `${e.nombre} (${e.tipo === 'EMPRESA' ? 'Empresa' : 'Monotributista'})`,
@@ -237,7 +232,7 @@ export function HistorialAccesosPage() {
                 {error
                   ? getErrorMessage(error)
                   : hayFiltrosActivos
-                    ? 'No se encontraron accesos que coincidan con los filtros aplicados'
+                    ? 'No se encontraron resultados con los filtros aplicados' // US-36 CA-3, igual que los otros listados
                     : 'Actualmente no existen Ingresos ni Egresos registrados al Barrio Privado'}
               </div>
             ),

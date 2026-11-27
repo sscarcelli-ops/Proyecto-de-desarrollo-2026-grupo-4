@@ -62,11 +62,6 @@ body {
   padding-left: 14px !important;
 }
 
-/* RangePicker con texto de fechas centrado para mejor lectura */
-.range-picker-centrado input {
-  text-align: center !important;
-}
-
 /* T-07: etiquetas de las tarjetas de TablaResponsiva. Pisa el estilo propio que algunas pantallas le dan al
    título de la columna (pensado para el encabezado de la tabla) */
 .tarjeta-etiqueta * {

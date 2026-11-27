@@ -452,7 +452,7 @@ export function GaritaPage() {
                 El trabajador tiene más de un vínculo registrado.
                 <br />
                 <Text strong style={{ color: palette.text, fontSize: 15 }}>
-                  ¿Bajo qué empresa/monotributo ingresa hoy?
+                  ¿Bajo qué Empresa o Monotributista ingresa hoy?
                 </Text>
               </Paragraph>
 
