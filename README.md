@@ -58,11 +58,12 @@ Qué tiene cada uno:
   levanta y el contenido del correo queda en el log del backend (`docker compose logs backend`).
 - **Pasar de una prueba a la otra:** ejecutar el otro comando. Usan bases distintas en el mismo contenedor y cada
   una conserva sus datos.
-- **Repetir el camino feliz desde cero:** `docker compose down -v` y volver a levantar. Borra las dos bases; la del
-  seed se vuelve a cargar sola.
+- **Repetir el camino feliz desde cero:** `docker compose --env-file docker/prueba.env down -v` y volver a levantar.
+  Borra las dos bases; la del seed se vuelve a cargar sola. Apagar siempre con el mismo `--env-file` con el que se
+  levantó: sin él, el buzón de correo (Mailpit) queda prendido y aparece "network accesos_default ... still in use".
 - **Producción:** copiar `docker/produccion.env.example` como `docker/produccion.env` (no se versiona) y reemplazar
   los valores `CAMBIAR-...`. Va en su propia máquina; si ahí se usó un ambiente de prueba, antes `docker compose
-  down -v` (la base conserva la contraseña con la que se creó).
+  --env-file docker/prueba.env down -v` (la base conserva la contraseña con la que se creó).
 - **Este compose es para instalaciones de prueba o locales: no exponerlo a internet.** No tiene HTTPS y publica los
   puertos de la base y del backend.
 - Otros comandos: `docker compose ps` (estado), `docker compose logs -f backend` (logs en vivo), `docker compose
@@ -83,10 +84,12 @@ hace falta tocar el código ni el `docker-compose.yml`.
 - **Con Docker:** en el archivo del ambiente (por ejemplo `docker/produccion.env`) poner `ARCHIVOS_DIR` con la carpeta
   de la máquina donde se guardan. Para un file server, montar antes su carpeta compartida en el servidor y poner esa
   ruta. Lo mismo con `LOGS_DIR` para los logs. Vacías, se usan los volúmenes `archivos` y `logs`.
+  La ruta tiene que ser **absoluta** (`/srv/...`, `C:/...`) o empezar con `./`: un nombre solo (`archivos2`) Docker lo
+  toma como un volumen que no existe y no levanta ("refers to undefined volume").
   ```bash
   # docker/produccion.env
   ARCHIVOS_DIR=/mnt/fileserver/accesos/archivos     # Linux
-  ARCHIVOS_DIR=Z:/accesos/archivos                  # Windows: la unidad tiene que estar compartida en Docker Desktop
+  ARCHIVOS_DIR=C:/accesos/archivos                  # Windows (con barras /)
   ```
   Después, `docker compose --env-file docker/produccion.env up -d`. La carpeta se crea si no existe.
 - **Desde el IDE:** `STORAGE_PATH` en `backend/.env` (por defecto `./uploads`).
