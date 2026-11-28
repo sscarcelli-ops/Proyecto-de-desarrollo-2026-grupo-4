@@ -829,7 +829,7 @@
                 "exec": [
                   "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
                   "",
-                  "pm.test(\"Es una lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                  "pm.test(\"Viene paginado\", () => pm.expect(pm.response.json()).to.have.property(\"totalElements\"));"
                 ]
               }
             }
@@ -838,13 +838,95 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/barrios",
+              "raw": "{{baseUrl}}/api/barrios?page=0&size=10",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "barrios"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "US-10: listado paginado (RNF-08), en orden alfabético."
+          }
+        },
+        {
+          "name": "Filtrar barrios sin Operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Ninguno tiene Operador\", () => pm.response.json().content.forEach(b => pm.expect(b.operadorId).to.eql(null)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrios?filtro=SIN_OPERADOR",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrios"
+              ],
+              "query": [
+                {
+                  "key": "filtro",
+                  "value": "SIN_OPERADOR"
+                }
+              ]
+            },
+            "description": "US-45: filtro=ACTIVO, INACTIVO o SIN_OPERADOR. Un valor inventado responde 400."
+          }
+        },
+        {
+          "name": "Filtro de barrios inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/barrios?filtro=XYZ",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "barrios"
+              ],
+              "query": [
+                {
+                  "key": "filtro",
+                  "value": "XYZ"
+                }
               ]
             }
           }
@@ -1620,6 +1702,52 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "Modificar Operador con letras en el teléfono",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test(\"Marca el teléfono\", () => pm.expect(pm.response.json().errors.map(e => e.field)).to.include(\"telefono\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadores/{{operadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadores",
+                "{{operadorId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Olivia\",\n  \"apellido\": \"Postman\",\n  \"telefono\": \"11-4555-ABCD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "El teléfono solo acepta números, espacios, +, - y paréntesis (al menos 6 números)."
           }
         },
         {

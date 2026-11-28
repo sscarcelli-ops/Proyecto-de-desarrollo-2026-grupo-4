@@ -12,8 +12,14 @@ import ar.edu.grupo4.accesos.ubicacion.Localidad;
 import ar.edu.grupo4.accesos.ubicacion.Provincia;
 import ar.edu.grupo4.accesos.ubicacion.UbicacionService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
@@ -23,6 +29,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -120,11 +128,39 @@ class BarrioServiceTest {
     }
 
     @Test
-    void listarPideLosBarriosOrdenadosAlfabeticamentePorNombre() {
-        List<Barrio> barrios = List.of(barrioExistente());
-        when(repository.findAll(Sort.by("nombre"))).thenReturn(barrios);
+    @DisplayName("US-10: sin filtro pide todos los barrios, paginados y en orden alfabético")
+    void listarSinFiltroPideTodosOrdenadosPorNombre() {
+        Page<Barrio> pagina = new PageImpl<>(List.of(barrioExistente()));
+        when(repository.listarConFiltro(isNull(), eq(false), any())).thenReturn(pagina);
 
-        assertThat(service.listar()).isSameAs(barrios);
+        assertThat(service.listar(null, PageRequest.of(2, 10))).isSameAs(pagina);
+
+        ArgumentCaptor<Pageable> pedido = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).listarConFiltro(isNull(), eq(false), pedido.capture());
+        assertThat(pedido.getValue().getPageNumber()).isEqualTo(2);
+        assertThat(pedido.getValue().getSort()).isEqualTo(Sort.by("nombre", "id"));
+    }
+
+    @Test
+    @DisplayName("US-10: el filtro Activos e Inactivos pide ese estado")
+    void listarConFiltroDeEstadoPasaElEstado() {
+        when(repository.listarConFiltro(any(), eq(false), any())).thenReturn(Page.empty());
+
+        service.listar(FiltroBarrio.ACTIVO, PageRequest.of(0, 10));
+        service.listar(FiltroBarrio.INACTIVO, PageRequest.of(0, 10));
+
+        verify(repository).listarConFiltro(eq(EstadoBarrio.ACTIVO), eq(false), any());
+        verify(repository).listarConFiltro(eq(EstadoBarrio.INACTIVO), eq(false), any());
+    }
+
+    @Test
+    @DisplayName("US-45: el filtro Sin Operador pide los barrios sin Operador, de cualquier estado")
+    void listarSinOperadorNoFiltraPorEstado() {
+        when(repository.listarConFiltro(isNull(), eq(true), any())).thenReturn(Page.empty());
+
+        service.listar(FiltroBarrio.SIN_OPERADOR, PageRequest.of(0, 10));
+
+        verify(repository).listarConFiltro(isNull(), eq(true), any());
     }
 
     @Test

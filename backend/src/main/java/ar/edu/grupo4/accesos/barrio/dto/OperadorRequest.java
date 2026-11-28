@@ -1,8 +1,10 @@
 package ar.edu.grupo4.accesos.barrio.dto;
 
 import ar.edu.grupo4.accesos.common.security.PasswordSegura;
+import ar.edu.grupo4.accesos.common.validacion.FormatoTelefono;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /** US-13: datos para crear un Operador (RF-03). La contraseña inicial cumple la política de US-44. */
@@ -22,6 +24,7 @@ public record OperadorRequest(
 
     @NotBlank(message = "El teléfono es obligatorio")
     @Size(max = 30, message = "El teléfono no puede superar los 30 caracteres")
+    @Pattern(regexp = FormatoTelefono.REGEX, message = FormatoTelefono.MENSAJE)
     String telefono,
 
     @PasswordSegura

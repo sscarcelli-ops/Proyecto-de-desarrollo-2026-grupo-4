@@ -1,7 +1,9 @@
 package ar.edu.grupo4.accesos.perfil.dto;
 
+import ar.edu.grupo4.accesos.common.validacion.FormatoTelefono;
 import ar.edu.grupo4.accesos.perfil.TipoPerfil;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +33,7 @@ public record SolicitarPerfilRequest(
     String dni,           // Monotributista
 
     @Size(max = 30, message = "El teléfono no puede superar los 30 caracteres")
+    @Pattern(regexp = FormatoTelefono.REGEX, message = FormatoTelefono.MENSAJE)
     String telefono,      // Opcional en ambos
 
     MultipartFile constancia // Obligatorio, PDF hasta 8 MB

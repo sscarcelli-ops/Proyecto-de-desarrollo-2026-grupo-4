@@ -7,6 +7,7 @@ import { BotonCambiarPassword } from '../../auth/components/BotonCambiarPassword
 import { BotonCerrarSesion } from '../../auth/components/BotonCerrarSesion';
 import { useMiSolicitud, useSolicitarPerfil } from '../api/perfiles';
 import { getErrorMessage, toFormFieldErrors } from '../../../shared/lib/apiError';
+import { reglaTelefono } from '../../../shared/lib/telefono';
 import { PATHS } from '../../../routes/paths';
 
 type TipoRegistro = 'EMPRESA' | 'MONOTRIBUTISTA';
@@ -317,7 +318,7 @@ export function SolicitarPerfilPage() {
         <Form.Item
           label="Número de teléfono"
           name="telefono"
-          rules={[{ max: 30, message: 'El teléfono no puede superar los 30 caracteres' }]}
+          rules={[{ max: 30, message: 'El teléfono no puede superar los 30 caracteres' }, reglaTelefono]}
           extra={<Typography.Text type="secondary" style={{ fontSize: 12 }}>* Dato opcional</Typography.Text>}
         >
           <Input placeholder="+54 9 1234 567890" maxLength={30} />

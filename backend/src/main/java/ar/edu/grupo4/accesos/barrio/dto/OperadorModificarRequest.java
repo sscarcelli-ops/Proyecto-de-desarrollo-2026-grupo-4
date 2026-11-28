@@ -1,6 +1,8 @@
 package ar.edu.grupo4.accesos.barrio.dto;
 
+import ar.edu.grupo4.accesos.common.validacion.FormatoTelefono;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -18,5 +20,6 @@ public record OperadorModificarRequest(
 
     @NotBlank(message = "El teléfono es obligatorio")
     @Size(max = 30, message = "El teléfono no puede superar los 30 caracteres")
+    @Pattern(regexp = FormatoTelefono.REGEX, message = FormatoTelefono.MENSAJE)
     String telefono
 ) {}

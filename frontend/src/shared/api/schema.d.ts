@@ -1209,6 +1209,17 @@ export interface components {
             nombreVinculo?: string;
             tipo?: string;
         };
+        PageResponseBarrioResponse: {
+            content: components["schemas"]["BarrioResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalElements: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         MiBarrioResponse: {
             /** Format: int64 */
             id: number;
@@ -2132,7 +2143,10 @@ export interface operations {
     };
     listar_3: {
         parameters: {
-            query?: never;
+            query: {
+                filtro?: "ACTIVO" | "INACTIVO" | "SIN_OPERADOR";
+                pageable: components["schemas"]["Pageable"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2145,7 +2159,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["BarrioResponse"][];
+                    "*/*": components["schemas"]["PageResponseBarrioResponse"];
                 };
             };
         };

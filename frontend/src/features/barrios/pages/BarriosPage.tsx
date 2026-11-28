@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, Select, Switch, Tooltip, Typography, App as AntdApp } from 'antd';
+import { Alert, Button, Flex, Pagination, Select, Switch, Tooltip, Typography, App as AntdApp } from 'antd';
 import type { TableColumnsType } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { generatePath, useNavigate } from 'react-router';
-import { useBarrios, useCambiarEstadoBarrio, type Barrio } from '../api/barrios';
+import { useBarrios, useCambiarEstadoBarrio, type Barrio, type FiltroBarrio } from '../api/barrios';
 import { AsignarOperadorSelect } from '../components/AsignarOperadorSelect';
 import { ReemplazarOperadorBoton } from '../components/ReemplazarOperadorBoton';
 import { getErrorMessage } from '../../../shared/lib/apiError';
@@ -11,7 +11,7 @@ import { textoUbicacion } from '../../ubicaciones/api/ubicaciones';
 import { PATHS } from '../../../routes/paths';
 import { palette } from '../../../app/theme';
 import { TablaResponsiva } from '../../../shared/components/TablaResponsiva';
-import { useParametrosUrl } from '../../../shared/hooks/useParametrosUrl';
+import { usePaginaValida, useParametrosUrl } from '../../../shared/hooks/useParametrosUrl';
 import { EncabezadoPagina } from '../../../shared/components/EncabezadoPagina';
 
 const { Text } = Typography;
@@ -21,8 +21,8 @@ const { Text } = Typography;
 // pantalla ancha el espacio va a los textos y no queda aire entre columnas cortas.
 const ANCHO_MINIMO_TABLA = 950;
 
-// Selector de estado del listado (RF-34)
-type FiltroBarrios = 'TODOS' | 'ACTIVO' | 'INACTIVO' | 'SIN_OPERADOR';
+// Selector de estado del listado (RF-34). Filtra el backend: con el paginado, el navegador solo tiene una página.
+type FiltroBarrios = 'TODOS' | FiltroBarrio;
 
 const OPCIONES_FILTRO: { value: FiltroBarrios; label: string }[] = [
   { value: 'TODOS', label: 'Todos' },
@@ -31,16 +31,10 @@ const OPCIONES_FILTRO: { value: FiltroBarrios; label: string }[] = [
   { value: 'SIN_OPERADOR', label: 'Sin Operador' },
 ];
 
-function cumpleFiltro(barrio: Barrio, filtro: FiltroBarrios): boolean {
-  switch (filtro) {
-    case 'ACTIVO': return barrio.estado === 'ACTIVO';
-    case 'INACTIVO': return barrio.estado === 'INACTIVO';
-    case 'SIN_OPERADOR': return barrio.operadorId === null;
-    default: return true;
-  }
-}
+const TAMANO_PAGINA = 10;
 
-// US-10: listado de barrios privados (Administrador). Sin paginación, orden alfabético desde el backend.
+// US-10: listado de barrios privados (Administrador), paginado (RNF-08) y en orden alfabético desde el backend.
+// La página y el filtro van en la dirección (?pagina=2&filtro=ACTIVO): al recargar o al volver de Editar, siguen.
 // US-45: filtro "Sin Operador" y asignación del Operador desde la columna "Op. Asignado".
 //
 // Cómo quedan las acciones (propuesta del grupo, el wireframe está desactualizado en esta pantalla):
@@ -52,16 +46,17 @@ function cumpleFiltro(barrio: Barrio, filtro: FiltroBarrios): boolean {
 export function BarriosPage() {
   const navigate = useNavigate();
   const { message, modal } = AntdApp.useApp();
-  const { data, error, isLoading } = useBarrios();
-  // El filtro va en la dirección (?filtro=ACTIVO): al recargar o al volver de Editar, sigue elegido
   const url = useParametrosUrl();
+  const pagina = url.numero('pagina', 1);
+  // Solo valores conocidos: un ?filtro=cualquiera se toma como "Todos"
   const filtroUrl = url.texto('filtro');
   const filtro: FiltroBarrios = OPCIONES_FILTRO.some((o) => o.value === filtroUrl) ? (filtroUrl as FiltroBarrios) : 'TODOS';
+  const { data, error, isLoading } = useBarrios(pagina, TAMANO_PAGINA, filtro === 'TODOS' ? undefined : filtro);
+  // Una página inexistente (?pagina=99), o que quedó vacía, va a la última con datos
+  usePaginaValida(url, pagina, data?.totalPages);
   const cambiarEstadoBarrio = useCambiarEstadoBarrio();
   // Barrio al que se le está cambiando el estado: su interruptor muestra que está cargando
   const [cambiandoId, setCambiandoId] = useState<number | null>(null);
-
-  const barrios = data?.filter((barrio) => cumpleFiltro(barrio, filtro));
 
   // US-12: el backend valida (activar sin Operador, por ejemplo) y devuelve el mensaje que se muestra
   const cambiarEstado = async (barrio: Barrio, activo: boolean) => {
@@ -184,7 +179,13 @@ export function BarriosPage() {
         filtros={
           <Flex align="center" gap={8}>
             <Text>Estado:</Text>
-            <Select<FiltroBarrios> value={filtro} onChange={(valor) => url.cambiar({ filtro: valor === 'TODOS' ? null : valor })} options={OPCIONES_FILTRO} style={{ minWidth: 160 }} />
+            {/* Cambiar el filtro vuelve a la página 1 */}
+            <Select<FiltroBarrios>
+              value={filtro}
+              onChange={(valor) => url.cambiar({ filtro: valor === 'TODOS' ? null : valor, pagina: null })}
+              options={OPCIONES_FILTRO}
+              style={{ minWidth: 160 }}
+            />
           </Flex>
         }
       />
@@ -196,7 +197,7 @@ export function BarriosPage() {
           columnaAcciones="accion"
         rowKey="id"
         columns={columns}
-        dataSource={barrios}
+        dataSource={data?.content ?? []}
         loading={isLoading}
         pagination={false}
         // Distribución fija: con 'max-content' la tabla crece con el texto y los "…" no llegan a aparecer.
@@ -205,6 +206,17 @@ export function BarriosPage() {
         scroll={{ x: ANCHO_MINIMO_TABLA }}
         locale={{ emptyText: filtro === 'TODOS' ? 'Todavía no hay barrios cargados' : 'No hay barrios con ese estado' }}
       />
+
+      <Flex justify="center">
+        <Pagination
+          current={pagina}
+          pageSize={TAMANO_PAGINA}
+          total={data?.totalElements ?? 0}
+          showSizeChanger={false}
+          hideOnSinglePage
+          onChange={(p) => url.cambiar({ pagina: p })}
+        />
+      </Flex>
     </Flex>
   );
 }

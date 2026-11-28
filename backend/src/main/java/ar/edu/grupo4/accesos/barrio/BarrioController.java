@@ -4,14 +4,20 @@ import ar.edu.grupo4.accesos.barrio.dto.AsignarOperadorRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioRequest;
 import ar.edu.grupo4.accesos.barrio.dto.BarrioResponse;
 import ar.edu.grupo4.accesos.barrio.dto.EstadoBarrioRequest;
+import ar.edu.grupo4.accesos.common.paging.OrdenPermitido;
+import ar.edu.grupo4.accesos.common.paging.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/barrios")
@@ -27,11 +33,17 @@ public class BarrioController {
         return responder(barrioService.crear(request));
     }
 
+    // US-10 y US-45: listado paginado (RNF-08) con el selector de estado (?filtro=ACTIVO | INACTIVO | SIN_OPERADOR).
+    // El orden es fijo (alfabético): no se acepta ?sort=.
     @GetMapping
-    public List<BarrioResponse> listar() {
-        List<Barrio> barrios = barrioService.listar();
-        Map<Long, Operador> operadores = barrioService.operadoresDe(barrios);
-        return barrios.stream().map(b -> BarrioResponse.from(b, operadorDe(b, operadores))).toList();
+    public PageResponse<BarrioResponse> listar(
+        @RequestParam(required = false) FiltroBarrio filtro,
+        @PageableDefault(size = 10) Pageable pageable
+    ) {
+        Page<Barrio> pagina = barrioService.listar(filtro, OrdenPermitido.validar(pageable, Set.of()));
+        // Los Operadores de la página en una sola consulta
+        Map<Long, Operador> operadores = barrioService.operadoresDe(pagina.getContent());
+        return PageResponse.from(pagina, b -> BarrioResponse.from(b, operadorDe(b, operadores)));
     }
 
     // US-11

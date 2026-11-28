@@ -10,6 +10,9 @@ import ar.edu.grupo4.accesos.ubicacion.UbicacionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,10 +50,20 @@ public class BarrioService {
         return creado;
     }
 
-    /** US-10: el listado de barrios no se pagina; orden alfabético. */
+    /**
+     * US-10 y US-45: listado paginado (RNF-08), en orden alfabético por nombre (y por id, para que dos barrios con el
+     * mismo nombre en distintas localidades no cambien de página entre una consulta y otra). Sin filtro, todos.
+     */
     @Transactional(readOnly = true)
-    public List<Barrio> listar() {
-        return barrioRepository.findAll(Sort.by("nombre"));
+    public Page<Barrio> listar(FiltroBarrio filtro, Pageable pageable) {
+        EstadoBarrio estado = null;
+        if (filtro == FiltroBarrio.ACTIVO) {
+            estado = EstadoBarrio.ACTIVO;
+        } else if (filtro == FiltroBarrio.INACTIVO) {
+            estado = EstadoBarrio.INACTIVO;
+        }
+        Pageable ordenado = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("nombre", "id"));
+        return barrioRepository.listarConFiltro(estado, filtro == FiltroBarrio.SIN_OPERADOR, ordenado);
     }
 
     /** US-11: datos de un barrio para precargar el formulario de edición. */

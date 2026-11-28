@@ -25,16 +25,24 @@ export const barriosKeys = {
   detail: (id: string) => ['barrios', id] as const,
 };
 
-// US-10: el listado de barrios no se pagina (devuelve un array)
-async function getBarrios(): Promise<Barrio[]> {
-  const { data } = await httpClient.get<Barrio[]>('/barrios');
+// Selector de estado del listado (RF-34); sin filtro, todos
+export type FiltroBarrio = 'ACTIVO' | 'INACTIVO' | 'SIN_OPERADOR';
+export type PaginaBarrios = ApiSchema<'PageResponseBarrioResponse'>;
+
+// US-10 y US-45: listado paginado (RNF-08), en orden alfabético desde el backend. La página de la pantalla empieza
+// en 1 y la del backend en 0.
+async function getBarrios(pagina: number, tamano: number, filtro?: FiltroBarrio): Promise<PaginaBarrios> {
+  const { data } = await httpClient.get<PaginaBarrios>('/barrios', {
+    params: { page: pagina - 1, size: tamano, filtro },
+  });
   return data;
 }
 
-export function useBarrios() {
+export function useBarrios(pagina: number, tamano: number, filtro?: FiltroBarrio) {
   return useQuery({
-    queryKey: barriosKeys.all,
-    queryFn: getBarrios,
+    // Empieza con barriosKeys.all: crear, editar o cambiar un barrio refresca todas las páginas
+    queryKey: [...barriosKeys.all, 'listado', pagina, tamano, filtro ?? 'TODOS'],
+    queryFn: () => getBarrios(pagina, tamano, filtro),
   });
 }
 

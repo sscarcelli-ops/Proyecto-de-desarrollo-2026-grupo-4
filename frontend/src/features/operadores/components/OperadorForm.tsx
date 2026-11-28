@@ -1,6 +1,7 @@
 import { Button, Col, Flex, Form, Input, Row } from 'antd';
 import type { FormInstance } from 'antd';
 import { CampoPasswordNueva } from '../../../shared/components/CamposPassword';
+import { reglaTelefono } from '../../../shared/lib/telefono';
 import type { OperadorRequest } from '../api/operadores';
 
 // Valores que se muestran al editar (US-16)
@@ -80,7 +81,7 @@ export function OperadorForm({
       <Form.Item
         name="telefono"
         label="Teléfono"
-        rules={[{ required: true, whitespace: true, message: 'El teléfono es obligatorio' }, { max: 30 }]}
+        rules={[{ required: true, whitespace: true, message: 'El teléfono es obligatorio' }, { max: 30 }, reglaTelefono]}
       >
         <Input maxLength={30} />
       </Form.Item>
